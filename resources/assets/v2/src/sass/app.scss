@@ -23,8 +23,8 @@ $link-decoration: none !default;
 $font-family-sans-serif: "Roboto", sans-serif;
 
 $danger: #CD5029 !default;
-$primary: #1E6581 !default;
-$success: #64B624 !default;
+$primary: #1A3D6B !default;
+$success: #00CC99 !default;
 
 // admin LTE
 @use "admin-lte/src/scss/adminlte" with (
@@ -96,4 +96,4 @@ td:not(:hover) .hidden-edit-button {
 
 // hover buttons
 
-
+@import 'pala-theme';

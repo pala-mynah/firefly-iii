@@ -1,0 +1,90 @@
+/* ============================================================
+   Pala Dashboards — token layer (dark-only)
+   Single source of truth for the Pala identity, applied to
+   self-hosted dashboards. Imported by every per-app override.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
+
+:root {
+  /* ---- Brand (constant across modes) ---- */
+  --pala-blue:        #073363;
+  --pala-blue-700:    #04244A;
+  --pala-blue-500:    #0A4485;
+  --pala-blue-300:    #2D63A1;
+  --pala-blue-100:    rgba(108, 197, 154, 0.12);
+  --pala-blue-050:    rgba(108, 197, 154, 0.06);
+
+  --pala-mint:        #149966;
+  --pala-mint-bright: #6CC59A;
+  --pala-mint-ink:    #B6E5C9;
+  --pala-mint-100:    rgba(20, 153, 102, 0.18);
+  --pala-mint-050:    rgba(20, 153, 102, 0.08);
+
+  /* ---- Surfaces (dark) ----
+     Layered: cool < paper < warm — paper is the default card surface */
+  --paper:            #0D1B30;   /* primary card / canvas    (~30% area) */
+  --paper-warm:       #112340;   /* hover row, raised card             */
+  --paper-cool:       #08152A;   /* page background           (~60% area) */
+
+  /* ---- Ink (dark) ---- */
+  --ink:              #E8ECF3;   /* primary text */
+  --ink-muted:        #B6C0D2;   /* secondary text */
+  --ink-soft:         #8896AE;   /* tertiary, captions */
+  --ink-faint:        #5C6A82;   /* labels, axis, footnotes */
+
+  /* ---- Rules / borders ---- */
+  --rule:             rgba(255, 255, 255, 0.10);
+  --rule-strong:      rgba(255, 255, 255, 0.20);
+  --rule-hair:        rgba(255, 255, 255, 0.05);
+
+  /* ---- Status (semantic) ---- */
+  --status-ok:        var(--pala-mint-bright);
+  --status-info:      #6FA8FF;
+  --status-warn:      #E0A24A;
+  --status-alarm:     #E16C6C;
+
+  /* ---- On-blue (rail / accent surface) ----
+     The 30% surface stays Pala Blue in dark mode for continuity with the CV. */
+  --on-blue:          #FFFFFF;
+  --on-blue-soft:     rgba(255, 255, 255, 0.78);
+  --on-blue-faint:    rgba(255, 255, 255, 0.55);
+  --on-blue-rule:     rgba(255, 255, 255, 0.18);
+  --on-blue-link:     var(--pala-mint-bright);
+
+  /* ---- Type ---- */
+  --font-display: "Crimson Pro", Georgia, serif;
+  --font-body:    "Crimson Pro", Georgia, serif;
+  --font-tag:     "Crimson Pro", Georgia, serif;
+  --font-data:    ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas, monospace;
+
+  /* ---- Scale ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.30), 0 4px 12px rgba(0, 0, 0, 0.20);
+  --shadow-pop:  0 8px 24px rgba(0, 0, 0, 0.40);
+
+  /* ---- Tracking presets ---- */
+  --track-tag:       0.18em;
+  --track-tag-tight: 0.12em;
+  --track-display:   -0.02em;
+  --track-body:      -0.005em;
+
+  /* ---- Optical scaling ----
+     Crimson Pro has a smaller x-height than Plex/Source. Apply
+     font-size-adjust on dashboard root containers to match optical size. */
+  --font-x-height-adjust: 0.514;
+
+  color-scheme: dark;
+}

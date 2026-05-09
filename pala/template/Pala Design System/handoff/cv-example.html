@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Alex Pala — Curriculum Vitae</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
+
+:root {
+  --pala-blue:        #073363;
+  --pala-blue-700:    #04244a;
+  --pala-blue-500:    #0a4485;
+  --pala-blue-100:    #cfd6e3;
+  --pala-blue-050:    #ebeef4;
+  --pala-mint:        #149966;
+  --pala-mint-bright: #6cc59a;
+  --pala-mint-ink:    #0d6a47;
+  --pala-mint-100:    #d2efdf;
+  --pala-mint-050:    #ecfaf3;
+  --paper:            #ffffff;
+  --paper-warm:       #fbfaf7;
+  --ink:              #11161e;
+  --ink-muted:        #4b5563;
+  --ink-soft:         #6b7280;
+  --ink-faint:        #9aa3af;
+  --rule:             #e5e7eb;
+  --rule-strong:      #cbd2dc;
+  --on-blue:          #ffffff;
+  --on-blue-soft:     rgba(255, 255, 255, 0.78);
+  --on-blue-faint:    rgba(255, 255, 255, 0.55);
+  --on-blue-rule:     rgba(255, 255, 255, 0.18);
+  --on-blue-link:     var(--pala-mint-bright);
+  /* One typeface, three voices via weight + italic + caps + tracking */
+  --font-display: "Crimson Pro", Georgia, serif;  /* headlines: heavy, tight tracking */
+  --font-body:    "Crimson Pro", Georgia, serif;  /* body: regular, italic for emphasis */
+  --font-tag:     "Crimson Pro", Georgia, serif;  /* metadata: medium, ALL CAPS, wide tracking */
+  /* legacy aliases so existing rules keep working */
+  --font-serif: var(--font-display);
+  --font-sans:  var(--font-body);
+  --font-mono:  var(--font-tag);
+}
+* { box-sizing: border-box; }
+html { background: #d6d8de; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  padding: 56px 24px 96px;
+  display: flex;
+  justify-content: center;
+  font-size-adjust: 0.514;
+}
+
+/* --- Page (A4) --- */
+.cv {
+  width: 210mm;
+  min-height: 297mm;
+  background: var(--paper);
+  display: grid;
+  grid-template-columns: 65mm 1fr;
+  box-shadow: 0 24px 64px rgba(7, 51, 99, 0.18);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* --- Sidebar (the 30%) --- */
+.cv-rail {
+  background: var(--pala-blue);
+  color: var(--on-blue);
+  padding: 7mm 7mm;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3.5mm;
+}
+.cv-rail::after {
+  content: "";
+  position: absolute;
+  top: 14mm; right: 0;
+  width: 4px; height: 14mm;
+  background: var(--pala-mint-bright);
+}
+.cv-rail-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26pt;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.cv-rail-name em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--pala-mint-bright);
+}
+.cv-rail-role {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 10.5pt;
+  color: var(--pala-mint-bright);
+  margin: 4px 0 0;
+}
+
+.cv-rail-block { }
+.cv-rail-label {
+  font-family: var(--font-tag);
+  font-weight: 600;
+  font-size: 8pt;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pala-mint-bright);
+  margin: 0 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--on-blue-rule);
+}
+.cv-rail-value {
+  font-family: var(--font-body);
+  font-size: 9.5pt;
+  color: var(--on-blue);
+  line-height: 1.55;
+}
+.cv-rail-value a {
+  color: var(--on-blue-link);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(108, 197, 154, 0.5);
+}
+.cv-rail-list {
+  font-family: var(--font-body);
+  font-size: 9.5pt;
+  color: var(--on-blue-soft);
+  line-height: 1.65;
+}
+.cv-rail-list strong {
+  color: var(--pala-mint-bright);
+  font-weight: 600;
+  font-style: italic;
+}
+.cv-rail-foot {
+  margin-top: auto;
+  font-family: var(--font-tag);
+  font-weight: 500;
+  font-size: 8pt;
+  color: var(--on-blue-faint);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* --- Body --- */
+.cv-body {
+  background: var(--paper);
+  padding: 6mm 9mm 6mm;
+}
+
+.cv-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-tag);
+  font-weight: 600;
+  font-size: 8.5pt;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pala-mint-ink);
+  margin: 0 0 10px;
+}
+.cv-eyebrow::before {
+  content: "";
+  width: 24px; height: 2px;
+  background: var(--pala-mint);
+}
+
+.cv-statement {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 11pt;
+  line-height: 1.3;
+  color: var(--ink);
+  margin: 0 0 3mm;
+  letter-spacing: -0.005em;
+}
+.cv-statement em {
+  color: var(--pala-blue);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.cv-section { margin-bottom: 3mm; }
+.cv-section:last-child { margin-bottom: 0; }
+.cv-section-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12pt;
+  color: var(--pala-blue);
+  margin: 0 0 2mm;
+  letter-spacing: -0.01em;
+  display: inline-block;
+  padding-bottom: 4px;
+  border-bottom: 3px solid var(--pala-mint);
+}
+
+.cv-entry {
+  padding: 1px 0;
+  border-bottom: 1px solid var(--rule);
+  position: relative;
+}
+.cv-entry:last-child { border-bottom: 0; }
+.cv-entry.featured {
+  background: var(--pala-mint-050);
+  margin: 0 -10px;
+  padding: 8px 10px 8px 12px;
+  border-bottom: 1px solid var(--pala-mint-100);
+  border-left: 3px solid var(--pala-mint);
+}
+
+.cv-entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 2px;
+}
+.cv-entry-role {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 10pt;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.cv-entry-when {
+  font-family: var(--font-tag);
+  font-weight: 500;
+  font-size: 8pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.cv-entry-org {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 9.5pt;
+  color: var(--pala-blue);
+  margin: 0 0 1px;
+}
+.cv-entry-text {
+  font-size: 8.5pt;
+  color: var(--ink-muted);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.cv-tag {
+  display: inline-block;
+  font-family: var(--font-tag);
+  font-weight: 600;
+  font-size: 7pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin-left: 8px;
+  vertical-align: 2px;
+}
+.cv-tag-now    { background: var(--pala-mint); color: #fff; }
+.cv-tag-blue   { background: var(--pala-blue-050); color: var(--pala-blue); }
+.cv-tag-quiet  { background: #f5f6f8; color: var(--ink-soft); border: 1px solid var(--rule); }
+
+.cv-list-compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+}
+.cv-list-compact .cv-entry {
+  padding: 5px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.cv-list-compact .cv-entry-when {
+  font-family: var(--font-tag);
+  font-weight: 500;
+  font-size: 7.5pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 1px;
+}
+.cv-list-compact .cv-entry-role { font-size: 10pt; }
+.cv-list-compact .cv-entry-text {
+  font-size: 9pt;
+  margin-top: 1px;
+}
+
+/* Footer */
+.cv-foot {
+  margin-top: 3mm;
+  padding-top: 6px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-tag);
+  font-weight: 500;
+  font-size: 7.5pt;
+  color: var(--ink-faint);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.cv-foot .mark { color: var(--pala-blue); font-weight: 600; }
+
+@page { size: A4; margin: 0; }
+@media print {
+  html, body { background: var(--paper); padding: 0; }
+  .cv { box-shadow: none; width: 210mm; min-height: 297mm; border-radius: 0; }
+}
+</style>
+</head>
+<body>
+
+<article class="cv">
+
+  <!-- Sidebar — Pala Blue, ~30% of pixel area -->
+  <aside class="cv-rail">
+    <div>
+      <h1 class="cv-rail-name">Alex Pala</h1>
+      <p class="cv-rail-role">Designer & engineer working in type</p>
+    </div>
+
+    <div class="cv-rail-block">
+      <div class="cv-rail-label">Based</div>
+      <div class="cv-rail-value">Lisbon, Portugal<br/>Available remote &mdash; CET</div>
+    </div>
+
+    <div class="cv-rail-block">
+      <div class="cv-rail-label">Contact</div>
+      <div class="cv-rail-value">
+        <a href="mailto:hello@pala.kit">hello@pala.kit</a><br/>
+        <a href="https://pala.kit">pala.kit</a><br/>
+        <a href="https://github.com/anon1984">github / anon1984</a>
+      </div>
+    </div>
+
+    <div class="cv-rail-block">
+      <div class="cv-rail-label">Disciplines</div>
+      <div class="cv-rail-list">
+        <strong>Typography</strong><br/>
+        Brand systems<br/>
+        Editorial design<br/>
+        Print production<br/>
+        Front-end engineering
+      </div>
+    </div>
+
+    <div class="cv-rail-block">
+      <div class="cv-rail-label">Tools</div>
+      <div class="cv-rail-list">
+        Figma · InDesign<br/>
+        Glyphs · TeX<br/>
+        HTML, CSS, React<br/>
+        Letterpress (Heidelberg)
+      </div>
+    </div>
+
+    <div class="cv-rail-block">
+      <div class="cv-rail-label">Languages</div>
+      <div class="cv-rail-list">
+        Portuguese (native)<br/>
+        English (native)<br/>
+        German (B2)
+      </div>
+    </div>
+
+    <div class="cv-rail-foot">Pala &middot; CV 2026</div>
+  </aside>
+
+  <!-- Body -->
+  <main class="cv-body">
+
+    <div class="cv-eyebrow">Curriculum Vitae &middot; Spring 2026</div>
+    <p class="cv-statement">
+      Twelve years across <em>typography, identity systems, and small printed things</em>. Independent since 2022, working with cultural clients and small publishers.
+    </p>
+
+    <section class="cv-section">
+      <h2 class="cv-section-title">Experience</h2>
+
+      <div class="cv-entry featured">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">Independent practice<span class="cv-tag cv-tag-now">Now</span></span>
+          <span class="cv-entry-when">2022 &mdash; present</span>
+        </div>
+        <p class="cv-entry-org">Pala &middot; Lisbon</p>
+        <p class="cv-entry-text">Type-driven brand systems and bespoke document tooling for small publishers and cultural institutions. Selected clients: Field Notes Co., Quarterly Review, Mensa Restaurants, Faculdade de Belas-Artes.</p>
+      </div>
+
+      <div class="cv-entry">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">Senior designer</span>
+          <span class="cv-entry-when">2018 &mdash; 2022</span>
+        </div>
+        <p class="cv-entry-org">Frame &amp; Folio &middot; Berlin</p>
+        <p class="cv-entry-text">Led the rebrand of three editorial properties; built and maintained the studio's component library; mentored two juniors. Last year as design lead.</p>
+      </div>
+
+      <div class="cv-entry">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">Designer</span>
+          <span class="cv-entry-when">2015 &mdash; 2018</span>
+        </div>
+        <p class="cv-entry-org">North &amp; North &middot; London</p>
+        <p class="cv-entry-text">Brand identity and print systems for cultural clients including the Wellcome Collection, the V&amp;A, and three independent record labels.</p>
+      </div>
+
+      <div class="cv-entry">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">Junior designer</span>
+          <span class="cv-entry-when">2014 &mdash; 2015</span>
+        </div>
+        <p class="cv-entry-org">Praline &middot; London</p>
+        <p class="cv-entry-text">Editorial and packaging work for food &amp; restaurant clients.</p>
+      </div>
+    </section>
+
+    <section class="cv-section">
+      <h2 class="cv-section-title">Selected work</h2>
+
+      <div class="cv-entry">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">Pala correspondence kit<span class="cv-tag cv-tag-blue">Type</span></span>
+          <span class="cv-entry-when">2024</span>
+        </div>
+        <p class="cv-entry-text">A small toolkit for writing letters that look like they belong on paper. Specimen booklet, envelope templates, ink-and-paper guide. Run of 200, sold out in three weeks.</p>
+      </div>
+
+      <div class="cv-entry">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">Field Notes, vol. 1<span class="cv-tag cv-tag-blue">Editorial</span></span>
+          <span class="cv-entry-when">2023</span>
+        </div>
+        <p class="cv-entry-text">A pocket volume of three years' essays on typography. Quarterly Review, run of 800.</p>
+      </div>
+
+      <div class="cv-entry">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">A revival of Lopes<span class="cv-tag cv-tag-blue">Type</span></span>
+          <span class="cv-entry-when">2021</span>
+        </div>
+        <p class="cv-entry-text">Digital revival of a 19th-century Portuguese display face from the José Lopes foundry. Three weights, full Latin, distributed open-source.</p>
+      </div>
+
+      <div class="cv-entry">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">Mensa restaurant identity<span class="cv-tag cv-tag-blue">Brand</span></span>
+          <span class="cv-entry-when">2022</span>
+        </div>
+        <p class="cv-entry-text">Wordmark, signage system, and weekly menus. One typeface, three colours, no photography.</p>
+      </div>
+    </section>
+
+    <section class="cv-section">
+      <h2 class="cv-section-title">Education</h2>
+
+      <div class="cv-entry">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">MA, Typeface Design</span>
+          <span class="cv-entry-when">2013 &mdash; 2014</span>
+        </div>
+        <p class="cv-entry-org">University of Reading</p>
+        <p class="cv-entry-text">Thesis: <em>The vertical rule as typographic device in 19th-century Iberian display.</em></p>
+      </div>
+
+      <div class="cv-entry">
+        <div class="cv-entry-head">
+          <span class="cv-entry-role">BFA, Communication Design</span>
+          <span class="cv-entry-when">2009 &mdash; 2013</span>
+        </div>
+        <p class="cv-entry-org">Faculdade de Belas-Artes &middot; Lisbon</p>
+        <p class="cv-entry-text">First class. Final-year prize in editorial design.</p>
+      </div>
+    </section>
+
+    <section class="cv-section">
+      <h2 class="cv-section-title">Talks &amp; teaching</h2>
+      <div class="cv-list-compact">
+        <div class="cv-entry"><span class="cv-entry-when">Mar 2025</span><div class="cv-entry-role">On the rule</div><p class="cv-entry-text">Robothon, The Hague</p></div>
+        <div class="cv-entry"><span class="cv-entry-when">Oct 2024</span><div class="cv-entry-role">Setting body type for print</div><p class="cv-entry-text">TypeCon, Lisbon</p></div>
+        <div class="cv-entry"><span class="cv-entry-when">2023 &mdash; present</span><div class="cv-entry-role">Visiting tutor, Type 1</div><p class="cv-entry-text">Faculdade de Belas-Artes</p></div>
+        <div class="cv-entry"><span class="cv-entry-when">May 2022</span><div class="cv-entry-role">The case for one colour</div><p class="cv-entry-text">Brand New Conference, Helsinki</p></div>
+      </div>
+    </section>
+
+    <div class="cv-foot">
+      <span><span class="mark">Pala</span> &middot; Curriculum Vitae</span>
+      <span>Spring 2026</span>
+      <span>Page 1 / 1</span>
+    </div>
+
+  </main>
+
+</article>
+
+</body>
+</html>

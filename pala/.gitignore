@@ -1,0 +1,8 @@
+secrets.yaml
+reports/
+imports/
+__pycache__/
+.venv/
+*.csv
+*.json
+!docker-compose.yml

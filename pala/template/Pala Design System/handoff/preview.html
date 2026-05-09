@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en" class="pala-dark">
+<head>
+<meta charset="utf-8" />
+<title>Pala Dark — Dashboard reference</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+/* Inlined from ../tokens.css and ../components.css for the standalone preview */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
+
+:root {
+  --pala-blue: #073363; --pala-blue-700: #04244A; --pala-blue-500: #0A4485; --pala-blue-300: #2D63A1;
+  --pala-blue-100: rgba(108,197,154,0.12); --pala-blue-050: rgba(108,197,154,0.06);
+  --pala-mint: #149966; --pala-mint-bright: #6CC59A; --pala-mint-ink: #B6E5C9;
+  --pala-mint-100: rgba(20,153,102,0.18); --pala-mint-050: rgba(20,153,102,0.08);
+  --paper: #0D1B30; --paper-warm: #112340; --paper-cool: #08152A;
+  --ink: #E8ECF3; --ink-muted: #B6C0D2; --ink-soft: #8896AE; --ink-faint: #5C6A82;
+  --rule: rgba(255,255,255,0.10); --rule-strong: rgba(255,255,255,0.20); --rule-hair: rgba(255,255,255,0.05);
+  --status-ok: var(--pala-mint-bright); --status-info: #6FA8FF; --status-warn: #E0A24A; --status-alarm: #E16C6C;
+  --on-blue: #FFFFFF; --on-blue-soft: rgba(255,255,255,0.78); --on-blue-faint: rgba(255,255,255,0.55);
+  --on-blue-rule: rgba(255,255,255,0.18); --on-blue-link: var(--pala-mint-bright);
+  --font-display: "Crimson Pro", Georgia, serif;
+  --font-body: "Crimson Pro", Georgia, serif;
+  --font-tag: "Crimson Pro", Georgia, serif;
+  --font-data: ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas, monospace;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+  --radius-sm: 2px; --radius-md: 4px; --radius-lg: 8px;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.20);
+  --shadow-pop: 0 8px 24px rgba(0,0,0,0.40);
+  --track-tag: 0.18em; --track-tag-tight: 0.12em; --track-display: -0.02em; --track-body: -0.005em;
+  --font-x-height-adjust: 0.514;
+  color-scheme: dark;
+}
+
+.pala-display { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.1; letter-spacing: var(--track-display); color: var(--ink); margin: 0; }
+.pala-heading { font-family: var(--font-display); font-weight: 700; font-size: 20px; line-height: 1.2; letter-spacing: -0.01em; color: var(--ink); margin: 0 0 var(--space-3); }
+.pala-tag { font-family: var(--font-tag); font-weight: 600; font-size: 11px; letter-spacing: var(--track-tag); text-transform: uppercase; color: var(--ink-soft); }
+.pala-tag-faint { color: var(--ink-faint); }
+
+.pala-card { background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-card); }
+.pala-card--raised { background: var(--paper-warm); border-color: var(--rule-strong); }
+.pala-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 1px solid var(--rule); }
+.pala-card__title { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.01em; color: var(--ink); margin: 0; }
+.pala-card__meta { font-family: var(--font-tag); font-weight: 500; font-size: 11px; letter-spacing: var(--track-tag); text-transform: uppercase; color: var(--ink-faint); }
+
+.pala-stat { display: flex; flex-direction: column; gap: var(--space-2); }
+.pala-stat__value { font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 1; letter-spacing: var(--track-display); color: var(--ink); font-feature-settings: "tnum" 1, "lnum" 1; }
+.pala-stat__value--mint { color: var(--pala-mint-bright); }
+.pala-stat__value--alarm { color: var(--status-alarm); }
+.pala-stat__unit { font-size: 0.55em; font-weight: 500; color: var(--ink-soft); margin-left: 0.18em; letter-spacing: 0.04em; }
+.pala-stat__label { font-family: var(--font-tag); font-weight: 600; font-size: 11px; letter-spacing: var(--track-tag); text-transform: uppercase; color: var(--ink-faint); }
+.pala-stat__delta { font-family: var(--font-tag); font-weight: 600; font-size: 11px; letter-spacing: var(--track-tag-tight); text-transform: uppercase; color: var(--pala-mint-bright); }
+.pala-stat__delta--down { color: var(--status-alarm); }
+
+.pala-pill { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-tag); font-weight: 600; font-size: 10px; letter-spacing: var(--track-tag-tight); text-transform: uppercase; padding: 3px 8px; border-radius: var(--radius-sm); border: 1px solid var(--rule); background: transparent; color: var(--ink-muted); }
+.pala-pill--ok { background: var(--pala-mint-100); color: var(--pala-mint-bright); border-color: transparent; }
+.pala-pill--info { background: rgba(111,168,255,0.14); color: #9CC2FF; border-color: transparent; }
+.pala-pill--warn { background: rgba(224,162,74,0.16); color: #E5B574; border-color: transparent; }
+.pala-pill--alarm { background: rgba(225,108,108,0.16); color: #ED9A9A; border-color: transparent; }
+.pala-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.pala-table { width: 100%; border-collapse: collapse; font-family: var(--font-body); font-size: 14px; }
+.pala-table thead th { font-family: var(--font-tag); font-weight: 600; font-size: 10.5px; letter-spacing: var(--track-tag); text-transform: uppercase; color: var(--ink-faint); text-align: left; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--rule-strong); background: var(--paper-cool); }
+.pala-table tbody td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--rule-hair); color: var(--ink-muted); vertical-align: top; }
+.pala-table tbody tr:hover td { background: var(--paper-warm); color: var(--ink); }
+.pala-table .col-data { font-family: var(--font-data); font-size: 13px; color: var(--ink); font-feature-settings: "tnum" 1, "zero" 1; }
+.pala-table .col-time { font-family: var(--font-data); font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+
+.pala-btn { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-tag); font-weight: 600; font-size: 12px; letter-spacing: var(--track-tag-tight); text-transform: uppercase; padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--rule-strong); background: transparent; color: var(--ink); cursor: pointer; transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
+.pala-btn:hover { background: var(--paper-warm); border-color: var(--pala-mint-bright); color: var(--pala-mint-bright); }
+.pala-btn--primary { background: var(--pala-mint); border-color: var(--pala-mint); color: #0D1B30; }
+.pala-btn--primary:hover { background: var(--pala-mint-bright); border-color: var(--pala-mint-bright); color: #0D1B30; }
+.pala-btn--ghost { border-color: transparent; color: var(--ink-soft); }
+
+.pala-rail { background: var(--pala-blue); color: var(--on-blue); padding: var(--space-6) var(--space-5); position: relative; display: flex; flex-direction: column; gap: var(--space-5); }
+.pala-rail::after { content: ""; position: absolute; top: var(--space-6); right: 0; width: 4px; height: 56px; background: var(--pala-mint-bright); }
+.pala-rail__brand { font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1; letter-spacing: var(--track-display); color: var(--on-blue); }
+.pala-rail__sub { font-family: var(--font-body); font-style: italic; font-weight: 500; font-size: 13px; color: var(--pala-mint-bright); margin: 4px 0 0; }
+.pala-rail__label { font-family: var(--font-tag); font-weight: 600; font-size: 10px; letter-spacing: var(--track-tag); text-transform: uppercase; color: var(--pala-mint-bright); padding-bottom: 6px; border-bottom: 1px solid var(--on-blue-rule); margin-bottom: var(--space-2); }
+.pala-rail__item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; font-family: var(--font-body); font-size: 14px; color: var(--on-blue-soft); text-decoration: none; border-left: 3px solid transparent; padding-left: var(--space-3); margin-left: calc(var(--space-3) * -1); }
+.pala-rail__item:hover { color: var(--on-blue); }
+.pala-rail__item.is-active { color: var(--on-blue); border-left-color: var(--pala-mint-bright); font-weight: 600; }
+
+.pala-input { font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--paper-cool); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 8px 12px; transition: border-color 120ms ease, background 120ms ease; }
+.pala-input:focus { outline: none; border-color: var(--pala-mint-bright); background: var(--paper); }
+.pala-input::placeholder { color: var(--ink-faint); font-style: italic; }
+</style>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper-cool); }
+  body { font-family: var(--font-body); color: var(--ink); font-size-adjust: 0.514; min-height: 100vh; display: grid; grid-template-columns: 240px 1fr; }
+
+  main { padding: var(--space-6) var(--space-7); }
+  .page-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-6); padding-bottom: var(--space-4); border-bottom: 1px solid var(--rule); }
+  .page-head .pala-tag { display: block; margin-bottom: var(--space-2); color: var(--pala-mint-bright); }
+
+  .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
+  .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-5); margin-bottom: var(--space-6); }
+
+  /* faux chart */
+  .chart-mini { height: 160px; margin-top: var(--space-4); position: relative; }
+  .chart-mini svg { width: 100%; height: 100%; }
+  .chart-mini .grid-line { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
+  .chart-mini .area { fill: rgba(108,197,154,0.10); }
+  .chart-mini .line { fill: none; stroke: var(--pala-mint-bright); stroke-width: 2; }
+  .chart-mini .axis { fill: var(--ink-faint); font-family: var(--font-tag); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<aside class="pala-rail">
+  <div>
+    <div class="pala-rail__brand">Pala</div>
+    <p class="pala-rail__sub">Homelab control</p>
+  </div>
+
+  <div>
+    <div class="pala-rail__label">Services</div>
+    <a class="pala-rail__item is-active" href="#">Home Assistant</a>
+    <a class="pala-rail__item" href="#">Vikunja</a>
+    <a class="pala-rail__item" href="#">KitchenOwl</a>
+    <a class="pala-rail__item" href="#">AdGuard Home</a>
+  </div>
+
+  <div>
+    <div class="pala-rail__label">System</div>
+    <a class="pala-rail__item" href="#">Network</a>
+    <a class="pala-rail__item" href="#">Storage</a>
+    <a class="pala-rail__item" href="#">Logs</a>
+  </div>
+</aside>
+
+<main>
+  <header class="page-head">
+    <div>
+      <span class="pala-tag">Dashboard / Overview</span>
+      <h1 class="pala-display">Today, your home</h1>
+    </div>
+    <div class="pala-tag pala-tag-faint">Last sync · 42 sec ago</div>
+  </header>
+
+  <!-- Stats row -->
+  <section class="grid-stats">
+    <div class="pala-card">
+      <div class="pala-stat">
+        <div class="pala-stat__label">Queries blocked</div>
+        <div class="pala-stat__value pala-stat__value--mint">17,432<span class="pala-stat__unit">/ day</span></div>
+        <div class="pala-stat__delta">▲ 12% vs avg</div>
+      </div>
+    </div>
+
+    <div class="pala-card">
+      <div class="pala-stat">
+        <div class="pala-stat__label">Active automations</div>
+        <div class="pala-stat__value">23</div>
+        <div class="pala-stat__delta">2 fired in last hour</div>
+      </div>
+    </div>
+
+    <div class="pala-card">
+      <div class="pala-stat">
+        <div class="pala-stat__label">Tasks open</div>
+        <div class="pala-stat__value">8</div>
+        <div class="pala-stat__delta pala-stat__delta--down">▼ 3 done today</div>
+      </div>
+    </div>
+
+    <div class="pala-card">
+      <div class="pala-stat">
+        <div class="pala-stat__label">Pantry low</div>
+        <div class="pala-stat__value pala-stat__value--alarm">4</div>
+        <div class="pala-stat__delta pala-stat__delta--down">restock list ready</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chart + side panel -->
+  <section class="grid-2">
+    <div class="pala-card">
+      <div class="pala-card__head">
+        <h2 class="pala-card__title">Network activity</h2>
+        <span class="pala-card__meta">Last 24 hours</span>
+      </div>
+      <div class="chart-mini pala-chart">
+        <svg viewBox="0 0 600 160" preserveAspectRatio="none">
+          <line class="grid-line" x1="0" y1="40"  x2="600" y2="40"/>
+          <line class="grid-line" x1="0" y1="80"  x2="600" y2="80"/>
+          <line class="grid-line" x1="0" y1="120" x2="600" y2="120"/>
+          <path class="area" d="M0,120 L40,90 L80,100 L120,70 L160,82 L200,55 L240,68 L280,40 L320,55 L360,30 L400,48 L440,28 L480,52 L520,38 L560,60 L600,72 L600,160 L0,160 Z"/>
+          <path class="line" d="M0,120 L40,90 L80,100 L120,70 L160,82 L200,55 L240,68 L280,40 L320,55 L360,30 L400,48 L440,28 L480,52 L520,38 L560,60 L600,72"/>
+          <text class="axis" x="0"   y="155">00:00</text>
+          <text class="axis" x="200" y="155">08:00</text>
+          <text class="axis" x="400" y="155">16:00</text>
+          <text class="axis" x="555" y="155">23:59</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="pala-card pala-card--raised">
+      <div class="pala-card__head">
+        <h2 class="pala-card__title">Status</h2>
+      </div>
+      <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:var(--space-3);">
+        <li style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Home Assistant</span>
+          <span class="pala-pill pala-pill--ok"><span class="pala-pill__dot"></span>Up</span>
+        </li>
+        <li style="display:flex; justify-content:space-between; align-items:center;">
+          <span>AdGuard</span>
+          <span class="pala-pill pala-pill--ok"><span class="pala-pill__dot"></span>Up</span>
+        </li>
+        <li style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Vikunja</span>
+          <span class="pala-pill pala-pill--info"><span class="pala-pill__dot"></span>Idle</span>
+        </li>
+        <li style="display:flex; justify-content:space-between; align-items:center;">
+          <span>KitchenOwl</span>
+          <span class="pala-pill pala-pill--warn"><span class="pala-pill__dot"></span>Slow</span>
+        </li>
+        <li style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Backup</span>
+          <span class="pala-pill pala-pill--alarm"><span class="pala-pill__dot"></span>Failed</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Table -->
+  <section class="pala-card" style="padding:0;">
+    <div class="pala-card__head" style="padding:var(--space-5) var(--space-5) var(--space-3); margin:0; border-bottom:1px solid var(--rule);">
+      <h2 class="pala-card__title">Recent DNS queries</h2>
+      <span class="pala-card__meta">Top 6, last 5 min</span>
+    </div>
+    <table class="pala-table">
+      <thead>
+        <tr><th>Time</th><th>Client</th><th>Domain</th><th>Type</th><th>Status</th><th style="text-align:right;">RTT</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-time">14:42:08</td>
+          <td class="col-data">192.168.1.42</td>
+          <td class="col-data">api.github.com</td>
+          <td>A</td>
+          <td><span class="pala-pill pala-pill--ok">Allowed</span></td>
+          <td class="col-data" style="text-align:right;">12 ms</td>
+        </tr>
+        <tr>
+          <td class="col-time">14:42:07</td>
+          <td class="col-data">192.168.1.42</td>
+          <td class="col-data">graph.facebook.com</td>
+          <td>AAAA</td>
+          <td><span class="pala-pill pala-pill--alarm">Blocked</span></td>
+          <td class="col-data" style="text-align:right;">3 ms</td>
+        </tr>
+        <tr>
+          <td class="col-time">14:42:05</td>
+          <td class="col-data">192.168.1.118</td>
+          <td class="col-data">home-assistant.io</td>
+          <td>A</td>
+          <td><span class="pala-pill pala-pill--ok">Allowed</span></td>
+          <td class="col-data" style="text-align:right;">8 ms</td>
+        </tr>
+        <tr>
+          <td class="col-time">14:42:01</td>
+          <td class="col-data">192.168.1.34</td>
+          <td class="col-data">telemetry.example.com</td>
+          <td>A</td>
+          <td><span class="pala-pill pala-pill--alarm">Blocked</span></td>
+          <td class="col-data" style="text-align:right;">2 ms</td>
+        </tr>
+        <tr>
+          <td class="col-time">14:41:58</td>
+          <td class="col-data">192.168.1.42</td>
+          <td class="col-data">cdn.jsdelivr.net</td>
+          <td>A</td>
+          <td><span class="pala-pill pala-pill--ok">Allowed</span></td>
+          <td class="col-data" style="text-align:right;">21 ms</td>
+        </tr>
+        <tr>
+          <td class="col-time">14:41:54</td>
+          <td class="col-data">192.168.1.250</td>
+          <td class="col-data">unbound.local</td>
+          <td>A</td>
+          <td><span class="pala-pill pala-pill--info">Local</span></td>
+          <td class="col-data" style="text-align:right;">1 ms</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Buttons + inputs row -->
+  <section style="display:flex; gap:var(--space-3); align-items:center; margin-top:var(--space-6); flex-wrap:wrap;">
+    <button class="pala-btn pala-btn--primary">Run backup</button>
+    <button class="pala-btn">Reload service</button>
+    <button class="pala-btn pala-btn--ghost">Cancel</button>
+    <input class="pala-input" placeholder="Search domains, hosts, automations…" style="flex:1; min-width:240px;" />
+  </section>
+</main>
+
+</body>
+</html>
