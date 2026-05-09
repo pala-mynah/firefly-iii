@@ -83,7 +83,7 @@ var defaultChartOptions = {
                     display: false
                 },
                 ticks: {
-                    // break ticks when too long.
+                    fontColor: '#8896AE',
                     callback: function (value, index, values) {
                         return formatLabel(value, 20);
                     }
@@ -92,13 +92,17 @@ var defaultChartOptions = {
         ],
         yAxes: [{
             display: true,
+            gridLines: {
+                color: 'rgba(255,255,255,0.07)',
+                zeroLineColor: 'rgba(255,255,255,0.18)'
+            },
             ticks: {
+                fontColor: '#8896AE',
                 callback: function (tickValue) {
                     "use strict";
                     if (anonymous) {
                         return accounting.formatMoney(0);
                     }
-                    // use first symbol or null:
                     return accounting.formatMoney(tickValue);
                 },
                 beginAtZero: true

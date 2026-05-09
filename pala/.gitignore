@@ -1,4 +1,4 @@
-secrets.yaml
+secrets.env
 reports/
 imports/
 __pycache__/

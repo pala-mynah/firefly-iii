@@ -25,23 +25,23 @@ var allCharts = {};
  Make some colours:
  */
 var colourSet = [
-    [53, 124, 165],
-    [0, 141, 76], // green
-    [219, 139, 11],
-    [202, 25, 90], // paars rood-ish #CA195A
-    [85, 82, 153],
-    [66, 133, 244],
-    [219, 68, 55], // red #DB4437
-    [244, 180, 0],
-    [15, 157, 88],
-    [171, 71, 188],
-    [0, 172, 193],
-    [255, 112, 67],
-    [158, 157, 36],
-    [92, 107, 192],
-    [240, 98, 146],
-    [0, 121, 107],
-    [194, 24, 91]
+    [20, 153, 102],   // pala-mint
+    [10, 68, 133],    // pala-blue-500
+    [108, 197, 154],  // pala-mint-bright
+    [111, 168, 255],  // status-info
+    [224, 162, 74],   // status-warn
+    [225, 108, 108],  // status-alarm
+    [182, 229, 201],  // pala-mint-ink
+    [4, 36, 74],      // pala-blue-700
+    [0, 172, 193],    // teal
+    [255, 112, 67],   // coral
+    [171, 71, 188],   // purple
+    [158, 157, 36],   // olive
+    [92, 107, 192],   // indigo
+    [240, 98, 146],   // pink
+    [0, 121, 107],    // dark teal
+    [194, 24, 91],    // raspberry
+    [15, 157, 88]     // medium green
 ];
 
 var fillColors = [];
@@ -54,6 +54,8 @@ Chart.defaults.global.legend.display = false;
 Chart.defaults.global.animation.duration = 0;
 Chart.defaults.global.responsive = true;
 Chart.defaults.global.maintainAspectRatio = false;
+Chart.defaults.global.defaultFontColor = '#8896AE';
+Chart.defaults.global.defaultFontFamily = '"Crimson Pro", Georgia, serif';
 
 /**
  *

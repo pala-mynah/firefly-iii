@@ -25,6 +25,7 @@
   --on-blue:          #ffffff;
   --on-blue-soft:     rgba(255,255,255,.78);
   --on-blue-rule:     rgba(255,255,255,.18);
+  --pala-mint-ink:    #B6E5C9;
 }
 
 /* ── Global typeface ── */
@@ -39,7 +40,7 @@ h1, h2, h3, h4, h5, h6,
 .dropdown-menu, .dropdown-item,
 .modal, .modal-title, .modal-body,
 .alert, .badge, .small,
-p, span, a, label, input, select, textarea, th, td {
+p, a, label, input, select, textarea, th, td {
   font-family: "Crimson Pro", Georgia, serif !important;
 }
 
@@ -52,6 +53,11 @@ body,
 }
 
 /* ── Top navbar (main-header) ── */
+/* sidebar toggle icon is rendered via ::before content + font-family on the <a> itself */
+.main-header .sidebar-toggle {
+  font-family: FontAwesome !important;
+}
+
 .main-header,
 .main-header .navbar,
 nav.main-header {
@@ -288,3 +294,27 @@ hr { border-color: var(--rule) !important; }
 .text-muted { color: var(--ink-soft) !important; }
 a { color: var(--pala-mint-bright) !important; }
 a:hover { color: var(--pala-mint-ink) !important; }
+
+/* ── AdminLTE box widgets (dashboard charts live here) ── */
+.box {
+  background-color: var(--paper) !important;
+  border-color: var(--rule) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.30), 0 4px 12px rgba(0,0,0,.20) !important;
+}
+.box-header {
+  background-color: var(--paper-warm) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--rule-strong) !important;
+}
+.box-header .box-title { color: var(--ink) !important; font-weight: 700 !important; }
+.box-body { background-color: var(--paper) !important; color: var(--ink-muted) !important; }
+.box-footer { background-color: var(--paper-cool) !important; border-top: 1px solid var(--rule) !important; }
+.box.box-success   { border-top-color: var(--pala-mint) !important; }
+.box.box-primary   { border-top-color: var(--pala-blue-500) !important; }
+.box.box-danger    { border-top-color: var(--status-alarm) !important; }
+.box.box-warning   { border-top-color: var(--status-warn) !important; }
+.box.box-info      { border-top-color: #6FA8FF !important; }
+
+/* ── Chart canvas — transparent so card bg shows through ── */
+canvas { background: transparent !important; }
