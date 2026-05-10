@@ -60,7 +60,7 @@ export default () => ({
     getFreshData() {
         const start = new Date(window.store.get('start'));
         const end = new Date(window.store.get('end'));
-        const chartCacheKey = getCacheKey(this.localCacheKey('chart'), {convertToPrimary: this.convertToPrimary, start: start, end: end})
+        const chartCacheKey = getCacheKey(this.localCacheKey('chart'), {convertToPrimary: this.convertToPrimary, start: start, end: end, period: '1D'})
 
         const cacheValid = window.store.get('cacheValid');
         let cachedData = window.store.get(chartCacheKey);
