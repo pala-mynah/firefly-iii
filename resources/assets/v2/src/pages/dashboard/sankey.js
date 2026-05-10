@@ -58,21 +58,21 @@ const colors = {
 
 const getColor = function (key) {
     if (key.includes(translations.revenue_account)) {
-        return '#149966';  // pala-mint — income sources
+        return '#149966';  // pala-mint — income sources (green = money in)
     }
     if (key.includes('(' + translations.in + ',')) {
         return '#6CC59A';  // pala-mint-bright — money flowing in
     }
     if (key.includes(translations.budget) || key.includes(translations.unknown_budget)) {
-        return '#0A4485';  // pala-blue-500 — budget buckets
+        return '#C0572A';  // burnt-orange — budget buckets (warm = money out)
     }
     if (key.includes('(' + translations.out + ',')) {
-        return '#073363';  // pala-blue — money flowing out
+        return '#E16C6C';  // status-alarm — money flowing out (red = spending)
     }
     if (key.includes(translations.all_money)) {
         return '#8896AE';  // ink-soft — neutral aggregate
     }
-    return '#5C6A82';  // ink-faint — default
+    return '#B6C0D2';  // ink-muted — default (expense accounts etc.)
 }
 
 // little helper
