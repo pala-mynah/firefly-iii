@@ -27,10 +27,8 @@
             <div class="row mb-2">
                 @include('partials.dashboard.sankey')
             </div>
-            <!-- row with piggy banks, subscriptions and empty box -->
+            <!-- row with piggy banks and empty box -->
             <div class="row mb-2">
-                <!-- column with subscriptions -->
-                @include('partials.dashboard.subscriptions')
                 <!-- column with piggy banks -->
                 @include('partials.dashboard.piggy-banks')
                 <!-- column with to do things -->

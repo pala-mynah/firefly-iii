@@ -58,23 +58,21 @@ const colors = {
 
 const getColor = function (key) {
     if (key.includes(translations.revenue_account)) {
-        return 'forestgreen';
+        return '#149966';  // pala-mint — income sources
     }
     if (key.includes('(' + translations.in + ',')) {
-        return 'green';
+        return '#6CC59A';  // pala-mint-bright — money flowing in
     }
-
     if (key.includes(translations.budget) || key.includes(translations.unknown_budget)) {
-        return 'Orchid';
+        return '#0A4485';  // pala-blue-500 — budget buckets
     }
     if (key.includes('(' + translations.out + ',')) {
-        return 'MediumOrchid';
+        return '#073363';  // pala-blue — money flowing out
     }
-
     if (key.includes(translations.all_money)) {
-        return 'blue';
+        return '#8896AE';  // ink-soft — neutral aggregate
     }
-    return 'red';
+    return '#5C6A82';  // ink-faint — default
 }
 
 // little helper
@@ -172,6 +170,8 @@ export default () => ({
 
     generateOptions() {
         let options = getDefaultChartSettings('sankey');
+        options.options.color = '#B6C0D2';  // ink-muted — node label text
+        options.options.plugins = { legend: { display: false } };
 
         // reset currencies
         currencies = [];

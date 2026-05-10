@@ -122,9 +122,13 @@ export default () => ({
 
                 // add colors:
                 dataset.borderColor = getPalaColor(i);
-                dataset.backgroundColor = getPalaColor(i).replace('0.9', '0.15');
-                dataset.borderWidth = 2;
-                dataset.pointRadius = 2;
+                dataset.backgroundColor = getPalaColor(i).replace('0.9', '0.08');
+                dataset.borderWidth = 1.5;
+                dataset.fill = true;
+                dataset.pointRadius = 3;
+                dataset.pointHoverRadius = 6;
+                dataset.pointBackgroundColor = getPalaColor(i);
+                dataset.tension = 0.3;
 
                 // add data set to the correct Y Axis:
 
