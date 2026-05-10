@@ -11,7 +11,7 @@ down:
 	$(COMPOSE) down --remove-orphans
 
 restart:
-	$(SOPS_RUN) $(COMPOSE) up -d --force-recreate app
+	$(COMPOSE) restart app importer
 
 logs:
 	$(COMPOSE) logs -f

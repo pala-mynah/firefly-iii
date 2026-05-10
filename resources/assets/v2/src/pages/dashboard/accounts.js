@@ -24,7 +24,7 @@ import Dashboard from "../../api/v1/chart/account/dashboard.js";
 import formatMoney from "../../util/format-money.js";
 import Get from "../../api/v1/model/account/get.js";
 import {Chart} from 'chart.js';
-import {getDefaultChartSettings} from "../../support/default-chart-settings.js";
+import {getDefaultChartSettings, getPalaColor} from "../../support/default-chart-settings.js";
 import {getCacheKey} from "../../support/get-cache-key.js";
 import {getConfiguration} from "../../store/get-configuration.js";
 
@@ -121,8 +121,10 @@ export default () => ({
                 dataset.data = collection;
 
                 // add colors:
-                //dataset.backgroundColor = getColors(null, 'background');
-                //dataset.borderColor = getColors(null, 'background');
+                dataset.borderColor = getPalaColor(i);
+                dataset.backgroundColor = getPalaColor(i).replace('0.9', '0.15');
+                dataset.borderWidth = 2;
+                dataset.pointRadius = 2;
 
                 // add data set to the correct Y Axis:
 
@@ -138,7 +140,12 @@ export default () => ({
                         id: currency,
                         type: 'linear',
                         position: 1 === parseInt(currency) ? 'right' : 'left',
+                        grid: {
+                            color: 'rgba(255,255,255,0.07)',
+                            zeroLineColor: 'rgba(255,255,255,0.18)',
+                        },
                         ticks: {
+                            color: '#8896AE',
                             callback: function (value, index, values) {
                                 return formatMoney(value, currencies[currency]);
                             }

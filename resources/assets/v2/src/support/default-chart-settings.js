@@ -20,6 +20,23 @@
 
 import formatMoney from "../util/format-money.js";
 
+const palaColors = [
+    'rgba(20,  153, 102, 0.9)',  // pala-mint
+    'rgba(108, 197, 154, 0.9)',  // pala-mint-bright
+    'rgba(10,  68,  133, 0.9)',  // pala-blue-500
+    'rgba(111, 168, 255, 0.9)',  // info-blue
+    'rgba(224, 162, 74,  0.9)',  // status-warn
+    'rgba(225, 108, 108, 0.9)',  // status-alarm
+    'rgba(182, 229, 201, 0.9)',  // pala-mint-ink
+    'rgba(0,   172, 193, 0.9)',  // teal
+    'rgba(171, 71,  188, 0.9)',  // purple
+    'rgba(158, 157, 36,  0.9)',  // olive
+];
+
+export function getPalaColor(index) {
+    return palaColors[index % palaColors.length];
+}
+
 function getDefaultChartSettings(type) {
     if ('sankey' === type) {
         return {
@@ -95,11 +112,11 @@ function getDefaultChartSettings(type) {
     if ('line' === type) {
         return {
             options: {
+                spanGaps: true,
                 plugins: {
                     tooltip: {
                         callbacks: {
                             label: function (tooltipItem) {
-                                // console.log(tooltipItem);
                                 let currency = tooltipItem.dataset.currency_code;
                                 return formatMoney(tooltipItem.raw, currency);
                             },
@@ -109,12 +126,18 @@ function getDefaultChartSettings(type) {
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        // The axis for this scale is determined from the first letter of the id as `'x'`
-                        // It is recommended to specify `position` and / or `axis` explicitly.
                         type: 'time',
                         time: {
                             tooltipFormat: 'PP',
-                        }
+                            unit: 'day',
+                        },
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)',
+                        },
+                        ticks: {
+                            color: '#8896AE',
+                            maxTicksLimit: 10,
+                        },
                     },
                 },
             },

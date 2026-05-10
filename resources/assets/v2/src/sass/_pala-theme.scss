@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
 
+/* ── Pala design tokens ── */
 :root {
   --pala-blue:        #073363;
   --pala-blue-700:    #04244A;
@@ -21,8 +22,34 @@
   --on-blue:          #ffffff;
   --on-blue-soft:     rgba(255,255,255,.78);
   --on-blue-rule:     rgba(255,255,255,.18);
+  --pala-mint-ink:    #B6E5C9;
 }
 
+/* ── Bootstrap 5 dark mode — map BS vars to Pala tokens ── */
+[data-bs-theme="dark"] {
+  --bs-body-bg:             #08152A;
+  --bs-body-bg-rgb:         8, 21, 42;
+  --bs-body-color:          #E8ECF3;
+  --bs-body-color-rgb:      232, 236, 243;
+  --bs-secondary-bg:        #0D1B30;
+  --bs-tertiary-bg:         #08152A;
+  --bs-secondary-color:     #B6C0D2;
+  --bs-tertiary-color:      #8896AE;
+  --bs-emphasis-color:      #E8ECF3;
+  --bs-border-color:        rgba(255,255,255,.10);
+  --bs-border-color-translucent: rgba(255,255,255,.10);
+  --bs-link-color:          #6CC59A;
+  --bs-link-hover-color:    #B6E5C9;
+  --bs-heading-color:       #E8ECF3;
+  --bs-card-bg:             #0D1B30;
+  --bs-card-border-color:   rgba(255,255,255,.10);
+  --bs-dropdown-bg:         #112340;
+  --bs-dropdown-border-color: rgba(255,255,255,.20);
+  --bs-dropdown-link-color: #B6C0D2;
+  --bs-dropdown-link-hover-bg: #08152A;
+}
+
+/* ── Global typeface ── */
 body,
 h1, h2, h3, h4, h5, h6,
 .nav-link, .navbar-brand,
@@ -38,13 +65,22 @@ p, a, label, input, select, textarea, th, td {
   font-family: "Crimson Pro", Georgia, serif !important;
 }
 
+/* ── Page background (v1 + v2) ── */
 body,
 .wrapper,
-.content-wrapper {
+.content-wrapper,
+.app-wrapper,
+.app-main,
+.app-content,
+.content-wrapper.bg-body-tertiary {
   background-color: var(--paper-cool) !important;
   color: var(--ink) !important;
 }
 
+/* ── Top navbar — v1 AdminLTE ── */
+.main-header .sidebar-toggle {
+  font-family: FontAwesome !important;
+}
 .main-header,
 .main-header .navbar,
 nav.main-header {
@@ -70,6 +106,22 @@ nav.main-header {
   background: var(--pala-mint-bright);
 }
 
+/* ── Top navbar — v2 AdminLTE5 / LTE5 ── */
+.app-header,
+nav.app-header {
+  background-color: var(--pala-blue) !important;
+  border-bottom: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.4) !important;
+}
+.app-header .nav-link,
+.app-header .navbar-brand {
+  color: var(--on-blue-soft) !important;
+}
+.app-header .nav-link:hover {
+  color: var(--on-blue) !important;
+}
+
+/* ── Left sidebar — v1 ── */
 .main-sidebar,
 .sidebar {
   background-color: var(--pala-blue-700) !important;
@@ -86,22 +138,42 @@ nav.main-header {
   color: var(--on-blue) !important;
 }
 
-.sidebar .nav-item .nav-link {
+/* ── Left sidebar — v2 ── */
+.app-sidebar {
+  background-color: var(--pala-blue-700) !important;
+  border-right: 1px solid var(--on-blue-rule) !important;
+}
+.sidebar-brand {
+  background-color: var(--pala-blue) !important;
+  border-bottom: 1px solid var(--on-blue-rule) !important;
+}
+.sidebar-brand .brand-text,
+.sidebar-brand .brand-link {
+  color: var(--on-blue) !important;
+  font-weight: 700 !important;
+}
+
+/* Sidebar nav items — v1 + v2 */
+.sidebar .nav-item .nav-link,
+.app-sidebar .nav-link {
   color: var(--on-blue-soft) !important;
   border-left: 3px solid transparent;
 }
-.sidebar .nav-item .nav-link:hover {
+.sidebar .nav-item .nav-link:hover,
+.app-sidebar .nav-link:hover {
   color: var(--on-blue) !important;
   background-color: rgba(108,197,154,.08) !important;
 }
 .sidebar .nav-item.menu-open > .nav-link,
-.sidebar .nav-item .nav-link.active {
+.sidebar .nav-item .nav-link.active,
+.app-sidebar .nav-link.active {
   color: var(--on-blue) !important;
   border-left-color: var(--pala-mint-bright) !important;
   background-color: rgba(108,197,154,.12) !important;
   font-weight: 600 !important;
 }
-.sidebar .nav-header {
+.sidebar .nav-header,
+.app-sidebar .nav-header {
   color: var(--pala-mint-bright) !important;
   font-size: 10px !important;
   letter-spacing: 0.18em !important;
@@ -109,6 +181,7 @@ nav.main-header {
   font-weight: 600 !important;
 }
 
+/* ── Cards ── */
 .card {
   background-color: var(--paper) !important;
   border: 1px solid var(--rule) !important;
@@ -129,6 +202,7 @@ nav.main-header {
   border-top: 1px solid var(--rule) !important;
 }
 
+/* ── Tables ── */
 .table {
   color: var(--ink-muted) !important;
   font-size: 14px !important;
@@ -154,6 +228,7 @@ nav.main-header {
   background-color: rgba(255,255,255,.02) !important;
 }
 
+/* ── Buttons ── */
 .btn-primary, .btn-success {
   background-color: var(--pala-mint) !important;
   border-color: var(--pala-mint) !important;
@@ -190,6 +265,7 @@ nav.main-header {
   color: #F5BABA !important;
 }
 
+/* ── Form controls ── */
 .form-control, .custom-select {
   background-color: var(--paper-cool) !important;
   border: 1px solid var(--rule) !important;
@@ -206,6 +282,7 @@ nav.main-header {
 .form-control::placeholder { color: var(--ink-faint) !important; font-style: italic; }
 label { color: var(--ink-soft) !important; font-size: 13px !important; }
 
+/* ── Breadcrumb / content header ── */
 .content-header h1 {
   font-weight: 700 !important;
   font-size: 24px !important;
@@ -220,16 +297,19 @@ label { color: var(--ink-soft) !important; font-size: 13px !important; }
 .breadcrumb-item.active { color: var(--ink-faint) !important; }
 .breadcrumb-item + .breadcrumb-item::before { color: var(--ink-faint) !important; }
 
+/* ── Alerts ── */
 .alert-success { background: rgba(20,153,102,.15) !important; border-color: var(--pala-mint) !important; color: var(--pala-mint-bright) !important; }
 .alert-danger  { background: rgba(225,108,108,.15) !important; border-color: var(--status-alarm) !important; color: #ED9A9A !important; }
 .alert-warning { background: rgba(224,162,74,.15) !important; border-color: var(--status-warn) !important; color: #E5B574 !important; }
 .alert-info    { background: rgba(111,168,255,.14) !important; border-color: #6FA8FF !important; color: #9CC2FF !important; }
 
-.badge-success { background-color: var(--pala-mint) !important; color: #0D1B30 !important; }
-.badge-danger  { background-color: rgba(225,108,108,.25) !important; color: #ED9A9A !important; }
-.badge-warning { background-color: rgba(224,162,74,.25) !important; color: #E5B574 !important; }
-.badge-info    { background-color: rgba(111,168,255,.20) !important; color: #9CC2FF !important; }
+/* ── Badges ── */
+.badge-success, .badge.bg-success, .text-bg-success { background-color: var(--pala-mint) !important; color: #0D1B30 !important; }
+.badge-danger, .badge.bg-danger, .text-bg-danger    { background-color: rgba(225,108,108,.25) !important; color: #ED9A9A !important; }
+.badge-warning, .badge.bg-warning, .text-bg-warning { background-color: rgba(224,162,74,.25) !important; color: #E5B574 !important; }
+.badge-info, .badge.bg-info, .text-bg-info          { background-color: rgba(111,168,255,.20) !important; color: #9CC2FF !important; }
 
+/* ── Dropdowns ── */
 .dropdown-menu {
   background-color: var(--paper-warm) !important;
   border: 1px solid var(--rule-strong) !important;
@@ -243,6 +323,7 @@ label { color: var(--ink-soft) !important; font-size: 13px !important; }
 }
 .dropdown-divider { border-top-color: var(--rule) !important; }
 
+/* ── Pagination ── */
 .page-link {
   background-color: var(--paper) !important;
   border-color: var(--rule) !important;
@@ -259,6 +340,7 @@ label { color: var(--ink-soft) !important; font-size: 13px !important; }
   color: #0D1B30 !important;
 }
 
+/* ── Misc ── */
 .small-box {
   border-radius: 4px !important;
   box-shadow: 0 1px 2px rgba(0,0,0,.30), 0 4px 12px rgba(0,0,0,.20) !important;
@@ -267,4 +349,27 @@ label { color: var(--ink-soft) !important; font-size: 13px !important; }
 hr { border-color: var(--rule) !important; }
 .text-muted { color: var(--ink-soft) !important; }
 a { color: var(--pala-mint-bright) !important; }
-a:hover { color: var(--pala-mint-bright) !important; }
+a:hover { color: var(--pala-mint-ink) !important; }
+
+/* ── AdminLTE box widgets (v1 dashboard charts) ── */
+.box {
+  background-color: var(--paper) !important;
+  border-color: var(--rule) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.30), 0 4px 12px rgba(0,0,0,.20) !important;
+}
+.box-header {
+  background-color: var(--paper-warm) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--rule-strong) !important;
+}
+.box-header .box-title { color: var(--ink) !important; font-weight: 700 !important; }
+.box-body { background-color: var(--paper) !important; color: var(--ink-muted) !important; }
+.box-footer { background-color: var(--paper-cool) !important; border-top: 1px solid var(--rule) !important; }
+.box.box-success   { border-top-color: var(--pala-mint) !important; }
+.box.box-primary   { border-top-color: var(--pala-blue-500) !important; }
+.box.box-danger    { border-top-color: var(--status-alarm) !important; }
+.box.box-warning   { border-top-color: var(--status-warn) !important; }
+.box.box-info      { border-top-color: #6FA8FF !important; }
+
+canvas { background: transparent !important; }

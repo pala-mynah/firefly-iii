@@ -22,11 +22,11 @@
 
             const getPreferredTheme = () => {
                 const storedTheme = getStoredTheme()
-                if (storedTheme) {
-                    return storedTheme
-                }
-
-                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+                // Firefly's store saves darkMode as boolean true/false; normalise to string
+                if (storedTheme === true || storedTheme === 'dark') return 'dark';
+                if (storedTheme === false || storedTheme === 'light') return 'light';
+                // Default to dark — Pala is a dark theme
+                return 'dark';
             }
 
             const setTheme = theme => {

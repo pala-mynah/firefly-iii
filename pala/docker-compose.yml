@@ -39,6 +39,7 @@ services:
       DEFAULT_LANGUAGE: de_DE
       DEFAULT_LOCALE: de_DE
       TZ: Europe/Vienna
+      FIREFLY_III_LAYOUT: v2
     volumes:
       - firefly_upload:/var/www/html/storage/upload
 
