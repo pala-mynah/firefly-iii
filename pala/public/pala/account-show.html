@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>George (Erste Bank) — Firefly III · Pala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+/* ── Pala Design System — v2 Firefly III ───────────────────────────────── */
+:root {
+  --pala-navy:       #0f1b2d;
+  --pala-navy-mid:   #172236;
+  --pala-navy-card:  #1e2d45;
+  --pala-navy-border:#253550;
+  --pala-mint:       #3ecfb2;
+  --pala-mint-dim:   #2aa89a;
+  --pala-text:       #d6e4f0;
+  --pala-muted:      #7a9bbf;
+  --pala-danger:     #e05c6a;
+  --pala-success:    #4caf82;
+  --pala-warning:    #f0a84a;
+  --pala-info:       #5bafd6;
+  --sidebar-w:       250px;
+}
+
+body { background: var(--pala-navy); color: var(--pala-text); font-family: 'Inter', sans-serif; font-size: 0.9rem; }
+h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 600; }
+
+/* Sidebar */
+.pala-sidebar { position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w); background:var(--pala-navy-mid); border-right:1px solid var(--pala-navy-border); overflow-y:auto; z-index:1000; }
+.pala-sidebar .brand { padding:1rem 1.25rem; font-family:'Crimson Pro',serif; font-size:1.25rem; color:var(--pala-mint); border-bottom:1px solid var(--pala-navy-border); }
+.pala-sidebar .nav-header { padding:0.75rem 1.25rem 0.25rem; font-size:0.63rem; letter-spacing:.1em; color:var(--pala-muted); text-transform:uppercase; }
+.pala-sidebar .nav-link { color:var(--pala-text); padding:.45rem 1.25rem; display:flex; align-items:center; gap:.6rem; }
+.pala-sidebar .nav-link:hover,.pala-sidebar .nav-link.active { background:rgba(62,207,178,.1); color:var(--pala-mint); }
+.pala-sidebar .nav-link i,.pala-sidebar .nav-link em { width:1.1rem; text-align:center; }
+.pala-sidebar .nav-sub .nav-link { padding:.3rem 1.25rem .3rem 2.8rem; font-size:.84rem; }
+
+/* Navbar */
+.pala-navbar { position:fixed; top:0; left:var(--sidebar-w); right:0; height:3.5rem; background:var(--pala-navy-mid); border-bottom:1px solid var(--pala-navy-border); display:flex; align-items:center; padding:0 1.5rem; gap:1rem; z-index:900; }
+.pala-navbar .breadcrumb { margin:0; font-size:.84rem; }
+.pala-navbar .breadcrumb-item,.pala-navbar .breadcrumb-item a { color:var(--pala-muted); }
+.pala-navbar .breadcrumb-item.active { color:var(--pala-text); }
+.pala-navbar .period-badge { margin-left:auto; background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.25rem .75rem; font-size:.8rem; color:var(--pala-muted); display:flex; align-items:center; gap:.4rem; }
+.pala-navbar .period-badge a { color:var(--pala-muted); text-decoration:none; }
+.pala-navbar .period-badge a:hover { color:var(--pala-mint); }
+
+/* Main */
+.pala-main { margin-left:var(--sidebar-w); margin-top:3.5rem; padding:1.5rem; }
+
+/* Cards */
+.card { background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:8px; }
+.card-header { background:transparent; border-bottom:1px solid var(--pala-navy-border); padding:.7rem 1.1rem; }
+.card-title { color:var(--pala-text); margin:0; font-size:1.05rem; }
+.card-footer { background:transparent; border-top:1px solid var(--pala-navy-border); padding:.6rem 1.1rem; }
+
+/* Tables */
+.table { color:var(--pala-text); --bs-table-bg:transparent; }
+.table > :not(caption) > * > * { border-color:var(--pala-navy-border); padding:.42rem .75rem; }
+.table thead th { color:var(--pala-muted); font-weight:500; font-size:.76rem; text-transform:uppercase; letter-spacing:.04em; }
+.table-hover > tbody > tr:hover > * { background:rgba(255,255,255,.04); }
+
+/* Buttons */
+.btn-primary { background:var(--pala-mint); border-color:var(--pala-mint); color:#0f1b2d; font-weight:500; }
+.btn-primary:hover { background:var(--pala-mint-dim); border-color:var(--pala-mint-dim); color:#0f1b2d; }
+.btn-success { background:var(--pala-success); border-color:var(--pala-success); }
+.btn-outline-secondary { border-color:var(--pala-navy-border); color:var(--pala-muted); }
+.btn-outline-secondary:hover { background:var(--pala-navy-border); color:var(--pala-text); }
+.btn-outline-danger { border-color:var(--pala-danger); color:var(--pala-danger); }
+.btn-outline-danger:hover { background:var(--pala-danger); color:#fff; }
+
+/* Text */
+.text-danger  { color:var(--pala-danger)  !important; }
+.text-success { color:var(--pala-success) !important; }
+.text-warning { color:var(--pala-warning) !important; }
+.text-info    { color:var(--pala-info)    !important; }
+.text-muted   { color:var(--pala-muted)   !important; }
+
+/* Nav tabs */
+.nav-tabs { border-color:var(--pala-navy-border); }
+.nav-tabs .nav-link { color:var(--pala-muted); border-color:transparent; }
+.nav-tabs .nav-link.active { background:var(--pala-navy-card); border-color:var(--pala-navy-border) var(--pala-navy-border) var(--pala-navy-card); color:var(--pala-mint); }
+
+/* Progress */
+.progress { background:var(--pala-navy); height:.75rem; }
+.progress-bar { background:var(--pala-mint); }
+.progress-bar.bg-success { background:var(--pala-success)!important; }
+
+/* Pagination */
+.page-link { background:var(--pala-navy-card); border-color:var(--pala-navy-border); color:var(--pala-muted); }
+.page-item.active .page-link { background:var(--pala-mint); border-color:var(--pala-mint); color:#0f1b2d; }
+
+/* Forms */
+.form-control,.form-select { background:var(--pala-navy); border-color:var(--pala-navy-border); color:var(--pala-text); }
+.form-control:focus,.form-select:focus { background:var(--pala-navy); border-color:var(--pala-mint); color:var(--pala-text); box-shadow:0 0 0 2px rgba(62,207,178,.2); }
+.form-check-input:checked { background-color:var(--pala-mint); border-color:var(--pala-mint); }
+
+/* List group */
+.list-group-item { background:transparent; border-color:var(--pala-navy-border); color:var(--pala-text); }
+.list-group-item-action:hover { background:rgba(255,255,255,.04); color:var(--pala-mint); }
+
+/* Badges */
+.badge.bg-success { background:var(--pala-success)!important; }
+.badge.bg-warning { background:var(--pala-warning)!important; color:#0f1b2d!important; }
+.badge.bg-secondary { background:var(--pala-navy-border)!important; color:var(--pala-text)!important; }
+
+</style>
+</head>
+<body data-page="accounts" data-sub="asset" data-crumbs="Home/Accounts/George (Erste Bank)" data-period="1 May – 31 May 2026">
+
+<main class="pala-main">
+  <div class="row g-3 mb-3">
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title">George (Erste Bank)</h3>
+          <div class="btn-group btn-group-sm"><a href="#" class="btn btn-outline-secondary"><i class="fa-solid fa-pencil fa-fw"></i> Edit</a><a href="#" class="btn btn-outline-secondary"><i class="fa-solid fa-scale-balanced fa-fw"></i> Reconcile</a></div>
+        </div>
+        <div class="card-body p-0"><table class="table table-sm mb-0"><tbody>
+          <tr><th>IBAN</th><td>AT80 2011 1842 2351 8400</td></tr>
+          <tr><th>Currency</th><td>Euro (EUR)</td></tr>
+          <tr><th>Balance</th><td class="text-success">€1,423.50</td></tr>
+          <tr><th>Period</th><td class="text-muted">1 May – 31 May 2026</td></tr>
+          <tr><th>Opened</th><td class="text-muted">12 Mar 2019</td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><h3 class="card-title">Balance history</h3></div>
+        <div class="card-body d-flex align-items-center justify-content-center text-muted" style="height:240px;">
+          <span><i class="fa-solid fa-chart-line fa-2x mb-2 d-block text-center"></i>Chart renders here</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">Transactions</h3></div>
+    <div class="card-body p-0">
+      <table class="table table-sm table-hover mb-0">
+        <thead><tr><th style="width:1.5rem"></th><th>Description</th><th class="text-end">Amount</th><th>Date</th><th>Category</th><th>From/To</th></tr></thead>
+        <tbody>
+          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa Supermarkt</a></td><td class="text-end text-danger text-nowrap">−€42.30</td><td class="text-nowrap">2026-05-28</td><td>Food</td><td class="text-muted"><a href="#">Billa</a></td></tr>
+          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">U-Bahn Monatskarte</a></td><td class="text-end text-danger text-nowrap">−€51.00</td><td class="text-nowrap">2026-05-27</td><td>Transport</td><td class="text-muted"><a href="#">Wiener Linien</a></td></tr>
+          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Netflix</a></td><td class="text-end text-danger text-nowrap">−€17.99</td><td class="text-nowrap">2026-05-25</td><td>Subscriptions</td><td class="text-muted"><a href="#">Netflix</a></td></tr>
+          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Apotheke Wien Mitte</a></td><td class="text-end text-danger text-nowrap">−€12.80</td><td class="text-nowrap">2026-05-24</td><td>Health</td><td class="text-muted"><a href="#">Apotheke</a></td></tr>
+          <tr><td class="text-center"><i class="fa-solid fa-arrow-right text-success"></i></td><td><a href="#">Gehalt Mai</a></td><td class="text-end text-success text-nowrap">+€2,800.00</td><td class="text-nowrap">2026-05-01</td><td></td><td class="text-muted"><a href="#">Employer</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer"><a href="transactions.html" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-calendar fa-fw"></i> Show all transactions</a></div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-live.js"></script>
+<script>
+/* ── Firefly III · Pala — shared chrome (sidebar + navbar) ──────────────
+   Each page sets:
+     <body data-page="transactions" data-crumbs="Home/Withdrawals" data-period="1 May – 31 May 2026">
+   data-crumbs is "/"-separated; last segment is rendered as active.
+   data-period is optional — omit to hide the period badge.
+   data-sub is optional — sets the active sub-link inside its parent group.
+*/
+(function () {
+  const NAV = [
+    { header: "Financial Control" },
+    { key: "dashboard",  icon: "fa-solid fa-gauge-high",        label: "Dashboard",     href: "index.html" },
+    { key: "budgets",    icon: "fa-solid fa-chart-pie",         label: "Budgets",       href: "budgets.html" },
+    { key: "bills",      icon: "fa-regular fa-calendar",        label: "Subscriptions", href: "bills.html" },
+    { key: "piggy",      icon: "fa-solid fa-piggy-bank",        label: "Piggy Banks",   href: "piggy.html" },
+
+    { header: "Accounting" },
+    { key: "transactions", icon: "fa-solid fa-arrow-right-arrow-left", label: "Transactions", href: "transactions.html",
+      sub: [
+        { key: "expenses",  icon: "fa-solid fa-arrow-left text-danger",       label: "Expenses",  href: "transactions.html?type=expenses" },
+        { key: "income",    icon: "fa-solid fa-arrow-right text-success",     label: "Income",    href: "transactions.html?type=income" },
+        { key: "transfers", icon: "fa-solid fa-arrows-rotate text-info",      label: "Transfers", href: "transactions.html?type=transfers" },
+        { key: "all",       icon: "fa-solid fa-arrows-turn-to-dots",          label: "All",       href: "transactions.html?type=all" },
+      ] },
+    { key: "automation", icon: "fa-solid fa-microchip", label: "Automation", expanded: true,
+      sub: [
+        { key: "rules",     icon: "fa-solid fa-shuffle",  label: "Rules",     href: "rules.html" },
+        { key: "recurring", icon: "fa-solid fa-repeat",   label: "Recurring", href: "recurring.html" },
+      ] },
+
+    { header: "Others" },
+    { key: "accounts", icon: "fa-regular fa-credit-card", label: "Accounts", href: "accounts.html",
+      sub: [
+        { key: "asset",       icon: "fa-solid fa-money-bills",           label: "Asset",       href: "accounts.html?type=asset" },
+        { key: "expense",     icon: "fa-solid fa-cart-shopping",         label: "Expense",     href: "accounts.html?type=expense" },
+        { key: "revenue",     icon: "fa-solid fa-money-bill-trend-up",   label: "Revenue",     href: "accounts.html?type=revenue" },
+        { key: "liabilities", icon: "fa-solid fa-landmark",              label: "Liabilities", href: "accounts.html?type=liabilities" },
+      ] },
+    { key: "classification", icon: "fa-solid fa-tags", label: "Classification", expanded: true,
+      sub: [
+        { key: "categories", icon: "fa-regular fa-bookmark", label: "Categories", href: "categories.html" },
+        { key: "tags",       icon: "fa-solid fa-tag",        label: "Tags",       href: "tags.html" },
+      ] },
+    { key: "reports", icon: "fa-solid fa-chart-column",         label: "Reports", href: "reports.html" },
+    { key: "search",  icon: "fa-solid fa-magnifying-glass",     label: "Search",  href: "search.html" },
+    { key: "export",  icon: "fa-solid fa-upload",               label: "Export",  href: "#" },
+
+    { divider: true },
+    { key: "profile",     icon: "fa-solid fa-user-gear",  label: "Profile",     href: "profile.html" },
+    { key: "preferences", icon: "fa-solid fa-sliders",    label: "Preferences", href: "preferences.html" },
+    { key: "logout",      icon: "fa-solid fa-arrow-right-from-bracket", label: "Logout", href: "#" },
+  ];
+
+  const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+
+  function renderSidebar(activePage, activeSub) {
+    const parts = ['<div class="brand"><i class="fa-solid fa-fire-flame-curved me-2"></i>Firefly III</div>'];
+    for (const item of NAV) {
+      if (item.header)  { parts.push(`<div class="nav-header">${escapeHtml(item.header)}</div>`); continue; }
+      if (item.divider) { parts.push('<hr style="border-color:var(--pala-navy-border);margin:0.6rem 0">'); continue; }
+
+      const isActive = item.key === activePage;
+      const cls = "nav-link" + (isActive ? " active" : "");
+      const chev = item.sub ? '<i class="fa-solid fa-chevron-down ms-auto fa-xs"></i>' : "";
+      parts.push(`<a href="${item.href || "#"}" class="${cls}"><i class="${item.icon}"></i> ${escapeHtml(item.label)}${chev}</a>`);
+
+      if (item.sub) {
+        const showSub = isActive || item.expanded;
+        if (showSub) {
+          parts.push('<div class="nav-sub">');
+          for (const s of item.sub) {
+            const sActive = (isActive && s.key === activeSub) ? " active" : "";
+            parts.push(`<a href="${s.href}" class="nav-link${sActive}"><i class="${s.icon}"></i> ${escapeHtml(s.label)}</a>`);
+          }
+          parts.push('</div>');
+        }
+      }
+    }
+    return `<aside class="pala-sidebar">${parts.join("")}</aside>`;
+  }
+
+  function renderNavbar(crumbs, period) {
+    const segs = (crumbs || "").split("/").filter(Boolean);
+    const last = segs.pop();
+    const olItems = segs.map(s => `<li class="breadcrumb-item"><a href="#">${escapeHtml(s)}</a></li>`).join("");
+    const activeItem = last ? `<li class="breadcrumb-item active">${escapeHtml(last)}</li>` : "";
+    const periodHtml = period
+      ? `<div class="period-badge"><a href="#"><i class="fa-solid fa-chevron-left fa-xs"></i></a><span>${escapeHtml(period)}</span><a href="#"><i class="fa-solid fa-chevron-right fa-xs"></i></a></div>`
+      : "";
+    return `<nav class="pala-navbar"><ol class="breadcrumb">${olItems}${activeItem}</ol>${periodHtml}</nav>`;
+  }
+
+  function inject() {
+    const body = document.body;
+    const page = body.dataset.page || "";
+    const sub  = body.dataset.sub  || "";
+    const crumbs = body.dataset.crumbs || "";
+    const period = body.dataset.period || "";
+
+    body.insertAdjacentHTML("afterbegin", renderSidebar(page, sub));
+    const main = document.querySelector("main.pala-main");
+    if (main) main.insertAdjacentHTML("beforebegin", renderNavbar(crumbs, period));
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", inject);
+  } else {
+    inject();
+  }
+})();
+
+</script>
+</body>
+</html>

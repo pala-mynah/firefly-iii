@@ -1211,7 +1211,7 @@ document.addEventListener('click', (e) => {
 
       rows.push(`
         <div class="col-md-6">
-          <a href="budgets.html?budget=${slug}" class="pace-row hero">
+          <a href="budgets.html?budget_id=${b.id}" class="pace-row hero" data-budget-id="${b.id}">
             <div class="pace-head"><span class="name">${escapeHtml(a.name)}</span><span class="vals">€${spent.toFixed(2)} / €${budgeted.toFixed(2)}</span></div>
             <div class="pace-track">
               <div class="pace-fill ${fillClass}" style="width:${Math.min(100, spentPct).toFixed(1)}%"></div>
