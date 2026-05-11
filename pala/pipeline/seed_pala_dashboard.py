@@ -48,10 +48,32 @@ H = {
     "Accept": "application/vnd.api+json",
 }
 
-ASSET_ACCOUNT_ID = "1"        # AT80 George (Erste Bank)
-SAVINGS_ACCOUNT_ID = "2"      # AT53 Erste Sparziel (round-ups)
+ASSET_ACCOUNT_ID = "1"        # AT80 George (Erste Bank) — reassigned by create_accounts()
+SAVINGS_ACCOUNT_ID = "2"      # AT53 Erste Sparziel (round-ups)  — reassigned by create_accounts()
 CURRENCY = "EUR"
+MOCK_TAG = "pala-mock"        # every seeded tx carries this tag for safe cleanup
 RNG = random.Random(20260111)  # deterministic mocks
+
+MOCK_ACCOUNTS = [
+    {
+        "name": "Checking · George",
+        "type": "asset",
+        "account_role": "defaultAsset",
+        "currency_code": CURRENCY,
+        "opening_balance": "500.00",
+        "opening_balance_date": "2024-01-01",
+        "notes": "Mock account seeded by Pala dashboard.",
+    },
+    {
+        "name": "Savings · Sparziel",
+        "type": "asset",
+        "account_role": "savingAsset",
+        "currency_code": CURRENCY,
+        "opening_balance": "1000.00",
+        "opening_balance_date": "2024-01-01",
+        "notes": "Mock account seeded by Pala dashboard.",
+    },
+]
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -133,28 +155,39 @@ def paged(path: str) -> Iterable[dict]:
 
 def wipe_metadata() -> None:
     print("→ wiping rules, rule-groups, budget-limits, budgets, categories…")
-    # rules first (FK on rule-groups, budgets, categories)
-    for r in paged("/rules"):
-        api("DELETE", f"/rules/{r['id']}")
+    # Bulk destroy via /data/destroy is orders of magnitude faster than per-row DELETE.
+    # Note: /data/destroy doesn't accept rule_groups — drop those one-by-one after rules.
+    for obj in ("rules", "budgets", "categories"):
+        api("DELETE", f"/data/destroy?objects={obj}&confirm=Are%20you%20sure%3F")
+    # Rule-groups are now empty; delete them individually.
     for g in paged("/rule-groups"):
         api("DELETE", f"/rule-groups/{g['id']}")
-    # available-budgets are auto-managed; budget-limits hang off budgets
-    for b in paged("/budgets"):
-        for lim in paged(f"/budgets/{b['id']}/limits"):
-            api("DELETE", f"/budgets/{b['id']}/limits/{lim['id']}")
-        api("DELETE", f"/budgets/{b['id']}")
-    for c in paged("/categories"):
-        api("DELETE", f"/categories/{c['id']}")
     print("  ✓ metadata wiped")
 
 
 def wipe_transactions() -> None:
-    print("→ wiping transactions…")
-    n = 0
-    for t in paged("/transactions"):
-        api("DELETE", f"/transactions/{t['id']}")
-        n += 1
-    print(f"  ✓ {n} transactions deleted")
+    print("→ wiping transactions (bulk)…")
+    api("DELETE", "/data/destroy?objects=transactions&confirm=Are%20you%20sure%3F")
+    print("  ✓ transactions deleted")
+
+
+def wipe_accounts() -> None:
+    """Wipe ALL accounts (asset, expense, revenue, liability). Cascades to any tx."""
+    print("→ wiping accounts (bulk)…")
+    api("DELETE", "/data/destroy?objects=accounts&confirm=Are%20you%20sure%3F")
+    print("  ✓ accounts deleted")
+
+
+def create_accounts() -> None:
+    """Create the 2 mock asset accounts and record their IDs into module globals."""
+    global ASSET_ACCOUNT_ID, SAVINGS_ACCOUNT_ID
+    print(f"→ creating {len(MOCK_ACCOUNTS)} asset accounts…")
+    ids = []
+    for spec in MOCK_ACCOUNTS:
+        r = api("POST", "/accounts", json=spec)
+        ids.append(r["data"]["id"])
+        print(f"  ✓ {spec['name']:<25} id={r['data']['id']}")
+    ASSET_ACCOUNT_ID, SAVINGS_ACCOUNT_ID = ids[0], ids[1]
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -236,6 +269,7 @@ def store_withdrawal(when: date, amount: float, description: str,
         "destination_name": description.split()[0],  # auto-creates expense account
         "currency_code": CURRENCY,
         "category_id": category_id,
+        "tags": [MOCK_TAG],
     }
     if budget_id:
         tx["budget_id"] = budget_id
@@ -251,6 +285,7 @@ def store_transfer(when: date, amount: float, description: str) -> None:
         "source_id": ASSET_ACCOUNT_ID,
         "destination_id": SAVINGS_ACCOUNT_ID,
         "currency_code": CURRENCY,
+        "tags": [MOCK_TAG],
     }], "apply_rules": False})
 
 
@@ -263,7 +298,30 @@ def store_deposit(when: date, amount: float, description: str, source: str) -> N
         "source_name": source,
         "destination_id": ASSET_ACCOUNT_ID,
         "currency_code": CURRENCY,
+        "tags": [MOCK_TAG],
     }], "apply_rules": False})
+
+
+def clean_mocks() -> None:
+    """Delete every transaction tagged MOCK_TAG."""
+    print(f"→ cleaning transactions tagged '{MOCK_TAG}'…")
+    n = 0
+    try:
+        # /tags/{tag}/transactions accepts the tag name directly
+        for t in paged(f"/tags/{MOCK_TAG}/transactions"):
+            api("DELETE", f"/transactions/{t['id']}")
+            n += 1
+    except SystemExit:
+        # tag doesn't exist — nothing to clean
+        print(f"  ✓ tag '{MOCK_TAG}' not found, nothing to delete")
+        return
+    print(f"  ✓ {n} mock transactions deleted")
+    # also drop the tag itself if empty
+    try:
+        api("DELETE", f"/tags/{MOCK_TAG}")
+        print(f"  ✓ tag '{MOCK_TAG}' removed")
+    except SystemExit:
+        pass
 
 
 def generate_mocks(budget_ids: dict[str, str], category_ids: dict[str, str],
@@ -338,6 +396,8 @@ def main() -> None:
     p_reset.add_argument("--history", type=int, default=6)
     p_reset.add_argument("--months", type=int, default=3)
 
+    p_clean = sub.add_parser("clean-mocks", help="Surgically delete every transaction tagged 'pala-mock'. Leaves real data intact.")
+
     args = ap.parse_args()
 
     print(f"Firefly URL: {FIREFLY_URL}")
@@ -364,9 +424,14 @@ def main() -> None:
     elif args.mode == "reset":
         wipe_metadata()
         wipe_transactions()
+        wipe_accounts()
+        create_accounts()
         budget_ids = create_envelopes(history_months=args.history)
         category_ids = create_categories()
         generate_mocks(budget_ids, category_ids, months_back=args.months)
+
+    elif args.mode == "clean-mocks":
+        clean_mocks()
 
     print("=" * 60)
     print("done.")

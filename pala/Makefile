@@ -52,9 +52,12 @@ importer-restart:
 
 
 dashboard-seed:
-	$(SOPS_RUN) uv run --with requests python3 pipeline/seed_pala_dashboard.py --mock
+	$(SOPS_RUN) uv run --with requests python3 pipeline/seed_pala_dashboard.py meta
+
+dashboard-mock:
+	$(SOPS_RUN) uv run --with requests python3 pipeline/seed_pala_dashboard.py mock
 
 dashboard-reset:
-	$(SOPS_RUN) uv run --with requests python3 pipeline/seed_pala_dashboard.py --mock --wipe-tx
+	$(SOPS_RUN) uv run --with requests python3 pipeline/seed_pala_dashboard.py reset
 
-.PHONY: up down restart logs status reset open rebuild importer-restart categories cleanup report cron-install  dashboard-seed dashboard-reset
+.PHONY: up down restart logs status reset open rebuild importer-restart categories cleanup report cron-install dashboard-seed dashboard-mock dashboard-reset

@@ -1,0 +1,1236 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budgets — Firefly III · Pala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root {
+  --pala-navy:#0f1b2d; --pala-navy-mid:#172236; --pala-navy-card:#1e2d45; --pala-navy-border:#253550;
+  --pala-mint:#3ecfb2; --pala-mint-dim:#2aa89a; --pala-text:#d6e4f0; --pala-muted:#7a9bbf;
+  --pala-danger:#e05c6a; --pala-success:#4caf82; --pala-warning:#f0a84a; --pala-info:#5bafd6;
+  --sidebar-w:250px;
+  /* Budget envelope colours, used in stacked charts + chips */
+  --bud-groceries:#3ecfb2;
+  --bud-going-out:#5bafd6;
+  --bud-sins:#e05c6a;
+  --bud-transport:#f0a84a;
+  --bud-subs:#a48cd2;
+  --bud-lifestyle:#7ad6c0;
+  --bud-living:#7a9bbf;
+  --bud-travel:#d2b06e;
+  --bud-outside:#4a5e7a;
+}
+body { background:var(--pala-navy); color:var(--pala-text); font-family:'Inter',sans-serif; font-size:.9rem; }
+h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600; letter-spacing:-.005em; }
+
+/* Chrome (matches index.html) */
+.pala-sidebar { position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w); background:var(--pala-navy-mid); border-right:1px solid var(--pala-navy-border); overflow-y:auto; z-index:1000; }
+.pala-sidebar .brand { padding:1rem 1.25rem; font-family:'Crimson Pro',serif; font-size:1.25rem; color:var(--pala-mint); border-bottom:1px solid var(--pala-navy-border); }
+.pala-sidebar .nav-header { padding:.75rem 1.25rem .25rem; font-size:.63rem; letter-spacing:.1em; color:var(--pala-muted); text-transform:uppercase; }
+.pala-sidebar .nav-link { color:var(--pala-text); padding:.45rem 1.25rem; display:flex; align-items:center; gap:.6rem; }
+.pala-sidebar .nav-link:hover,.pala-sidebar .nav-link.active { background:rgba(62,207,178,.1); color:var(--pala-mint); }
+.pala-sidebar .nav-link i { width:1.1rem; text-align:center; }
+.pala-sidebar .nav-sub .nav-link { padding:.3rem 1.25rem .3rem 2.8rem; font-size:.84rem; }
+.pala-navbar { position:fixed; top:0; left:var(--sidebar-w); right:0; height:3.5rem; background:var(--pala-navy-mid); border-bottom:1px solid var(--pala-navy-border); display:flex; align-items:center; padding:0 1.5rem; gap:1rem; z-index:900; }
+.pala-navbar .breadcrumb { margin:0; font-size:.84rem; }
+.pala-navbar .breadcrumb-item,.pala-navbar .breadcrumb-item a { color:var(--pala-muted); }
+.pala-navbar .breadcrumb-item.active { color:var(--pala-text); }
+.pala-navbar .period-badge { margin-left:auto; background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.25rem .75rem; font-size:.8rem; color:var(--pala-muted); display:flex; align-items:center; gap:.4rem; }
+.pala-navbar .period-badge a { color:var(--pala-muted); text-decoration:none; }
+.pala-navbar .period-badge a:hover { color:var(--pala-mint); }
+.pala-main { margin-left:var(--sidebar-w); margin-top:3.5rem; padding:1.5rem; }
+
+.card { background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:10px; }
+.card-header { background:transparent; border-bottom:1px solid var(--pala-navy-border); padding:.7rem 1.1rem; display:flex; justify-content:space-between; align-items:center; }
+.card-title { color:var(--pala-text); margin:0; font-size:1.05rem; }
+.card-body { padding:1rem 1.1rem; }
+.card-footer { background:transparent; border-top:1px solid var(--pala-navy-border); padding:.6rem 1.1rem; }
+.text-danger { color:var(--pala-danger)!important; } .text-success{color:var(--pala-success)!important;}
+.text-warning { color:var(--pala-warning)!important; } .text-info{color:var(--pala-info)!important;}
+.text-muted   { color:var(--pala-muted)!important; }   .text-mint{color:var(--pala-mint)!important;}
+
+/* KPI strip */
+.kpi-card { padding:1rem 1.1rem; }
+.kpi-eyebrow { color:var(--pala-muted); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; }
+.kpi-amount { font-family:'Crimson Pro',serif; font-weight:600; font-size:1.6rem; line-height:1.05; margin-top:.2rem; }
+.kpi-meta { color:var(--pala-muted); font-size:.78rem; margin-top:.15rem; }
+
+/* Page eyebrow */
+.page-head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1rem; }
+.page-head h1 { font-size:1.6rem; margin:0; }
+.page-head .sub { color:var(--pala-muted); font-size:.85rem; margin-left:.6rem; }
+.page-head .actions { display:flex; gap:.5rem; align-items:center; }
+.btn-mint { background:var(--pala-mint); border:0; color:#0f1b2d; font-weight:500; padding:.35rem .85rem; border-radius:6px; font-size:.82rem; }
+.btn-mint:hover { background:var(--pala-mint-dim); color:#0f1b2d; }
+.btn-ghost { background:transparent; border:1px solid var(--pala-navy-border); color:var(--pala-muted); padding:.35rem .85rem; border-radius:6px; font-size:.82rem; }
+.btn-ghost:hover { border-color:var(--pala-mint); color:var(--pala-mint); }
+
+/* ── Historic overview chart (the heart) ────────────────────────────── */
+/* 12-column stacked bar; each column = 1 month; segments = budget envelopes */
+.history-wrap { padding:1.25rem 1.25rem 1rem; }
+.history-grid { display:grid; grid-template-columns:auto 1fr; gap:.6rem 1rem; align-items:stretch; }
+.history-yaxis { display:flex; flex-direction:column; justify-content:space-between; color:var(--pala-muted); font-size:.7rem; padding:.25rem 0 1.5rem; font-variant-numeric:tabular-nums; min-width:38px; text-align:right; }
+.history-bars { display:grid; grid-template-columns:repeat(12,1fr); gap:.5rem; align-items:end; padding-bottom:1.5rem; position:relative; height:280px; }
+.history-bars::before, .history-bars::after { content:""; position:absolute; left:0; right:0; height:1px; background:rgba(255,255,255,.04); }
+.history-bars::before { top:0; }                    /* 110% reference */
+.history-bars::after  { top:25.5%; background:repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 4px,transparent 4px 8px); height:1px; } /* 100% target line */
+.history-month { position:relative; height:100%; display:flex; flex-direction:column; justify-content:flex-end; cursor:pointer; transition:filter .12s ease; }
+.history-month:hover { filter:brightness(1.15); }
+.history-month.current { outline:1px solid rgba(62,207,178,.35); outline-offset:1px; border-radius:3px; }
+.history-stack { display:flex; flex-direction:column-reverse; border-radius:2px; overflow:hidden; min-height:1px; }
+.history-seg { width:100%; min-height:1px; }
+.history-label { color:var(--pala-muted); font-size:.66rem; text-align:center; margin-top:.4rem; font-variant-numeric:tabular-nums; position:absolute; bottom:0; left:0; right:0; }
+.history-month.current .history-label { color:var(--pala-mint); font-weight:500; }
+.history-month .pct { position:absolute; bottom:1.2rem; left:50%; transform:translateX(-50%); font-size:.62rem; color:var(--pala-text); opacity:0; transition:opacity .12s ease; font-variant-numeric:tabular-nums; pointer-events:none; }
+.history-month:hover .pct { opacity:.9; }
+
+/* Legend */
+.history-legend { display:flex; flex-wrap:wrap; gap:.4rem .9rem; padding:.6rem 1.25rem 1rem; border-top:1px solid var(--pala-navy-border); }
+.history-legend .lg-item { display:inline-flex; align-items:center; gap:.4rem; font-size:.74rem; color:var(--pala-text); cursor:pointer; padding:.15rem .35rem; border-radius:3px; }
+.history-legend .lg-item:hover { background:rgba(255,255,255,.04); color:var(--pala-mint); }
+.history-legend .lg-swatch { width:10px; height:10px; border-radius:2px; }
+.history-legend .lg-amt { color:var(--pala-muted); font-variant-numeric:tabular-nums; font-size:.7rem; margin-left:.15rem; }
+
+/* Reference markers */
+.ref-line-label { position:absolute; right:.25rem; font-size:.62rem; color:var(--pala-muted); letter-spacing:.04em; text-transform:uppercase; background:var(--pala-navy-card); padding:0 .3rem; }
+.ref-line-label.target { top:25.5%; transform:translateY(-50%); color:var(--pala-warning); }
+
+/* ── Per-budget detail cards ───────────────────────────────────────── */
+.bud-card { display:flex; flex-direction:column; gap:.7rem; padding:1rem 1.1rem; height:100%; }
+/* stretch the wrapping anchor.card so all cards in a row are the same height,
+   so .mini-hist-block (margin-top:auto) sits at a consistent baseline */
+#view-this .row.g-3 > [class*="col-"] > a.card { height:100%; }
+.bud-head { display:flex; justify-content:space-between; align-items:flex-start; gap:.5rem; }
+.bud-head .name { font-family:'Crimson Pro',serif; font-size:1.05rem; font-weight:600; color:var(--pala-text); }
+.bud-head .name .swatch { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:.5rem; vertical-align:middle; }
+.bud-head .vals { font-variant-numeric:tabular-nums; color:var(--pala-muted); font-size:.85rem; text-align:right; line-height:1.2; }
+.bud-head .vals .big { color:var(--pala-text); font-size:.92rem; }
+.bud-head .vals .delta { font-size:.7rem; }
+
+.bud-pace { position:relative; height:.55rem; background:var(--pala-navy); border-radius:3px; overflow:hidden; }
+.bud-pace .fill { position:absolute; left:0; top:0; bottom:0; border-radius:3px; }
+.bud-pace .marker { position:absolute; top:-2px; bottom:-2px; width:1px; background:var(--pala-text); opacity:.45; }
+.bud-pace .marker::after { content:""; position:absolute; top:-3px; left:-2px; width:5px; height:5px; background:var(--pala-text); border-radius:50%; opacity:.55; }
+
+.bud-status-row { display:flex; justify-content:space-between; align-items:center; font-size:.74rem; color:var(--pala-muted); }
+.bud-pill { font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; padding:.1rem .42rem; border-radius:3px; font-weight:500; }
+.bud-pill.over { background:rgba(224,92,106,.16); color:var(--pala-danger); }
+.bud-pill.under { background:rgba(76,175,130,.16); color:var(--pala-success); }
+.bud-pill.ok { background:rgba(62,207,178,.14); color:var(--pala-mint); }
+.bud-pill.rollover { background:rgba(91,175,214,.14); color:var(--pala-info); }
+.bud-pill.rollover i { margin-right:.25rem; font-size:.6rem; }
+
+/* Per-budget category breakdown — one row per category, fixed slot so cards align */
+.cat-stack-block { padding-top:.5rem; border-top:1px dashed rgba(255,255,255,.07); min-height:5.4rem; display:flex; flex-direction:column; }
+.cat-stack-label { font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; color:var(--pala-muted); margin-bottom:.4rem; }
+.cat-list { display:flex; flex-direction:column; gap:.2rem; }
+.cat-row { display:grid; grid-template-columns: 8px 1fr 38% 4rem; align-items:center; gap:.45rem; font-size:.74rem; color:var(--pala-text); text-decoration:none; padding:.05rem .25rem; border-radius:3px; transition:background .12s ease, color .12s ease; }
+.cat-row:hover { background:rgba(62,207,178,.10); color:var(--pala-mint); }
+.cat-row .dot { width:8px; height:8px; border-radius:50%; }
+.cat-row .name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cat-row .bar { position:relative; height:.35rem; border-radius:2px; background:rgba(255,255,255,.05); overflow:hidden; }
+.cat-row .bar .fill { position:absolute; left:0; top:0; bottom:0; border-radius:inherit; max-width:100%; }
+.cat-row .amt { text-align:right; color:var(--pala-muted); font-variant-numeric:tabular-nums; font-size:.72rem; }
+.cat-row:hover .amt { color:var(--pala-mint); }
+.cat-row.empty { color:rgba(255,255,255,.20); pointer-events:none; }
+.cat-row.empty .name { font-style:italic; }
+.cat-row.empty .bar .fill { background:rgba(255,255,255,.05); }
+.cat-row.empty .amt { color:rgba(255,255,255,.20); }
+
+/* Per-budget mini history (12 columns, single colour, target line) */
+.mini-hist-block { padding-top:.5rem; border-top:1px dashed rgba(255,255,255,.07); margin-top:auto; }
+.mini-hist { position:relative; height:42px; display:grid; grid-template-columns:repeat(12,1fr); gap:2px; align-items:end; overflow:hidden; }
+.mini-hist .col.cap { background:repeating-linear-gradient(45deg,var(--pala-danger) 0 3px,#9c3a45 3px 6px); }
+.mini-hist::before { content:""; position:absolute; left:0; right:0; top:30%; height:1px; background:repeating-linear-gradient(90deg,rgba(240,168,74,.4) 0 3px,transparent 3px 6px); }
+.mini-hist .col { background:var(--pala-mint-dim); border-radius:1px 1px 0 0; min-height:1px; transition:filter .12s ease; }
+.mini-hist .col:hover { filter:brightness(1.3); }
+.mini-hist .col.over { background:var(--pala-danger); }
+.mini-hist .col.under-50 { opacity:.55; }
+.mini-hist .col.current { box-shadow:inset 0 0 0 1px var(--pala-mint); }
+.mini-hist-legend { display:flex; justify-content:space-between; color:var(--pala-muted); font-size:.62rem; margin-top:.25rem; font-variant-numeric:tabular-nums; }
+
+.bud-cta { font-size:.74rem; color:var(--pala-muted); text-decoration:none; padding:.25rem 0 0; display:flex; justify-content:space-between; align-items:center; }
+.bud-cta a { color:var(--pala-muted); text-decoration:none; }
+.bud-cta a:hover { color:var(--pala-mint); }
+.bud-cta i { margin-left:.25rem; font-size:.65rem; }
+
+/* Setup table */
+.setup-table { width:100%; font-size:.84rem; }
+.setup-table th { color:var(--pala-muted); font-weight:500; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; padding:.55rem .8rem; border-bottom:1px solid var(--pala-navy-border); text-align:left; }
+.setup-table td { padding:.6rem .8rem; border-bottom:1px solid var(--pala-navy-border); vertical-align:middle; }
+.setup-table tr:last-child td { border-bottom:0; }
+.setup-table tr:hover td { background:rgba(255,255,255,.025); }
+.setup-table .swatch { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:.55rem; vertical-align:middle; }
+.setup-table .num { font-variant-numeric:tabular-nums; }
+.setup-table .acct-chip { display:inline-block; padding:.05rem .4rem; border-radius:3px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); font-size:.72rem; color:var(--pala-text); margin-right:.2rem; }
+.setup-table .rollover-chip { display:inline-flex; align-items:center; gap:.3rem; font-size:.7rem; color:var(--pala-info); }
+.setup-table .rollover-chip.reset  { color:var(--pala-muted); }
+.setup-table .rollover-chip.carry  { color:var(--pala-warning); }
+.setup-table .row-act { color:var(--pala-muted); font-size:.7rem; }
+.setup-table .row-act:hover { color:var(--pala-mint); }
+
+/* Section header */
+.section-h { display:flex; justify-content:space-between; align-items:baseline; margin:1.5rem 0 .75rem; }
+.section-h h2 { font-size:1.2rem; margin:0; }
+.section-h .sub { color:var(--pala-muted); font-size:.78rem; margin-left:.5rem; }
+.section-h .actions { display:flex; gap:.4rem; }
+
+/* Tabs (used both for view-switch in page-head and decorative inside cards) */
+.bud-tabs { display:inline-flex; background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:999px; padding:2px; }
+.bud-tabs button, .bud-tabs a { background:transparent; border:0; color:var(--pala-muted); font-size:.78rem; padding:.3rem .85rem; border-radius:999px; cursor:pointer; font-family:inherit; text-decoration:none; line-height:1.2; }
+.bud-tabs button.active, .bud-tabs a.active { background:var(--pala-navy-card); color:var(--pala-mint); }
+.bud-tabs a:hover:not(.active) { color:var(--pala-text); }
+
+/* View sections */
+.view[hidden] { display:none; }
+
+/* History view extras */
+.yoy-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.75rem; padding:1rem 1.25rem; }
+.yoy-card { padding:.7rem .85rem; border:1px solid var(--pala-navy-border); border-radius:6px; background:rgba(255,255,255,.015); }
+.yoy-card .yoy-name { font-family:'Crimson Pro',serif; font-size:.95rem; display:flex; align-items:center; gap:.45rem; }
+.yoy-card .yoy-row { display:flex; justify-content:space-between; font-size:.74rem; color:var(--pala-muted); margin-top:.35rem; font-variant-numeric:tabular-nums; }
+.yoy-card .yoy-row .v { color:var(--pala-text); }
+.yoy-card .yoy-delta { font-size:.72rem; margin-top:.4rem; padding-top:.4rem; border-top:1px dashed rgba(255,255,255,.06); font-variant-numeric:tabular-nums; }
+
+.history-bigbars { display:grid; grid-template-columns:repeat(24,1fr); gap:.35rem; align-items:end; padding:1rem 1.25rem 2rem; height:340px; position:relative; }
+.history-bigbars::after { content:""; position:absolute; left:1.25rem; right:1.25rem; top:25.5%; height:1px; background:repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 4px,transparent 4px 8px); }
+.history-bigbars .year-divider { grid-row:1; position:relative; color:var(--pala-muted); font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; }
+.history-bigbars .bb-month { position:relative; height:100%; display:flex; flex-direction:column; justify-content:flex-end; cursor:pointer; }
+.history-bigbars .bb-month:hover { filter:brightness(1.15); }
+.history-bigbars .bb-stack { display:flex; flex-direction:column-reverse; border-radius:2px; overflow:hidden; min-height:1px; }
+.history-bigbars .bb-seg { width:100%; min-height:1px; }
+.history-bigbars .bb-label { position:absolute; bottom:-1.1rem; left:0; right:0; text-align:center; color:var(--pala-muted); font-size:.6rem; font-variant-numeric:tabular-nums; }
+.history-bigbars .bb-yearline { position:absolute; top:0; bottom:-1.4rem; width:1px; background:rgba(255,255,255,.08); }
+.history-bigbars .bb-yearline span { position:absolute; bottom:-1.8rem; left:.3rem; color:var(--pala-muted); font-size:.68rem; letter-spacing:.05em; }
+
+/* Outside-budgets footer (matches dashboard) */
+.outside-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; padding:.85rem 1.25rem; }
+.outside-row .lbl { color:var(--pala-muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; }
+.outside-row .ob-chip { display:inline-flex; align-items:baseline; gap:.5rem; padding:.3rem .65rem; border-radius:3px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); color:var(--pala-text); text-decoration:none; font-size:.82rem; }
+.outside-row .ob-chip:hover { background:rgba(62,207,178,.10); border-color:rgba(62,207,178,.35); color:var(--pala-mint); }
+.outside-row .ob-chip.warn { border-color:rgba(240,168,74,.30); background:rgba(240,168,74,.08); color:var(--pala-warning); }
+.outside-row .ob-chip.warn:hover { background:rgba(240,168,74,.16); border-color:rgba(240,168,74,.55); }
+
+</style>
+</head>
+<body data-page="budgets" data-crumbs="Home/Budgets" data-period="1 May – 31 May 2026">
+
+<main class="pala-main">
+
+  <!-- Page header -->
+  <div class="page-head">
+    <div>
+      <h1>Budgets <span class="sub">8 envelopes · €1,340/mo</span></h1>
+    </div>
+    <div class="actions">
+      <div class="bud-tabs" id="viewTabs">
+        <a href="?view=this-month" data-view="this-month" class="active">This month</a>
+        <a href="?view=setup" data-view="setup">Setup</a>
+        <a href="?view=history" data-view="history">History</a>
+      </div>
+      <button class="btn-ghost" id="repaceBtn"><i class="fa-solid fa-arrow-down-up-across-line"></i> Re-pace</button>
+      <button class="btn-mint" id="newBudgetBtn"><i class="fa-solid fa-plus"></i> New budget</button>
+    </div>
+  </div>
+
+  <!-- ════════ VIEW: THIS MONTH ════════ -->
+  <section class="view" data-view="this-month">
+
+  <!-- KPI strip -->
+  <div class="row g-3 mb-3">
+    <div class="col-md col-sm-6">
+      <div class="card h-100"><div class="kpi-card">
+        <div class="kpi-eyebrow">Budgeted · May</div>
+        <div class="kpi-amount">€1,340<span class="text-muted" style="font-weight:400">.00</span></div>
+        <div class="kpi-meta">across 8 envelopes</div>
+      </div></div>
+    </div>
+    <div class="col-md col-sm-6">
+      <div class="card h-100"><div class="kpi-card">
+        <div class="kpi-eyebrow">Spent · so far</div>
+        <div class="kpi-amount text-danger">€956.97</div>
+        <div class="kpi-meta">71% used · day 28 of 31</div>
+      </div></div>
+    </div>
+    <div class="col-md col-sm-6">
+      <div class="card h-100"><div class="kpi-card">
+        <div class="kpi-eyebrow">Available</div>
+        <div class="kpi-amount text-mint">€383.03</div>
+        <div class="kpi-meta">3 days left in period</div>
+      </div></div>
+    </div>
+    <div class="col-md col-sm-6">
+      <div class="card h-100"><div class="kpi-card">
+        <div class="kpi-eyebrow">Status</div>
+        <div style="display:flex; gap:1rem; margin-top:.2rem; font-family:'Crimson Pro',serif; align-items:flex-end;">
+          <div style="display:flex; flex-direction:column; line-height:1;"><span style="font-size:1.6rem; font-weight:600; color:var(--pala-mint);">5</span><span class="text-muted" style="font-size:.62rem; text-transform:uppercase; margin-top:.15rem; white-space:nowrap;">on pace</span></div>
+          <div style="display:flex; flex-direction:column; line-height:1;"><span style="font-size:1.6rem; font-weight:600; color:var(--pala-danger);">2</span><span class="text-muted" style="font-size:.62rem; text-transform:uppercase; margin-top:.15rem; white-space:nowrap;">over</span></div>
+          <div style="display:flex; flex-direction:column; line-height:1;"><span style="font-size:1.6rem; font-weight:600; color:var(--pala-info);">1</span><span class="text-muted" style="font-size:.62rem; text-transform:uppercase; margin-top:.15rem; white-space:nowrap;">sweep</span></div>
+        </div>
+        <div class="kpi-meta">3 days left in period</div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ─────────── HISTORIC OVERVIEW (the heart) ─────────── -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <div style="display:flex; align-items:baseline; gap:.6rem;">
+        <h3 class="card-title">Budget pacing · last 12 months</h3>
+        <span class="text-muted small">% of monthly budget used, stacked by envelope</span>
+      </div>
+      <div class="bud-tabs">
+        <button class="active">% used</button>
+        <button>€ amount</button>
+        <button>vs target</button>
+      </div>
+    </div>
+    <div class="history-wrap">
+      <div class="history-grid">
+        <div class="history-yaxis">
+          <span>110%</span>
+          <span>80%</span>
+          <span>50%</span>
+          <span>0%</span>
+        </div>
+        <div class="history-bars" id="historyBars">
+          <!-- 12 months Jun 2025 → May 2026.
+               Each month: total stack height = (totalSpent / monthlyBudget) * (100/110) * 100% of the chart area.
+               Stack height in percent of 110% scale: pct = used%/110.
+               Segments are rendered column-reverse so first listed = bottom. -->
+
+          <!-- Jun 2025 — 96% used; one envelope over (sins) -->
+          <div class="history-month" title="Jun 2025 · 96% used (€1,286/€1,340)">
+            <div class="history-stack" style="height:87.3%">
+              <!-- segments sum to 96 (out of 110). column-reverse means first listed is at the bottom. -->
+              <div class="history-seg" style="height:32.3%; background:var(--bud-groceries)"   title="Groceries 31% (€420)"></div>
+              <div class="history-seg" style="height:14.6%; background:var(--bud-going-out)"   title="Going Out 14%"></div>
+              <div class="history-seg" style="height:5.2%;  background:var(--bud-sins)"        title="Sins 5%"></div>
+              <div class="history-seg" style="height:7.3%;  background:var(--bud-transport)"   title="Transport 7%"></div>
+              <div class="history-seg" style="height:4.7%;  background:var(--bud-subs)"        title="Subs 4.5%"></div>
+              <div class="history-seg" style="height:11.5%; background:var(--bud-lifestyle)"   title="Lifestyle 11%"></div>
+              <div class="history-seg" style="height:14.6%; background:var(--bud-living)"      title="Living 14%"></div>
+              <div class="history-seg" style="height:8.3%;  background:var(--bud-travel)"      title="Travel 8% (camping)"></div>
+              <div class="history-seg" style="height:1.0%;  background:var(--bud-outside)"     title="Outside 1%"></div>
+            </div>
+            <div class="pct">96%</div>
+            <div class="history-label">Jun</div>
+          </div>
+
+          <!-- Jul 2025 — 113% (vacation overrun) -->
+          <div class="history-month" title="Jul 2025 · 113% used (€1,514/€1,340) — Italy trip">
+            <div class="history-stack" style="height:102.7%">
+              <div class="history-seg" style="height:20.0%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:18.2%; background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:6.4%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:8.2%;  background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:9.1%;  background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:28.2%; background:var(--bud-travel)"      title="Travel 31% — Italy"></div>
+              <div class="history-seg" style="height:1.6%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">113%</div>
+            <div class="history-label">Jul</div>
+          </div>
+
+          <!-- Aug 2025 — 78% (post-vacation) -->
+          <div class="history-month" title="Aug 2025 · 78% used (€1,045/€1,340)">
+            <div class="history-stack" style="height:70.9%">
+              <div class="history-seg" style="height:25.5%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:9.1%;  background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:3.6%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:6.4%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:9.1%;  background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:7.3%;  background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:2.7%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:1.7%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">78%</div>
+            <div class="history-label">Aug</div>
+          </div>
+
+          <!-- Sep 2025 — 88% -->
+          <div class="history-month" title="Sep 2025 · 88% used (€1,179/€1,340)">
+            <div class="history-stack" style="height:80.0%">
+              <div class="history-seg" style="height:30.0%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:11.8%; background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:4.5%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:8.2%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:11.8%; background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:13.6%; background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:0.0%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:2.6%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">88%</div>
+            <div class="history-label">Sep</div>
+          </div>
+
+          <!-- Oct 2025 — 102% (sins blow-up) -->
+          <div class="history-month current" title="Oct 2025 · 102% used (€1,366/€1,340) — Sins +€40 over">
+            <div class="history-stack" style="height:92.7%">
+              <div class="history-seg" style="height:31.8%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:14.5%; background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:9.1%;  background:var(--bud-sins)"      title="Sins 9% (over)"></div>
+              <div class="history-seg" style="height:3.6%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:4.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:10.0%; background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:14.5%; background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:0.0%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:4.7%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">102%</div>
+            <div class="history-label">Oct</div>
+          </div>
+
+          <!-- Nov 2025 — 91% -->
+          <div class="history-month" title="Nov 2025 · 91% used (€1,219/€1,340)">
+            <div class="history-stack" style="height:82.7%">
+              <div class="history-seg" style="height:30.9%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:10.9%; background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:4.5%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:7.3%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:9.1%;  background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:11.8%; background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:0.0%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:2.7%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">91%</div>
+            <div class="history-label">Nov</div>
+          </div>
+
+          <!-- Dec 2025 — 105% (Christmas) -->
+          <div class="history-month" title="Dec 2025 · 105% used (€1,407/€1,340) — Christmas">
+            <div class="history-stack" style="height:95.4%">
+              <div class="history-seg" style="height:36.4%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:14.5%; background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:7.3%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:4.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:18.2%; background:var(--bud-lifestyle)"   title="Lifestyle 20% (gifts)"></div>
+              <div class="history-seg" style="height:7.3%;  background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:0.0%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:1.7%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">105%</div>
+            <div class="history-label">Dec</div>
+          </div>
+
+          <!-- Jan 2026 — 80% -->
+          <div class="history-month" title="Jan 2026 · 80% used (€1,072/€1,340)">
+            <div class="history-stack" style="height:72.7%">
+              <div class="history-seg" style="height:27.3%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:8.2%;  background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:3.6%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:4.5%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:8.2%;  background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:13.6%; background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:0.0%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:1.8%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">80%</div>
+            <div class="history-label">Jan</div>
+          </div>
+
+          <!-- Feb 2026 — 84% -->
+          <div class="history-month" title="Feb 2026 · 84% used (€1,126/€1,340)">
+            <div class="history-stack" style="height:76.4%">
+              <div class="history-seg" style="height:29.1%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:10.0%; background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:4.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:8.2%;  background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:11.8%; background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:0.0%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:1.8%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">84%</div>
+            <div class="history-label">Feb</div>
+          </div>
+
+          <!-- Mar 2026 — 87% -->
+          <div class="history-month" title="Mar 2026 · 87% used (€1,166/€1,340)">
+            <div class="history-stack" style="height:79.1%">
+              <div class="history-seg" style="height:30.0%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:10.9%; background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:6.4%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:4.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:9.1%;  background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:10.9%; background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:0.0%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:1.8%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">87%</div>
+            <div class="history-label">Mar</div>
+          </div>
+
+          <!-- Apr 2026 — 92% -->
+          <div class="history-month" title="Apr 2026 · 92% used (€1,233/€1,340)">
+            <div class="history-stack" style="height:83.6%">
+              <div class="history-seg" style="height:31.8%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:11.8%; background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:5.5%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:7.3%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:4.5%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:9.1%;  background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:13.6%; background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:0.0%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:8.0%;  background:var(--bud-outside)"     title="Outside 9% — large bureaucracy charge"></div>
+            </div>
+            <div class="pct">92%</div>
+            <div class="history-label">Apr</div>
+          </div>
+
+          <!-- May 2026 (current, partial) — 71% with 3 days left -->
+          <div class="history-month current" title="May 2026 · 71% used (€956.97/€1,340) · day 28 of 31">
+            <div class="history-stack" style="height:64.5%">
+              <div class="history-seg" style="height:25.7%; background:var(--bud-groceries)"></div>
+              <div class="history-seg" style="height:9.8%;  background:var(--bud-going-out)"></div>
+              <div class="history-seg" style="height:5.0%;  background:var(--bud-sins)"></div>
+              <div class="history-seg" style="height:3.5%;  background:var(--bud-transport)"></div>
+              <div class="history-seg" style="height:4.1%;  background:var(--bud-subs)"></div>
+              <div class="history-seg" style="height:6.6%;  background:var(--bud-lifestyle)"></div>
+              <div class="history-seg" style="height:10.0%; background:var(--bud-living)"></div>
+              <div class="history-seg" style="height:0.0%;  background:var(--bud-travel)"></div>
+              <div class="history-seg" style="height:5.4%;  background:var(--bud-outside)"></div>
+            </div>
+            <div class="pct">71%</div>
+            <div class="history-label">May</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="history-legend">
+      <span class="text-muted small me-3" style="letter-spacing:.06em; text-transform:uppercase; font-size:.66rem;">12-mo avg</span>
+      <a href="budgets.html?budget=groceries" class="lg-item"><span class="lg-swatch" style="background:var(--bud-groceries)"></span>Groceries<span class="lg-amt">€405/mo</span></a>
+      <a href="budgets.html?budget=going-out" class="lg-item"><span class="lg-swatch" style="background:var(--bud-going-out)"></span>Going Out<span class="lg-amt">€158/mo</span></a>
+      <a href="budgets.html?budget=sins" class="lg-item"><span class="lg-swatch" style="background:var(--bud-sins)"></span>Sins<span class="lg-amt">€67/mo</span></a>
+      <a href="budgets.html?budget=transport" class="lg-item"><span class="lg-swatch" style="background:var(--bud-transport)"></span>Transport<span class="lg-amt">€81/mo</span></a>
+      <a href="budgets.html?budget=subscription" class="lg-item"><span class="lg-swatch" style="background:var(--bud-subs)"></span>Subscription<span class="lg-amt">€61/mo</span></a>
+      <a href="budgets.html?budget=lifestyle" class="lg-item"><span class="lg-swatch" style="background:var(--bud-lifestyle)"></span>Lifestyle<span class="lg-amt">€131/mo</span></a>
+      <a href="budgets.html?budget=living" class="lg-item"><span class="lg-swatch" style="background:var(--bud-living)"></span>Living<span class="lg-amt">€158/mo</span></a>
+      <a href="budgets.html?budget=travel" class="lg-item"><span class="lg-swatch" style="background:var(--bud-travel)"></span>Travel<span class="lg-amt">€44/mo</span></a>
+      <a href="categories.html?cat=outside" class="lg-item"><span class="lg-swatch" style="background:var(--bud-outside)"></span>Outside budgets<span class="lg-amt">€42/mo</span></a>
+    </div>
+  </div>
+
+  <!-- ─────────── Per-budget detail grid ─────────── -->
+  <div class="section-h">
+    <div>
+      <h2>This month · per envelope</h2>
+      <span class="sub">click any card to see all transactions in that budget</span>
+    </div>
+    <div class="actions">
+      <button class="btn-ghost"><i class="fa-solid fa-arrow-down-wide-short"></i> Sort: % used</button>
+      <button class="btn-ghost"><i class="fa-solid fa-filter"></i> Filter</button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <!-- Groceries -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card bud-link" data-href="budgets.html?budget=groceries" tabindex="0" role="link" style="color:inherit; display:block; cursor:pointer;">
+        <div class="bud-card">
+          <div class="bud-head">
+            <div class="name"><span class="swatch" style="background:var(--bud-groceries)"></span>Groceries</div>
+            <div class="vals"><div class="big">€380.00 <span class="text-muted">/ €450.00</span></div><div class="delta text-muted">€70 left · ~€23/day</div></div>
+          </div>
+          <div class="bud-pace">
+            <div class="fill" style="width:84.4%; background:var(--bud-groceries)"></div>
+            <div class="marker" style="left:90%"></div>
+          </div>
+          <div class="bud-status-row">
+            <span>Day 28/31 · expected 90%</span>
+            <span class="bud-pill ok">on pace</span>
+          </div>
+          <div class="cat-stack-block">
+            <div class="cat-stack-label">Categories feeding this budget</div>
+            <div class="cat-list">
+              <a href="categories.html?cat=supermarket" class="cat-row"><span class="dot" style="background:var(--bud-groceries)"></span><span class="name">Supermarket</span><span class="bar"><span class="fill" style="width:53.3%; background:var(--bud-groceries)"></span></span><span class="amt">€240</span></a>
+              <a href="categories.html?cat=fresh-market-and-butcher" class="cat-row"><span class="dot" style="background:#5dd9bf"></span><span class="name">Fresh Market &amp; Butcher</span><span class="bar"><span class="fill" style="width:21.8%; background:#5dd9bf"></span></span><span class="amt">€98</span></a>
+              <a href="categories.html?cat=bakeries" class="cat-row"><span class="dot" style="background:#86e3cd"></span><span class="name">Bakeries</span><span class="bar"><span class="fill" style="width:9.3%; background:#86e3cd"></span></span><span class="amt">€42</span></a>
+            </div>
+          </div>
+          <div class="mini-hist-block">
+            <div class="cat-stack-label">% of budget used · last 12 months</div>
+            <div class="mini-hist">
+              <div class="col" style="height:96%"  title="Jun 96%"></div>
+              <div class="col" style="height:80%"  title="Jul 80%"></div>
+              <div class="col" style="height:88%"  title="Aug 88%"></div>
+              <div class="col" style="height:91%"  title="Sep 91%"></div>
+              <div class="col" style="height:94%"  title="Oct 94%"></div>
+              <div class="col" style="height:92%"  title="Nov 92%"></div>
+              <div class="col over" style="height:108%"  title="Dec 108% — Christmas"></div>
+              <div class="col" style="height:82%"  title="Jan 82%"></div>
+              <div class="col" style="height:87%"  title="Feb 87%"></div>
+              <div class="col" style="height:90%"  title="Mar 90%"></div>
+              <div class="col" style="height:95%"  title="Apr 95%"></div>
+              <div class="col current" style="height:84%"  title="May 84% (current)"></div>
+            </div>
+            <div class="mini-hist-legend"><span>Jun '25</span><span>avg 91% · max 108%</span><span>May '26</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Going Out -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card bud-link" data-href="budgets.html?budget=going-out" tabindex="0" role="link" style="color:inherit; display:block; cursor:pointer;">
+        <div class="bud-card">
+          <div class="bud-head">
+            <div class="name"><span class="swatch" style="background:var(--bud-going-out)"></span>Going Out</div>
+            <div class="vals"><div class="big">€145.00 <span class="text-muted">/ €180.00</span></div><div class="delta text-muted">€35 left · 3 days remaining</div></div>
+          </div>
+          <div class="bud-pace">
+            <div class="fill" style="width:80.6%; background:var(--bud-going-out)"></div>
+            <div class="marker" style="left:90%"></div>
+          </div>
+          <div class="bud-status-row">
+            <span>Day 28/31 · expected 90%</span>
+            <span class="bud-pill ok">on pace</span>
+          </div>
+          <div class="cat-stack-block">
+            <div class="cat-stack-label">Categories feeding this budget</div>
+            <div class="cat-list">
+              <a href="categories.html?cat=restaurants" class="cat-row"><span class="dot" style="background:var(--bud-going-out)"></span><span class="name">Restaurants</span><span class="bar"><span class="fill" style="width:54.4%; background:var(--bud-going-out)"></span></span><span class="amt">€98</span></a>
+              <a href="categories.html?cat=cafes" class="cat-row"><span class="dot" style="background:#86c9e3"></span><span class="name">Cafes</span><span class="bar"><span class="fill" style="width:26.1%; background:#86c9e3"></span></span><span class="amt">€47</span></a>
+            </div>
+          </div>
+          <div class="mini-hist-block">
+            <div class="cat-stack-label">% of budget used · last 12 months</div>
+            <div class="mini-hist">
+              <div class="col" style="height:88%"  title="Jun 88%"></div>
+              <div class="col over" style="height:118%"  title="Jul 118% — Italy"></div>
+              <div class="col" style="height:65%"  title="Aug 65%"></div>
+              <div class="col" style="height:84%"  title="Sep 84%"></div>
+              <div class="col" style="height:102%" title="Oct 102%"></div>
+              <div class="col" style="height:78%"  title="Nov 78%"></div>
+              <div class="col over" style="height:104%" title="Dec 104%"></div>
+              <div class="col under-50" style="height:48%" title="Jan 48% — quiet"></div>
+              <div class="col" style="height:71%"  title="Feb 71%"></div>
+              <div class="col" style="height:78%"  title="Mar 78%"></div>
+              <div class="col" style="height:84%"  title="Apr 84%"></div>
+              <div class="col current" style="height:81%"  title="May 81% (current)"></div>
+            </div>
+            <div class="mini-hist-legend"><span>Jun '25</span><span>avg 83% · max 118%</span><span>May '26</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sins (over) -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card bud-link" data-href="budgets.html?budget=sins" tabindex="0" role="link" style="color:inherit; display:block; cursor:pointer;">
+        <div class="bud-card">
+          <div class="bud-head">
+            <div class="name"><span class="swatch" style="background:var(--bud-sins)"></span>Sins</div>
+            <div class="vals"><div class="big text-danger">€74.00 <span class="text-muted">/ €60.00</span></div><div class="delta text-danger">€14 over · mostly Bars on Sat</div></div>
+          </div>
+          <div class="bud-pace">
+            <div class="fill" style="width:100%; background:var(--bud-sins)"></div>
+            <div class="marker" style="left:90%"></div>
+          </div>
+          <div class="bud-status-row">
+            <span>Day 28/31 · expected 90%</span>
+            <span class="bud-pill over">over by 23%</span>
+          </div>
+          <div class="cat-stack-block">
+            <div class="cat-stack-label">Categories feeding this budget</div>
+            <div class="cat-list">
+              <a href="categories.html?cat=drinking" class="cat-row"><span class="dot" style="background:var(--bud-sins)"></span><span class="name">Drinking</span><span class="bar"><span class="fill" style="width:96.7%; background:var(--bud-sins)"></span></span><span class="amt">€58</span></a>
+              <a href="categories.html?cat=smoking" class="cat-row"><span class="dot" style="background:#ee8590"></span><span class="name">Smoking</span><span class="bar"><span class="fill" style="width:26.7%; background:#ee8590"></span></span><span class="amt">€16</span></a>
+            </div>
+          </div>
+          <div class="mini-hist-block">
+            <div class="cat-stack-label">% of budget used · last 12 months</div>
+            <div class="mini-hist">
+              <div class="col" style="height:98%"  title="Jun 98%"></div>
+              <div class="col over" style="height:115%"  title="Jul 115%"></div>
+              <div class="col" style="height:72%"  title="Aug 72%"></div>
+              <div class="col" style="height:90%"  title="Sep 90%"></div>
+              <div class="col over" style="height:142%"  title="Oct 142% — bachelor party"></div>
+              <div class="col" style="height:88%"  title="Nov 88%"></div>
+              <div class="col over" style="height:110%"  title="Dec 110%"></div>
+              <div class="col" style="height:65%"  title="Jan 65%"></div>
+              <div class="col" style="height:92%"  title="Feb 92%"></div>
+              <div class="col" style="height:95%"  title="Mar 95%"></div>
+              <div class="col over" style="height:108%"  title="Apr 108%"></div>
+              <div class="col over current" style="height:123%"  title="May 123% (current, over)"></div>
+            </div>
+            <div class="mini-hist-legend"><span>Jun '25</span><span>avg 99% · over 6/12</span><span>May '26</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transport -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card bud-link" data-href="budgets.html?budget=transport" tabindex="0" role="link" style="color:inherit; display:block; cursor:pointer;">
+        <div class="bud-card">
+          <div class="bud-head">
+            <div class="name"><span class="swatch" style="background:var(--bud-transport)"></span>Transport</div>
+            <div class="vals"><div class="big">€51.00 <span class="text-muted">/ €120.00</span></div><div class="delta text-success">€69 left · monthly pass already paid</div></div>
+          </div>
+          <div class="bud-pace">
+            <div class="fill" style="width:42.5%; background:var(--bud-transport)"></div>
+            <div class="marker" style="left:90%"></div>
+          </div>
+          <div class="bud-status-row">
+            <span>Day 28/31 · expected 90%</span>
+            <span class="bud-pill under">−48% under pace</span>
+          </div>
+          <div class="cat-stack-block">
+            <div class="cat-stack-label">Categories feeding this budget</div>
+            <div class="cat-list">
+              <a href="categories.html?cat=public-transport" class="cat-row"><span class="dot" style="background:var(--bud-transport)"></span><span class="name">Public Transport</span><span class="bar"><span class="fill" style="width:42.5%; background:var(--bud-transport)"></span></span><span class="amt">€51</span></a>
+              <a href="categories.html?cat=fuel" class="cat-row"><span class="dot" style="background:#f4bf73"></span><span class="name">Fuel</span><span class="bar"><span class="fill" style="width:0%; background:#f4bf73"></span></span><span class="amt">€0</span></a>
+            </div>
+          </div>
+          <div class="mini-hist-block">
+            <div class="cat-stack-label">% of budget used · last 12 months</div>
+            <div class="mini-hist">
+              <div class="col" style="height:73%"  title="Jun 73%"></div>
+              <div class="col" style="height:55%"  title="Jul 55% — vacation"></div>
+              <div class="col" style="height:65%"  title="Aug 65%"></div>
+              <div class="col" style="height:82%"  title="Sep 82%"></div>
+              <div class="col" style="height:36%"  title="Oct 36%"></div>
+              <div class="col" style="height:74%"  title="Nov 74%"></div>
+              <div class="col" style="height:73%"  title="Dec 73%"></div>
+              <div class="col" style="height:45%"  title="Jan 45%"></div>
+              <div class="col" style="height:55%"  title="Feb 55%"></div>
+              <div class="col" style="height:64%"  title="Mar 64%"></div>
+              <div class="col" style="height:73%"  title="Apr 73%"></div>
+              <div class="col under-50 current" style="height:43%"  title="May 43% (current)"></div>
+            </div>
+            <div class="mini-hist-legend"><span>Jun '25</span><span>avg 62% · always under</span><span>May '26</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscription (just over) -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card bud-link" data-href="budgets.html?budget=subscription" tabindex="0" role="link" style="color:inherit; display:block; cursor:pointer;">
+        <div class="bud-card">
+          <div class="bud-head">
+            <div class="name"><span class="swatch" style="background:var(--bud-subs)"></span>Subscription</div>
+            <div class="vals"><div class="big text-danger">€60.97 <span class="text-muted">/ €60.00</span></div><div class="delta text-danger">€0.97 over · Spotify reactivated</div></div>
+          </div>
+          <div class="bud-pace">
+            <div class="fill" style="width:100%; background:var(--bud-subs)"></div>
+            <div class="marker" style="left:90%"></div>
+          </div>
+          <div class="bud-status-row">
+            <span>Day 28/31 · expected 90%</span>
+            <span class="bud-pill over">over by 2%</span>
+          </div>
+          <div class="cat-stack-block">
+            <div class="cat-stack-label">Categories feeding this budget</div>
+            <div class="cat-list">
+              <a href="categories.html?cat=subs-infrastructure" class="cat-row"><span class="dot" style="background:var(--bud-subs)"></span><span class="name">Subs &mdash; Infrastructure</span><span class="bar"><span class="fill" style="width:55.0%; background:var(--bud-subs)"></span></span><span class="amt">€33</span></a>
+              <a href="categories.html?cat=subs-lifestyle" class="cat-row"><span class="dot" style="background:#bea4dc"></span><span class="name">Subs &mdash; Lifestyle</span><span class="bar"><span class="fill" style="width:46.6%; background:#bea4dc"></span></span><span class="amt">€27.97</span></a>
+            </div>
+          </div>
+          <div class="mini-hist-block">
+            <div class="cat-stack-label">% of budget used · last 12 months</div>
+            <div class="mini-hist">
+              <div class="col" style="height:96%"  title="Jun 96%"></div>
+              <div class="col" style="height:96%"  title="Jul 96%"></div>
+              <div class="col" style="height:96%"  title="Aug 96%"></div>
+              <div class="col" style="height:96%"  title="Sep 96%"></div>
+              <div class="col" style="height:96%"  title="Oct 96%"></div>
+              <div class="col" style="height:96%"  title="Nov 96%"></div>
+              <div class="col" style="height:96%"  title="Dec 96%"></div>
+              <div class="col" style="height:96%"  title="Jan 96%"></div>
+              <div class="col" style="height:96%"  title="Feb 96%"></div>
+              <div class="col" style="height:96%"  title="Mar 96%"></div>
+              <div class="col" style="height:96%"  title="Apr 96%"></div>
+              <div class="col over current" style="height:102%"  title="May 102% (Spotify reactivated)"></div>
+            </div>
+            <div class="mini-hist-legend"><span>Jun '25</span><span>avg 96% · ratchets up</span><span>May '26</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lifestyle -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card bud-link" data-href="budgets.html?budget=lifestyle" tabindex="0" role="link" style="color:inherit; display:block; cursor:pointer;">
+        <div class="bud-card">
+          <div class="bud-head">
+            <div class="name"><span class="swatch" style="background:var(--bud-lifestyle)"></span>Lifestyle</div>
+            <div class="vals"><div class="big">€98.00 <span class="text-muted">/ €150.00</span></div><div class="delta text-muted">€52 left · Volkstheater queued</div></div>
+          </div>
+          <div class="bud-pace">
+            <div class="fill" style="width:65.3%; background:var(--bud-lifestyle)"></div>
+            <div class="marker" style="left:90%"></div>
+          </div>
+          <div class="bud-status-row">
+            <span>Day 28/31 · expected 90%</span>
+            <span class="bud-pill ok">on pace</span>
+          </div>
+          <div class="cat-stack-block">
+            <div class="cat-stack-label">Categories feeding this budget</div>
+            <div class="cat-list">
+              <a href="categories.html?cat=entertainment-and-culture" class="cat-row"><span class="dot" style="background:var(--bud-lifestyle)"></span><span class="name">Entertainment &amp; Culture</span><span class="bar"><span class="fill" style="width:38.7%; background:var(--bud-lifestyle)"></span></span><span class="amt">€58</span></a>
+              <a href="categories.html?cat=sports-and-activities" class="cat-row"><span class="dot" style="background:#5fc4af"></span><span class="name">Sports &amp; Activities</span><span class="bar"><span class="fill" style="width:26.7%; background:#5fc4af"></span></span><span class="amt">€40</span></a>
+            </div>
+          </div>
+          <div class="mini-hist-block">
+            <div class="cat-stack-label">% of budget used · last 12 months</div>
+            <div class="mini-hist">
+              <div class="col" style="height:88%"  title="Jun 88%"></div>
+              <div class="col" style="height:62%"  title="Jul 62%"></div>
+              <div class="col" style="height:68%"  title="Aug 68%"></div>
+              <div class="col" style="height:88%"  title="Sep 88%"></div>
+              <div class="col" style="height:75%"  title="Oct 75%"></div>
+              <div class="col" style="height:68%"  title="Nov 68%"></div>
+              <div class="col over" style="height:138%"  title="Dec 138% — gifts"></div>
+              <div class="col under-50" style="height:48%" title="Jan 48%"></div>
+              <div class="col" style="height:62%"  title="Feb 62%"></div>
+              <div class="col" style="height:68%"  title="Mar 68%"></div>
+              <div class="col" style="height:68%"  title="Apr 68%"></div>
+              <div class="col current" style="height:65%"  title="May 65% (current)"></div>
+            </div>
+            <div class="mini-hist-legend"><span>Jun '25</span><span>avg 75% · gift season spike</span><span>May '26</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Living -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card bud-link" data-href="budgets.html?budget=living" tabindex="0" role="link" style="color:inherit; display:block; cursor:pointer;">
+        <div class="bud-card">
+          <div class="bud-head">
+            <div class="name"><span class="swatch" style="background:var(--bud-living)"></span>Living</div>
+            <div class="vals"><div class="big">€148.00 <span class="text-muted">/ €200.00</span></div><div class="delta text-muted">€52 left · Health was the big line</div></div>
+          </div>
+          <div class="bud-pace">
+            <div class="fill" style="width:74%; background:var(--bud-living)"></div>
+            <div class="marker" style="left:90%"></div>
+          </div>
+          <div class="bud-status-row">
+            <span>Day 28/31 · expected 90%</span>
+            <span class="bud-pill ok">on pace</span>
+          </div>
+          <div class="cat-stack-block">
+            <div class="cat-stack-label">Categories feeding this budget</div>
+            <div class="cat-list">
+              <a href="categories.html?cat=health" class="cat-row"><span class="dot" style="background:var(--bud-living)"></span><span class="name">Health</span><span class="bar"><span class="fill" style="width:46.5%; background:var(--bud-living)"></span></span><span class="amt">€93</span></a>
+              <a href="categories.html?cat=home-and-hardware" class="cat-row"><span class="dot" style="background:#9eb8d6"></span><span class="name">Home &amp; Hardware</span><span class="bar"><span class="fill" style="width:21.0%; background:#9eb8d6"></span></span><span class="amt">€42</span></a>
+              <a href="categories.html?cat=bureaucracy" class="cat-row"><span class="dot" style="background:#bdcde0"></span><span class="name">Bureaucracy</span><span class="bar"><span class="fill" style="width:6.5%; background:#bdcde0"></span></span><span class="amt">€13</span></a>
+            </div>
+          </div>
+          <div class="mini-hist-block">
+            <div class="cat-stack-label">% of budget used · last 12 months</div>
+            <div class="mini-hist">
+              <div class="col" style="height:98%"  title="Jun 98%"></div>
+              <div class="col" style="height:62%"  title="Jul 62%"></div>
+              <div class="col" style="height:48%"  title="Aug 48%"></div>
+              <div class="col" style="height:91%"  title="Sep 91%"></div>
+              <div class="col" style="height:97%"  title="Oct 97%"></div>
+              <div class="col" style="height:78%"  title="Nov 78%"></div>
+              <div class="col" style="height:48%"  title="Dec 48%"></div>
+              <div class="col" style="height:91%"  title="Jan 91% — flu season"></div>
+              <div class="col" style="height:78%"  title="Feb 78%"></div>
+              <div class="col" style="height:73%"  title="Mar 73%"></div>
+              <div class="col" style="height:91%"  title="Apr 91%"></div>
+              <div class="col current" style="height:74%"  title="May 74% (current)"></div>
+            </div>
+            <div class="mini-hist-legend"><span>Jun '25</span><span>avg 77% · health-driven</span><span>May '26</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Travel (rollover) -->
+    <div class="col-lg-6 col-xl-4">
+      <div class="card bud-link" data-href="budgets.html?budget=travel" tabindex="0" role="link" style="color:inherit; display:block; cursor:pointer;">
+        <div class="bud-card">
+          <div class="bud-head">
+            <div class="name"><span class="swatch" style="background:var(--bud-travel)"></span>Travel</div>
+            <div class="vals"><div class="big">€0.00 <span class="text-muted">/ €120.00</span></div><div class="delta text-info">No spending · sweeps to Holiday 2026</div></div>
+          </div>
+          <div class="bud-pace">
+            <div class="fill" style="width:0%; background:var(--bud-travel)"></div>
+            <div class="marker" style="left:90%"></div>
+          </div>
+          <div class="bud-status-row">
+            <span>Day 28/31 · €120 ready to sweep on Jun 1</span>
+            <span class="bud-pill rollover"><i class="fa-solid fa-piggy-bank"></i>rollover</span>
+          </div>
+          <div class="cat-stack-block">
+            <div class="cat-stack-label">Categories feeding this budget</div>
+            <div class="cat-list">
+              <a href="categories.html?cat=travel-and-accommodation" class="cat-row"><span class="dot" style="background:var(--bud-travel)"></span><span class="name">Travel &amp; Accommodation</span><span class="bar"><span class="fill" style="width:0%; background:var(--bud-travel)"></span></span><span class="amt">€0</span></a>
+              <a href="piggies.html?piggy=holiday-2026" class="cat-row" style="color:var(--pala-info);"><span class="dot" style="background:var(--pala-info)"></span><span class="name"><i class="fa-solid fa-piggy-bank fa-xs" style="margin-right:.3rem; opacity:.8"></i>sweeps to Holiday 2026</span><span class="bar"><span class="fill" style="width:100%; background:repeating-linear-gradient(90deg,rgba(91,175,214,.4) 0 4px,rgba(91,175,214,.1) 4px 8px)"></span></span><span class="amt">€120</span></a>
+            </div>
+          </div>
+          <div class="mini-hist-block">
+            <div class="cat-stack-label">% of budget used · last 12 months</div>
+            <div class="mini-hist">
+              <div class="col" style="height:8%"   title="Jun 8%"></div>
+              <div class="col over" style="height:235%"  title="Jul 235% — Italy €282 (overflowed)"></div>
+              <div class="col" style="height:22%"  title="Aug 22%"></div>
+              <div class="col" style="height:0%"   title="Sep 0% — swept"></div>
+              <div class="col" style="height:0%"   title="Oct 0% — swept"></div>
+              <div class="col" style="height:0%"   title="Nov 0% — swept"></div>
+              <div class="col" style="height:0%"   title="Dec 0% — swept"></div>
+              <div class="col" style="height:0%"   title="Jan 0% — swept"></div>
+              <div class="col" style="height:0%"   title="Feb 0% — swept"></div>
+              <div class="col" style="height:0%"   title="Mar 0% — swept"></div>
+              <div class="col" style="height:0%"   title="Apr 0% — swept"></div>
+              <div class="col current" style="height:0%"   title="May 0% (current, swept)"></div>
+            </div>
+            <div class="mini-hist-legend"><span>Jun '25</span><span>10/12 swept to piggy</span><span>May '26</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Outside-budgets footer -->
+  <div class="card mt-3">
+    <div class="outside-row">
+      <span class="lbl">Outside budgets · €283.53</span>
+      <a href="categories.html?cat=cash-withdrawals" class="ob-chip" title="Deliberately unbudgeted"><i class="fa-solid fa-money-bill-wave fa-xs"></i> Cash Withdrawals <span style="color:var(--pala-text); font-variant-numeric:tabular-nums">€80</span></a>
+      <a href="transactions.html?filter=uncategorised" class="ob-chip warn" title="4 transactions need a category"><i class="fa-solid fa-tag fa-xs"></i> Uncategorised <span style="font-variant-numeric:tabular-nums">€203.53</span> <span style="color:var(--pala-warning); font-size:.7rem; opacity:.8">· 4 tx</span></a>
+      <span style="margin-left:auto;"><a href="rules.html" class="text-muted small" style="text-decoration:none">Add a rule to auto-budget these →</a></span>
+    </div>
+  </div>
+
+  </section>
+  <!-- ════════ END This month ════════ -->
+
+
+  <!-- ════════ VIEW: SETUP ════════ -->
+  <section class="view" data-view="setup" hidden>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title">Envelopes</h3>
+      <span class="text-muted small">how money flows into each budget &middot; click a row to edit</span>
+    </div>
+    <table class="setup-table">
+      <thead>
+        <tr>
+          <th>Envelope</th>
+          <th>Monthly</th>
+          <th>Period</th>
+          <th>If leftover at month-end</th>
+          <th>Source accounts</th>
+          <th>Categories feeding it</th>
+          <th style="text-align:right;">Last edit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="swatch" style="background:var(--bud-groceries)"></span>Groceries</td>
+          <td class="num">€450.00</td>
+          <td>Monthly &middot; 1st</td>
+          <td><span class="rollover-chip reset"><i class="fa-solid fa-rotate-left fa-xs"></i>Reset to zero</span></td>
+          <td><span class="acct-chip">Erste Giro</span></td>
+          <td><span class="text-muted small">Supermarket, Fresh Market &amp; Butcher, Bakeries</span></td>
+          <td style="text-align:right;"><span class="row-act">12 Mar 2026</span></td>
+        </tr>
+        <tr>
+          <td><span class="swatch" style="background:var(--bud-going-out)"></span>Going Out</td>
+          <td class="num">€180.00</td>
+          <td>Monthly &middot; 1st</td>
+          <td><span class="rollover-chip reset"><i class="fa-solid fa-rotate-left fa-xs"></i>Reset to zero</span></td>
+          <td><span class="acct-chip">Erste Giro</span> <span class="acct-chip">Visa</span></td>
+          <td><span class="text-muted small">Restaurants, Cafes</span></td>
+          <td style="text-align:right;"><span class="row-act">04 Feb 2026</span></td>
+        </tr>
+        <tr>
+          <td><span class="swatch" style="background:var(--bud-sins)"></span>Sins</td>
+          <td class="num">€60.00</td>
+          <td>Monthly &middot; 1st</td>
+          <td><span class="rollover-chip carry"><i class="fa-solid fa-arrow-right fa-xs"></i>Carry deficit to next month</span></td>
+          <td><span class="acct-chip">Erste Giro</span></td>
+          <td><span class="text-muted small">Drinking, Smoking</span></td>
+          <td style="text-align:right;"><span class="row-act">28 Sep 2025</span></td>
+        </tr>
+        <tr>
+          <td><span class="swatch" style="background:var(--bud-transport)"></span>Transport</td>
+          <td class="num">€120.00</td>
+          <td>Monthly &middot; 1st</td>
+          <td><span class="rollover-chip reset"><i class="fa-solid fa-rotate-left fa-xs"></i>Reset to zero</span></td>
+          <td><span class="acct-chip">Erste Giro</span> <span class="acct-chip">Visa</span></td>
+          <td><span class="text-muted small">Public Transport, Fuel</span></td>
+          <td style="text-align:right;"><span class="row-act">01 Jan 2026</span></td>
+        </tr>
+        <tr>
+          <td><span class="swatch" style="background:var(--bud-subs)"></span>Subscription</td>
+          <td class="num">€60.00</td>
+          <td>Monthly &middot; 1st</td>
+          <td><span class="rollover-chip reset"><i class="fa-solid fa-rotate-left fa-xs"></i>Reset to zero</span></td>
+          <td><span class="acct-chip">Erste Giro</span></td>
+          <td><span class="text-muted small">Subs — Infrastructure, Subs — Lifestyle</span></td>
+          <td style="text-align:right;"><span class="row-act">06 May 2026</span></td>
+        </tr>
+        <tr>
+          <td><span class="swatch" style="background:var(--bud-lifestyle)"></span>Lifestyle</td>
+          <td class="num">€150.00</td>
+          <td>Monthly &middot; 1st</td>
+          <td><span class="rollover-chip"><i class="fa-solid fa-piggy-bank fa-xs"></i>Sweep → <strong>Whatever-fund</strong></span></td>
+          <td><span class="acct-chip">Erste Giro</span> <span class="acct-chip">Visa</span></td>
+          <td><span class="text-muted small">Entertainment &amp; Culture, Sports &amp; Activities</span></td>
+          <td style="text-align:right;"><span class="row-act">19 Nov 2025</span></td>
+        </tr>
+        <tr>
+          <td><span class="swatch" style="background:var(--bud-living)"></span>Living</td>
+          <td class="num">€200.00</td>
+          <td>Monthly &middot; 1st</td>
+          <td><span class="rollover-chip reset"><i class="fa-solid fa-rotate-left fa-xs"></i>Reset to zero</span></td>
+          <td><span class="acct-chip">Erste Giro</span> <span class="acct-chip">Visa</span></td>
+          <td><span class="text-muted small">Health, Home &amp; Hardware, Bureaucracy</span></td>
+          <td style="text-align:right;"><span class="row-act">11 Oct 2025</span></td>
+        </tr>
+        <tr>
+          <td><span class="swatch" style="background:var(--bud-travel)"></span>Travel</td>
+          <td class="num">€120.00</td>
+          <td>Monthly &middot; 1st</td>
+          <td><span class="rollover-chip"><i class="fa-solid fa-piggy-bank fa-xs"></i>Sweep → <strong>Holiday 2026</strong></span></td>
+          <td><span class="acct-chip">Erste Giro</span></td>
+          <td><span class="text-muted small">Travel &amp; Accommodation</span></td>
+          <td style="text-align:right;"><span class="row-act">22 Aug 2025</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header"><h3 class="card-title">Rollover policies</h3></div>
+        <div class="card-body" style="font-size:.84rem; color:var(--pala-muted); line-height:1.55;">
+          <p style="margin:0 0 .6rem;"><span class="rollover-chip reset" style="font-size:.72rem;"><i class="fa-solid fa-rotate-left fa-xs"></i>Reset to zero</span> &mdash; classic envelope. Leftover or overspend disappears on the 1st.</p>
+          <p style="margin:0 0 .6rem;"><span class="rollover-chip carry" style="font-size:.72rem;"><i class="fa-solid fa-arrow-right fa-xs"></i>Carry deficit</span> &mdash; if you go over, next month's envelope is reduced by the overspend. Used for <em>Sins</em>.</p>
+          <p style="margin:0;"><span class="rollover-chip" style="font-size:.72rem;"><i class="fa-solid fa-piggy-bank fa-xs"></i>Sweep to piggy</span> &mdash; on the 1st, leftover moves into a savings goal as a real bank transfer. Used for <em>Travel</em> and <em>Lifestyle</em>.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">Auto-assignment</h3>
+          <a href="rules.html" class="text-muted small" style="text-decoration:none">Manage rules &rarr;</a>
+        </div>
+        <div class="card-body" style="font-size:.84rem; color:var(--pala-muted); line-height:1.55;">
+          <div style="display:flex; justify-content:space-between; padding:.35rem 0; border-bottom:1px dashed rgba(255,255,255,.06);"><span>Transactions auto-budgeted by category</span><span class="text-success" style="font-variant-numeric:tabular-nums;">187 / 211</span></div>
+          <div style="display:flex; justify-content:space-between; padding:.35rem 0; border-bottom:1px dashed rgba(255,255,255,.06);"><span>Caught by an explicit rule</span><span class="text-info" style="font-variant-numeric:tabular-nums;">14 / 211</span></div>
+          <div style="display:flex; justify-content:space-between; padding:.35rem 0; border-bottom:1px dashed rgba(255,255,255,.06);"><span>Cash &mdash; intentionally unbudgeted</span><span class="text-muted" style="font-variant-numeric:tabular-nums;">6 / 211</span></div>
+          <div style="display:flex; justify-content:space-between; padding:.35rem 0;"><span>Uncategorised &mdash; needs your attention</span><span class="text-warning" style="font-variant-numeric:tabular-nums;">4 / 211</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </section>
+  <!-- ════════ END Setup ════════ -->
+
+
+  <!-- ════════ VIEW: HISTORY ════════ -->
+  <section class="view" data-view="history" hidden>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <div style="display:flex; align-items:baseline; gap:.6rem;">
+        <h3 class="card-title">Two years of envelope pacing</h3>
+        <span class="text-muted small">Jun '24 → May '26 &middot; % of monthly budget used, stacked by envelope</span>
+      </div>
+      <div class="bud-tabs">
+        <button class="active">% used</button>
+        <button>€ amount</button>
+      </div>
+    </div>
+    <div class="history-bigbars">
+      <div class="bb-yearline" style="left:50%;"><span>2026 &rarr;</span></div>
+      <!-- 24 columns. Approximated: 2024-25 averaged from memory; 2025-26 mirrors the 12-mo hero on the This-month view. -->
+      <div class="bb-month" title="Jun '24 · 82%"><div class="bb-stack" style="height:74.5%"><div class="bb-seg" style="height:28%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:11%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:4%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:6%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:8%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:12%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:8%; background:var(--bud-outside)"></div></div><div class="bb-label">J</div></div>
+      <div class="bb-month" title="Jul '24 · 124% · Croatia trip"><div class="bb-stack" style="height:112.7%"><div class="bb-seg" style="height:22%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:14%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:6%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:5%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:8%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:9%; background:var(--bud-living)"></div><div class="bb-seg" style="height:38%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:5%; background:var(--bud-outside)"></div></div><div class="bb-label">J</div></div>
+      <div class="bb-month" title="Aug '24 · 70%"><div class="bb-stack" style="height:63.6%"><div class="bb-seg" style="height:24%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:8%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:3%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:5%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:8%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:8%; background:var(--bud-living)"></div><div class="bb-seg" style="height:2%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:7%; background:var(--bud-outside)"></div></div><div class="bb-label">A</div></div>
+      <div class="bb-month" title="Sep '24 · 85%"><div class="bb-stack" style="height:77.3%"><div class="bb-seg" style="height:29%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:11%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:5%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:7%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:10%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:12%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:6%; background:var(--bud-outside)"></div></div><div class="bb-label">S</div></div>
+      <div class="bb-month" title="Oct '24 · 89%"><div class="bb-stack" style="height:80.9%"><div class="bb-seg" style="height:30%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:12%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:5%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:5%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:10%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:14%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:8%; background:var(--bud-outside)"></div></div><div class="bb-label">O</div></div>
+      <div class="bb-month" title="Nov '24 · 86%"><div class="bb-stack" style="height:78.2%"><div class="bb-seg" style="height:29%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:10%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:4%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:6%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:8%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:14%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:10%; background:var(--bud-outside)"></div></div><div class="bb-label">N</div></div>
+      <div class="bb-month" title="Dec '24 · 99% · Christmas"><div class="bb-stack" style="height:90.0%"><div class="bb-seg" style="height:34%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:13%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:5%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:6%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:17%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:8%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:2%; background:var(--bud-outside)"></div></div><div class="bb-label">D</div></div>
+      <div class="bb-month" title="Jan '25 · 76%"><div class="bb-stack" style="height:69.1%"><div class="bb-seg" style="height:26%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:8%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:3%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:5%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:7%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:13%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:9%; background:var(--bud-outside)"></div></div><div class="bb-label">J</div></div>
+      <div class="bb-month" title="Feb '25 · 81%"><div class="bb-stack" style="height:73.6%"><div class="bb-seg" style="height:28%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:9%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:4%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:5%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:8%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:11%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:11%; background:var(--bud-outside)"></div></div><div class="bb-label">F</div></div>
+      <div class="bb-month" title="Mar '25 · 84%"><div class="bb-stack" style="height:76.4%"><div class="bb-seg" style="height:29%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:10%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:5%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:6%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:9%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:11%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:9%; background:var(--bud-outside)"></div></div><div class="bb-label">M</div></div>
+      <div class="bb-month" title="Apr '25 · 88%"><div class="bb-stack" style="height:80.0%"><div class="bb-seg" style="height:31%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:11%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:5%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:7%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:9%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:13%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:7%; background:var(--bud-outside)"></div></div><div class="bb-label">A</div></div>
+      <div class="bb-month" title="May '25 · 79%"><div class="bb-stack" style="height:71.8%"><div class="bb-seg" style="height:27%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:10%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:4%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:6%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:8%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:12%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:7%; background:var(--bud-outside)"></div></div><div class="bb-label">M</div></div>
+      <!-- 2025-26 (same shape as the This-month hero) -->
+      <div class="bb-month" title="Jun '25 · 96%"><div class="bb-stack" style="height:87.3%"><div class="bb-seg" style="height:31%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:14%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:5%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:7%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:11%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:14%; background:var(--bud-living)"></div><div class="bb-seg" style="height:8%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:1%; background:var(--bud-outside)"></div></div><div class="bb-label">J</div></div>
+      <div class="bb-month" title="Jul '25 · 113% · Italy"><div class="bb-stack" style="height:102.7%"><div class="bb-seg" style="height:20%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:18%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:6%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:5%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:8%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:9%; background:var(--bud-living)"></div><div class="bb-seg" style="height:31%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:1%; background:var(--bud-outside)"></div></div><div class="bb-label">J</div></div>
+      <div class="bb-month" title="Aug '25 · 78%"><div class="bb-stack" style="height:70.9%"><div class="bb-seg" style="height:26%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:9%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:4%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:6%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:9%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:7%; background:var(--bud-living)"></div><div class="bb-seg" style="height:3%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:2%; background:var(--bud-outside)"></div></div><div class="bb-label">A</div></div>
+      <div class="bb-month" title="Sep '25 · 88%"><div class="bb-stack" style="height:80.0%"><div class="bb-seg" style="height:30%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:12%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:5%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:8%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:12%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:14%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:2%; background:var(--bud-outside)"></div></div><div class="bb-label">S</div></div>
+      <div class="bb-month" title="Oct '25 · 102% · sins over"><div class="bb-stack" style="height:92.7%"><div class="bb-seg" style="height:32%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:15%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:9%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:4%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:10%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:14%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:5%; background:var(--bud-outside)"></div></div><div class="bb-label">O</div></div>
+      <div class="bb-month" title="Nov '25 · 91%"><div class="bb-stack" style="height:82.7%"><div class="bb-seg" style="height:31%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:11%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:5%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:7%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:6%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:9%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:12%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:3%; background:var(--bud-outside)"></div></div><div class="bb-label">N</div></div>
+      <div class="bb-month" title="Dec '25 · 105% · Christmas"><div class="bb-stack" style="height:95.4%"><div class="bb-seg" style="height:36%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:14%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:6%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:7%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:18%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:7%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:2%; background:var(--bud-outside)"></div></div><div class="bb-label">D</div></div>
+      <div class="bb-month" title="Jan '26 · 80%"><div class="bb-stack" style="height:72.7%"><div class="bb-seg" style="height:27%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:8%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:4%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:5%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:6%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:8%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:14%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:2%; background:var(--bud-outside)"></div></div><div class="bb-label">J</div></div>
+      <div class="bb-month" title="Feb '26 · 84%"><div class="bb-stack" style="height:76.4%"><div class="bb-seg" style="height:29%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:10%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:6%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:6%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:8%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:12%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:2%; background:var(--bud-outside)"></div></div><div class="bb-label">F</div></div>
+      <div class="bb-month" title="Mar '26 · 87%"><div class="bb-stack" style="height:79.1%"><div class="bb-seg" style="height:30%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:11%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:6%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:6%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:9%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:11%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:2%; background:var(--bud-outside)"></div></div><div class="bb-label">M</div></div>
+      <div class="bb-month" title="Apr '26 · 92%"><div class="bb-stack" style="height:83.6%"><div class="bb-seg" style="height:32%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:12%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:6%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:7%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:5%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:9%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:14%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:8%; background:var(--bud-outside)"></div></div><div class="bb-label">A</div></div>
+      <div class="bb-month" title="May '26 · 71% (current)" style="outline:1px solid rgba(62,207,178,.35); outline-offset:1px; border-radius:3px;"><div class="bb-stack" style="height:64.5%"><div class="bb-seg" style="height:26%; background:var(--bud-groceries)"></div><div class="bb-seg" style="height:10%; background:var(--bud-going-out)"></div><div class="bb-seg" style="height:5%; background:var(--bud-sins)"></div><div class="bb-seg" style="height:4%; background:var(--bud-transport)"></div><div class="bb-seg" style="height:4%; background:var(--bud-subs)"></div><div class="bb-seg" style="height:7%; background:var(--bud-lifestyle)"></div><div class="bb-seg" style="height:10%; background:var(--bud-living)"></div><div class="bb-seg" style="height:0%; background:var(--bud-travel)"></div><div class="bb-seg" style="height:5%; background:var(--bud-outside)"></div></div><div class="bb-label">M</div></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header"><h3 class="card-title">Year-on-year &middot; per envelope</h3><span class="text-muted small">Jun '24–May '25 vs Jun '25–May '26 · avg % of budget used</span></div>
+    <div class="yoy-grid">
+      <div class="yoy-card"><div class="yoy-name"><span class="swatch" style="width:8px;height:8px;border-radius:2px;background:var(--bud-groceries)"></span>Groceries</div><div class="yoy-row"><span>last 12-mo</span><span class="v">91%</span></div><div class="yoy-row"><span>prior 12-mo</span><span class="v">85%</span></div><div class="yoy-delta text-warning">+6 pts · trending up</div></div>
+      <div class="yoy-card"><div class="yoy-name"><span class="swatch" style="width:8px;height:8px;border-radius:2px;background:var(--bud-going-out)"></span>Going Out</div><div class="yoy-row"><span>last 12-mo</span><span class="v">83%</span></div><div class="yoy-row"><span>prior 12-mo</span><span class="v">78%</span></div><div class="yoy-delta text-warning">+5 pts</div></div>
+      <div class="yoy-card"><div class="yoy-name"><span class="swatch" style="width:8px;height:8px;border-radius:2px;background:var(--bud-sins)"></span>Sins</div><div class="yoy-row"><span>last 12-mo</span><span class="v">99%</span></div><div class="yoy-row"><span>prior 12-mo</span><span class="v">88%</span></div><div class="yoy-delta text-danger">+11 pts · over 6/12 months</div></div>
+      <div class="yoy-card"><div class="yoy-name"><span class="swatch" style="width:8px;height:8px;border-radius:2px;background:var(--bud-transport)"></span>Transport</div><div class="yoy-row"><span>last 12-mo</span><span class="v">62%</span></div><div class="yoy-row"><span>prior 12-mo</span><span class="v">68%</span></div><div class="yoy-delta text-success">−6 pts · budget could shrink</div></div>
+      <div class="yoy-card"><div class="yoy-name"><span class="swatch" style="width:8px;height:8px;border-radius:2px;background:var(--bud-subs)"></span>Subscription</div><div class="yoy-row"><span>last 12-mo</span><span class="v">97%</span></div><div class="yoy-row"><span>prior 12-mo</span><span class="v">94%</span></div><div class="yoy-delta text-warning">+3 pts · ratcheting up</div></div>
+      <div class="yoy-card"><div class="yoy-name"><span class="swatch" style="width:8px;height:8px;border-radius:2px;background:var(--bud-lifestyle)"></span>Lifestyle</div><div class="yoy-row"><span>last 12-mo</span><span class="v">75%</span></div><div class="yoy-row"><span>prior 12-mo</span><span class="v">71%</span></div><div class="yoy-delta text-muted">+4 pts</div></div>
+      <div class="yoy-card"><div class="yoy-name"><span class="swatch" style="width:8px;height:8px;border-radius:2px;background:var(--bud-living)"></span>Living</div><div class="yoy-row"><span>last 12-mo</span><span class="v">77%</span></div><div class="yoy-row"><span>prior 12-mo</span><span class="v">81%</span></div><div class="yoy-delta text-success">−4 pts</div></div>
+      <div class="yoy-card"><div class="yoy-name"><span class="swatch" style="width:8px;height:8px;border-radius:2px;background:var(--bud-travel)"></span>Travel</div><div class="yoy-row"><span>last 12-mo</span><span class="v">22% used · 78% swept</span></div><div class="yoy-row"><span>prior 12-mo</span><span class="v">31% used · 69% swept</span></div><div class="yoy-delta text-info">More disciplined this year</div></div>
+    </div>
+  </div>
+
+  </section>
+  <!-- ════════ END History ════════ -->
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script>
+/* Sidebar + navbar — copy of the shared chrome from index.html */
+(function () {
+  const NAV = [
+    { header: "Financial Control" },
+    { key: "dashboard",  icon: "fa-solid fa-gauge-high",        label: "Dashboard",     href: "index.html" },
+    { key: "budgets",    icon: "fa-solid fa-chart-pie",         label: "Budgets",       href: "budgets.html" },
+    { key: "bills",      icon: "fa-regular fa-calendar",        label: "Subscriptions", href: "bills.html" },
+    { key: "piggy",      icon: "fa-solid fa-piggy-bank",        label: "Piggy Banks",   href: "piggy.html" },
+    { header: "Accounting" },
+    { key: "transactions", icon: "fa-solid fa-arrow-right-arrow-left", label: "Transactions", href: "transactions.html",
+      sub: [
+        { key: "expenses",  icon: "fa-solid fa-arrow-left text-danger",       label: "Expenses",  href: "transactions.html?type=expenses" },
+        { key: "income",    icon: "fa-solid fa-arrow-right text-success",     label: "Income",    href: "transactions.html?type=income" },
+        { key: "transfers", icon: "fa-solid fa-arrows-rotate text-info",      label: "Transfers", href: "transactions.html?type=transfers" },
+        { key: "all",       icon: "fa-solid fa-arrows-turn-to-dots",          label: "All",       href: "transactions.html?type=all" },
+      ] },
+    { key: "automation", icon: "fa-solid fa-microchip", label: "Automation", expanded: true,
+      sub: [
+        { key: "rules",     icon: "fa-solid fa-shuffle",  label: "Rules",     href: "rules.html" },
+        { key: "recurring", icon: "fa-solid fa-repeat",   label: "Recurring", href: "recurring.html" },
+      ] },
+    { header: "Others" },
+    { key: "accounts", icon: "fa-regular fa-credit-card", label: "Accounts", href: "accounts.html",
+      sub: [
+        { key: "asset",       icon: "fa-solid fa-money-bills",           label: "Asset",       href: "accounts.html?type=asset" },
+        { key: "expense",     icon: "fa-solid fa-cart-shopping",         label: "Expense",     href: "accounts.html?type=expense" },
+        { key: "revenue",     icon: "fa-solid fa-money-bill-trend-up",   label: "Revenue",     href: "accounts.html?type=revenue" },
+        { key: "liabilities", icon: "fa-solid fa-landmark",              label: "Liabilities", href: "accounts.html?type=liabilities" },
+      ] },
+    { key: "classification", icon: "fa-solid fa-tags", label: "Classification", expanded: true,
+      sub: [
+        { key: "categories", icon: "fa-regular fa-bookmark", label: "Categories", href: "categories.html" },
+        { key: "tags",       icon: "fa-solid fa-tag",        label: "Tags",       href: "tags.html" },
+      ] },
+    { key: "reports", icon: "fa-solid fa-chart-column",         label: "Reports", href: "reports.html" },
+    { key: "search",  icon: "fa-solid fa-magnifying-glass",     label: "Search",  href: "search.html" },
+    { key: "export",  icon: "fa-solid fa-upload",               label: "Export",  href: "#" },
+    { divider: true },
+    { key: "profile",     icon: "fa-solid fa-user-gear",  label: "Profile",     href: "profile.html" },
+    { key: "preferences", icon: "fa-solid fa-sliders",    label: "Preferences", href: "preferences.html" },
+    { key: "logout",      icon: "fa-solid fa-arrow-right-from-bracket", label: "Logout", href: "#" },
+  ];
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  function renderSidebar(active, sub) {
+    const parts = ['<div class="brand"><i class="fa-solid fa-fire-flame-curved me-2"></i>Firefly III</div>'];
+    for (const item of NAV) {
+      if (item.header)  { parts.push(`<div class="nav-header">${esc(item.header)}</div>`); continue; }
+      if (item.divider) { parts.push('<hr style="border-color:var(--pala-navy-border);margin:0.6rem 0">'); continue; }
+      const isActive = item.key === active;
+      const cls = "nav-link" + (isActive ? " active" : "");
+      const chev = item.sub ? '<i class="fa-solid fa-chevron-down ms-auto fa-xs"></i>' : "";
+      parts.push(`<a href="${item.href || '#'}" class="${cls}"><i class="${item.icon}"></i> ${esc(item.label)}${chev}</a>`);
+      if (item.sub && (isActive || item.expanded)) {
+        parts.push('<div class="nav-sub">');
+        for (const s of item.sub) {
+          const sActive = (isActive && s.key === sub) ? " active" : "";
+          parts.push(`<a href="${s.href}" class="nav-link${sActive}"><i class="${s.icon}"></i> ${esc(s.label)}</a>`);
+        }
+        parts.push('</div>');
+      }
+    }
+    return `<aside class="pala-sidebar">${parts.join('')}</aside>`;
+  }
+  function renderNavbar(crumbs, period) {
+    const segs = (crumbs || '').split('/').filter(Boolean);
+    const last = segs.pop();
+    const olItems = segs.map(s => `<li class="breadcrumb-item"><a href="#">${esc(s)}</a></li>`).join('');
+    const activeItem = last ? `<li class="breadcrumb-item active">${esc(last)}</li>` : '';
+    const periodHtml = period
+      ? `<div class="period-badge"><a href="#"><i class="fa-solid fa-chevron-left fa-xs"></i></a><span>${esc(period)}</span><a href="#"><i class="fa-solid fa-chevron-right fa-xs"></i></a></div>`
+      : '';
+    return `<nav class="pala-navbar"><ol class="breadcrumb">${olItems}${activeItem}</ol>${periodHtml}</nav>`;
+  }
+  const body = document.body;
+  body.insertAdjacentHTML('afterbegin', renderSidebar(body.dataset.page || '', body.dataset.sub || ''));
+  const main = document.querySelector('main.pala-main');
+  if (main) main.insertAdjacentHTML('beforebegin', renderNavbar(body.dataset.crumbs || '', body.dataset.period || ''));
+})();
+
+/* View switcher: read ?view= and show matching section + activate tab */
+(function () {
+  const params = new URLSearchParams(location.search);
+  const view = params.get('view') || 'this-month';
+  document.querySelectorAll('section.view').forEach(s => {
+    s.hidden = (s.dataset.view !== view);
+  });
+  document.querySelectorAll('#viewTabs a').forEach(a => {
+    a.classList.toggle('active', a.dataset.view === view);
+  });
+  /* Setup/History views don't need the New-budget button on the header */
+  if (view === 'history') {
+    document.getElementById('newBudgetBtn')?.style.setProperty('display','none');
+    document.getElementById('repaceBtn')?.style.setProperty('display','none');
+  }
+})();
+
+/* Decorative tabs inside cards (not the view-switcher) */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.bud-tabs button');
+  if (!btn) return;
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+});
+
+/* Bud-card click-through: navigate when clicking a .bud-link card body,
+   but only if the click target isn't a real anchor/button inside it. */
+document.addEventListener('click', (e) => {
+  if (e.target.closest('a, button')) return;
+  const card = e.target.closest('.bud-link');
+  if (!card) return;
+  const href = card.dataset.href;
+  if (href) window.location.href = href;
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest?.('.bud-link');
+  if (!card || e.target !== card) return;
+  e.preventDefault();
+  if (card.dataset.href) window.location.href = card.dataset.href;
+});
+</script>
+</body>
+</html>

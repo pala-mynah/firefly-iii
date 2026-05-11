@@ -432,16 +432,16 @@ a.pace-row:hover .name, a.piggy-row:hover .name, a.donut-legend-row:hover .donut
       <div class="card budget-hero">
         <a href="budgets.html" class="card-header card-header-link d-flex justify-content-between align-items-center" title="Manage all budgets">
           <div class="d-flex align-items-baseline gap-3">
-            <h3 class="card-title">Budgets · May</h3>
-            <span class="text-muted small">8 envelopes · €956.97 of €1,340 spent</span>
+            <h3 class="card-title" data-pala="budget-hero-title">Budgets · May</h3>
+            <span class="text-muted small" data-pala="budget-hero-summary">8 envelopes · €956.97 of €1,340 spent</span>
           </div>
-          <div class="text-muted small">
+          <div class="text-muted small" data-pala="budget-hero-pace">
             Day 28 of 31 · expected
             <span class="text-mint" style="font-variant-numeric:tabular-nums">90%</span>
           </div>
         </a>
         <div class="card-body">
-          <div class="row g-4">
+          <div class="row g-4" id="pala-envelope-grid">
 
             <!-- Groceries: 380/450 = 84.4%, marker 90% → -6% under -->
             <div class="col-md-6">
@@ -1142,6 +1142,14 @@ document.addEventListener('click', (e) => {
       console.warn('budget fetch failed', e);
     }
 
+    // ── budget hero card ───────────────────────────────────────────
+    status.textContent = 'rendering envelopes…';
+    try {
+      await hydrateBudgetHero(start, end);
+    } catch (e) {
+      console.warn('budget hero failed', e);
+    }
+
     // update period badge in the navbar
     const body = document.body;
     body.setAttribute('data-period', periodLabel(start, end));
@@ -1150,6 +1158,84 @@ document.addEventListener('click', (e) => {
 
     status.textContent = '✓ live';
     setTimeout(() => { status.textContent = 'live · ' + (new Date()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }, 1200);
+  }
+
+  async function hydrateBudgetHero(start, end) {
+    const budgets = await api(`/budgets?start=${start}&end=${end}`);
+    const today = new Date();
+    const endDate = new Date(end);
+    const startDate = new Date(start);
+    const daysInMonth = endDate.getDate();
+    const dayOfMonth = Math.min(today.getDate(), daysInMonth);
+    const pacePct = (dayOfMonth / daysInMonth) * 100;
+    const monthName = endDate.toLocaleString('en-US', { month: 'long' });
+
+    // sum totals and build rows
+    let totalBudgeted = 0;
+    let totalSpent = 0;
+    const rows = [];
+
+    for (const b of budgets.data) {
+      const a = b.attributes || {};
+      if (!a.active) continue;
+
+      const budgeted = parseFloat(a.auto_budget_amount || 0) || 0;
+      let spent = 0;
+      if (Array.isArray(a.spent)) {
+        for (const s of a.spent) spent += Math.abs(parseFloat(s.sum) || 0);
+      }
+      totalBudgeted += budgeted;
+      totalSpent += spent;
+
+      const spentPct = budgeted > 0 ? (spent / budgeted) * 100 : 0;
+      const remaining = Math.max(0, budgeted - spent);
+      const daysLeft = Math.max(1, daysInMonth - dayOfMonth);
+      const perDay = remaining / daysLeft;
+
+      // status pill
+      let pillClass = 'ok', pillText = 'on pace';
+      if (spentPct > 100) { pillClass = 'over'; pillText = 'over'; }
+      else if (spentPct > pacePct + 10) { pillClass = 'over'; pillText = `+${Math.round(spentPct - pacePct)}% over pace`; }
+      else if (spentPct < pacePct - 15) { pillClass = 'under'; pillText = `${Math.round(pacePct - spentPct)}% under`; }
+
+      // fill class
+      let fillClass = '';
+      if (spentPct > 100) fillClass = 'over';
+      else if (spentPct < pacePct - 15) fillClass = 'under';
+
+      const slug = a.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const statusText = spentPct > 100
+        ? `€${(spent - budgeted).toFixed(2)} over · day ${dayOfMonth} of ${daysInMonth}`
+        : `€${remaining.toFixed(2)} left · ~€${perDay.toFixed(0)}/day to spend`;
+
+      rows.push(`
+        <div class="col-md-6">
+          <a href="budgets.html?budget=${slug}" class="pace-row hero">
+            <div class="pace-head"><span class="name">${escapeHtml(a.name)}</span><span class="vals">€${spent.toFixed(2)} / €${budgeted.toFixed(2)}</span></div>
+            <div class="pace-track">
+              <div class="pace-fill ${fillClass}" style="width:${Math.min(100, spentPct).toFixed(1)}%"></div>
+              <div class="pace-marker" style="left:${pacePct.toFixed(1)}%" title="Day ${dayOfMonth} of ${daysInMonth}"></div>
+            </div>
+            <div class="pace-status">
+              <span>${statusText}</span>
+              <span class="pill ${pillClass}">${pillText}</span>
+            </div>
+          </a>
+        </div>`);
+    }
+
+    document.getElementById('pala-envelope-grid').innerHTML = rows.join('');
+
+    // header summary
+    setText('[data-pala="budget-hero-title"]', `Budgets · ${monthName}`);
+    setText('[data-pala="budget-hero-summary"]',
+      `${budgets.data.length} envelopes · €${totalSpent.toFixed(2)} of €${totalBudgeted.toFixed(2)} spent`);
+    setText('[data-pala="budget-hero-pace"]',
+      `Day ${dayOfMonth} of ${daysInMonth} · expected <span class="text-mint" style="font-variant-numeric:tabular-nums">${Math.round(pacePct)}%</span>`);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
   async function boot() {
