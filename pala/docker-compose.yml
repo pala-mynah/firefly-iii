@@ -42,6 +42,7 @@ services:
       FIREFLY_III_LAYOUT: v2
     volumes:
       - firefly_upload:/var/www/html/storage/upload
+      - ./public/pala:/var/www/html/public/pala:ro
 
   importer:
     image: fireflyiii/data-importer:latest
