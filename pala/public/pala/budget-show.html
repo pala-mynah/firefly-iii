@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Groceries — Budget · Firefly III · Pala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+/* ── Pala palette ───────────────────────────────────────────────────── */
+:root {
+  --pala-navy:#0f1b2d; --pala-navy-mid:#172236; --pala-navy-card:#1e2d45; --pala-navy-border:#253550;
+  --pala-mint:#3ecfb2; --pala-mint-dim:#2aa89a; --pala-text:#d6e4f0; --pala-muted:#7a9bbf;
+  --pala-danger:#e05c6a; --pala-success:#4caf82; --pala-warning:#f0a84a; --pala-info:#5bafd6;
+  --sidebar-w:250px;
+  --bud-groceries:#3ecfb2; --bud-supermarket:#3ecfb2; --bud-fresh:#5dd9bf; --bud-bakery:#86e3cd;
+}
+body { background:var(--pala-navy); color:var(--pala-text); font-family:'Inter',sans-serif; font-size:.9rem; }
+h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600; letter-spacing:-.005em; }
+
+/* Chrome */
+.pala-sidebar { position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w); background:var(--pala-navy-mid); border-right:1px solid var(--pala-navy-border); overflow-y:auto; z-index:1000; }
+.pala-sidebar .brand { padding:1rem 1.25rem; font-family:'Crimson Pro',serif; font-size:1.25rem; color:var(--pala-mint); border-bottom:1px solid var(--pala-navy-border); }
+.pala-sidebar .nav-header { padding:.75rem 1.25rem .25rem; font-size:.63rem; letter-spacing:.1em; color:var(--pala-muted); text-transform:uppercase; }
+.pala-sidebar .nav-link { color:var(--pala-text); padding:.45rem 1.25rem; display:flex; align-items:center; gap:.6rem; }
+.pala-sidebar .nav-link:hover,.pala-sidebar .nav-link.active { background:rgba(62,207,178,.1); color:var(--pala-mint); }
+.pala-sidebar .nav-link i { width:1.1rem; text-align:center; }
+.pala-sidebar .nav-sub .nav-link { padding:.3rem 1.25rem .3rem 2.8rem; font-size:.84rem; }
+.pala-navbar { position:fixed; top:0; left:var(--sidebar-w); right:0; height:3.5rem; background:var(--pala-navy-mid); border-bottom:1px solid var(--pala-navy-border); display:flex; align-items:center; padding:0 1.5rem; gap:1rem; z-index:900; }
+.pala-navbar .breadcrumb { margin:0; font-size:.84rem; }
+.pala-navbar .breadcrumb-item,.pala-navbar .breadcrumb-item a { color:var(--pala-muted); text-decoration:none; }
+.pala-navbar .breadcrumb-item.active { color:var(--pala-text); }
+.pala-navbar .period-badge { margin-left:auto; background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.25rem .75rem; font-size:.8rem; color:var(--pala-muted); display:flex; align-items:center; gap:.4rem; }
+.pala-navbar .period-badge a { color:var(--pala-muted); text-decoration:none; }
+.pala-navbar .period-badge a:hover { color:var(--pala-mint); }
+.pala-main { margin-left:var(--sidebar-w); margin-top:3.5rem; padding:1.5rem; }
+
+.card { background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:8px; }
+.card-header { background:transparent; border-bottom:1px solid var(--pala-navy-border); padding:.7rem 1.1rem; display:flex; justify-content:space-between; align-items:baseline; }
+.card-title { color:var(--pala-text); margin:0; font-size:1.05rem; }
+.card-footer { background:transparent; border-top:1px solid var(--pala-navy-border); padding:.6rem 1.1rem; }
+.text-mint { color:var(--pala-mint)!important; }
+.text-danger { color:var(--pala-danger)!important; } .text-success { color:var(--pala-success)!important; }
+.text-warning { color:var(--pala-warning)!important; } .text-info { color:var(--pala-info)!important; }
+.text-muted { color:var(--pala-muted)!important; }
+
+/* Tables */
+.table { color:var(--pala-text); --bs-table-bg:transparent; }
+.table > :not(caption) > * > * { border-color:var(--pala-navy-border); padding:.42rem .75rem; }
+.table thead th { color:var(--pala-muted); font-weight:500; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; }
+.table-hover > tbody > tr:hover > * { background:rgba(255,255,255,.04); }
+.table a { color:var(--pala-text); text-decoration:none; }
+.table a:hover { color:var(--pala-mint); }
+.num { font-variant-numeric:tabular-nums; }
+
+/* Buttons */
+.btn-mint { background:var(--pala-mint); border:0; color:#0f1b2d; font-weight:500; font-size:.84rem; padding:.4rem .9rem; border-radius:6px; }
+.btn-mint:hover { background:var(--pala-mint-dim); color:#0f1b2d; }
+.btn-ghost { background:transparent; border:1px solid var(--pala-navy-border); color:var(--pala-muted); font-size:.78rem; padding:.35rem .75rem; border-radius:6px; }
+.btn-ghost:hover { background:rgba(255,255,255,.04); color:var(--pala-text); }
+
+/* ── Page head ───────────────────────────────────────────────────── */
+.page-head { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+.page-head .title-block h1 { font-size:1.85rem; margin:0; display:flex; align-items:center; gap:.55rem; }
+.page-head .title-block h1 .dot { width:14px; height:14px; border-radius:3px; background:var(--bud-groceries); }
+.page-head .title-block .sub { color:var(--pala-muted); font-size:.84rem; margin-top:.2rem; }
+.page-head .title-block .sub a { color:var(--pala-muted); }
+.page-head .title-block .sub a:hover { color:var(--pala-mint); }
+.page-head .actions { display:flex; gap:.45rem; flex-wrap:wrap; }
+
+/* ── Hero KPI strip ───────────────────────────────────────────────── */
+.kpi-card { padding:.85rem 1.1rem; display:flex; flex-direction:column; gap:.2rem; }
+.kpi-eyebrow { font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; color:var(--pala-muted); }
+.kpi-amount { font-family:'Crimson Pro',serif; font-size:1.7rem; line-height:1.1; font-variant-numeric:tabular-nums; }
+.kpi-meta { font-size:.74rem; color:var(--pala-muted); }
+.kpi-trend-up { color:var(--pala-danger); font-size:.78rem; }
+.kpi-trend-down { color:var(--pala-success); font-size:.78rem; }
+
+/* ── Big pace bar ──────────────────────────────────────────────────── */
+.big-pace-wrap { padding:1rem 1.25rem 1.25rem; }
+.big-pace-axis { display:flex; justify-content:space-between; font-size:.66rem; color:var(--pala-muted); letter-spacing:.05em; text-transform:uppercase; margin-bottom:.4rem; font-variant-numeric:tabular-nums; }
+.big-pace { position:relative; height:1.1rem; background:var(--pala-navy); border-radius:4px; overflow:hidden; border:1px solid var(--pala-navy-border); }
+.big-pace .fill { position:absolute; left:0; top:0; bottom:0; background:var(--bud-groceries); border-radius:3px; }
+.big-pace .marker { position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--pala-warning); border-radius:1px; box-shadow:0 0 0 3px rgba(240,168,74,.18); }
+.big-pace .marker-label { position:absolute; top:-1.4rem; transform:translateX(-50%); white-space:nowrap; font-size:.62rem; color:var(--pala-warning); letter-spacing:.06em; text-transform:uppercase; }
+.big-pace-meta { display:flex; justify-content:space-between; margin-top:.55rem; font-size:.78rem; color:var(--pala-muted); }
+.big-pace-meta .pill { font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; padding:.15rem .5rem; border-radius:3px; font-weight:500; background:rgba(62,207,178,.14); color:var(--pala-mint); }
+
+/* ── Daily burn-down chart ─────────────────────────────────────────── */
+.burn-wrap { padding:.5rem 1.25rem 1rem; }
+.burn-chart { width:100%; height:240px; }
+.burn-chart .grid line { stroke:var(--pala-navy-border); stroke-dasharray:2 4; opacity:.4; }
+.burn-chart .axis text { fill:var(--pala-muted); font-size:10px; font-family:Inter,sans-serif; font-variant-numeric:tabular-nums; }
+.burn-chart .target { stroke:var(--pala-warning); stroke-width:1.4; stroke-dasharray:4 4; fill:none; opacity:.7; }
+.burn-chart .actual { stroke:var(--bud-groceries); stroke-width:2.2; fill:none; }
+.burn-chart .actual-area { fill:url(#mintGrad); opacity:.5; }
+.burn-chart .today { stroke:var(--pala-text); stroke-width:1; stroke-dasharray:1 3; opacity:.55; }
+.burn-chart .dot { fill:var(--bud-groceries); stroke:var(--pala-navy-card); stroke-width:1.5; }
+.burn-chart .today-dot { fill:var(--pala-mint); stroke:var(--pala-navy-card); stroke-width:2; r:5; }
+.burn-legend { display:flex; gap:1.2rem; padding:.5rem 1.25rem 0; font-size:.74rem; color:var(--pala-muted); flex-wrap:wrap; }
+.burn-legend .sw { display:inline-block; width:1rem; height:2px; vertical-align:middle; margin-right:.4rem; }
+.burn-legend .sw.dashed { border-top:2px dashed var(--pala-warning); height:0; }
+.burn-legend .sw.solid { background:var(--bud-groceries); }
+
+/* ── Cat-in-budget table ───────────────────────────────────────────── */
+.cat-table { width:100%; font-size:.84rem; }
+.cat-table thead th { color:var(--pala-muted); font-weight:500; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; padding:.55rem .85rem; border-bottom:1px solid var(--pala-navy-border); }
+.cat-table tbody tr { cursor:pointer; transition:background .12s ease; }
+.cat-table tbody tr:hover { background:rgba(62,207,178,.06); }
+.cat-table tbody td { padding:.7rem .85rem; border-bottom:1px solid var(--pala-navy-border); }
+.cat-table tbody tr:last-child td { border-bottom:0; }
+.cat-table .swatch { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:.55rem; vertical-align:middle; }
+.cat-table .name { color:var(--pala-text); font-weight:500; }
+.cat-table tr:hover .name { color:var(--pala-mint); }
+.cat-table .num { font-variant-numeric:tabular-nums; text-align:right; }
+.cat-table .trend-up { color:var(--pala-danger); font-size:.74rem; }
+.cat-table .trend-down { color:var(--pala-success); font-size:.74rem; }
+.cat-table .trend-flat { color:var(--pala-muted); font-size:.74rem; }
+
+/* Sparkline column */
+.spark { width:80px; height:24px; display:inline-block; vertical-align:middle; }
+.spark polyline { fill:none; stroke-width:1.5; }
+.spark .dot { stroke-width:0; }
+
+/* ── Big mini-hist (right column) ──────────────────────────────────── */
+.hist-big { padding:1rem 1.1rem; }
+.hist-big .bars { display:grid; grid-template-columns:repeat(12,1fr); gap:3px; align-items:end; height:140px; position:relative; padding-bottom:.2rem; }
+.hist-big .bars::before { content:""; position:absolute; left:0; right:0; top:9.1%; height:1px; background:repeating-linear-gradient(90deg,rgba(240,168,74,.5) 0 3px,transparent 3px 6px); }
+.hist-big .bars::after { content:"100%"; position:absolute; right:-1.5rem; top:9.1%; transform:translateY(-50%); font-size:.6rem; color:var(--pala-warning); letter-spacing:.04em; }
+.hist-big .bar { position:relative; background:var(--pala-mint-dim); border-radius:1.5px 1.5px 0 0; min-height:1px; transition:filter .12s ease; cursor:pointer; }
+.hist-big .bar:hover { filter:brightness(1.25); }
+.hist-big .bar.over { background:var(--pala-danger); }
+.hist-big .bar.current { box-shadow:inset 0 0 0 1.5px var(--pala-mint); background:var(--pala-mint-dim); }
+.hist-big .bar .pct { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); font-size:.6rem; color:var(--pala-muted); padding-bottom:2px; font-variant-numeric:tabular-nums; opacity:0; transition:opacity .12s ease; }
+.hist-big .bar:hover .pct, .hist-big .bar.current .pct { opacity:1; color:var(--pala-text); }
+.hist-big .labels { display:grid; grid-template-columns:repeat(12,1fr); gap:3px; margin-top:.3rem; color:var(--pala-muted); font-size:.62rem; text-align:center; font-variant-numeric:tabular-nums; }
+.hist-stats { display:flex; justify-content:space-between; padding-top:.7rem; margin-top:.55rem; border-top:1px dashed rgba(255,255,255,.07); font-size:.72rem; color:var(--pala-muted); }
+.hist-stats b { color:var(--pala-text); font-weight:500; font-variant-numeric:tabular-nums; }
+
+/* ── Setup card ────────────────────────────────────────────────────── */
+.setup-list { padding:.5rem .25rem; }
+.setup-list .row-item { display:flex; justify-content:space-between; align-items:center; gap:.7rem; padding:.55rem .85rem; border-bottom:1px solid rgba(255,255,255,.05); }
+.setup-list .row-item:last-child { border-bottom:0; }
+.setup-list .lbl { font-size:.7rem; color:var(--pala-muted); letter-spacing:.04em; text-transform:uppercase; }
+.setup-list .val { font-size:.86rem; color:var(--pala-text); text-align:right; }
+.setup-list .val.num { font-variant-numeric:tabular-nums; }
+.setup-list .chips { display:flex; gap:.3rem; flex-wrap:wrap; justify-content:flex-end; }
+.setup-list .chip { display:inline-block; padding:.1rem .42rem; border-radius:3px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); font-size:.72rem; color:var(--pala-text); }
+.setup-list .val a { color:var(--pala-text); text-decoration:none; border-bottom:1px dotted rgba(255,255,255,.15); }
+.setup-list .val a:hover { color:var(--pala-mint); border-color:var(--pala-mint); }
+
+/* ── Recurring list ────────────────────────────────────────────────── */
+.recur-row { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:.7rem; padding:.55rem .85rem; border-bottom:1px solid rgba(255,255,255,.05); font-size:.84rem; }
+.recur-row:last-child { border-bottom:0; }
+.recur-row .ic { width:28px; height:28px; border-radius:6px; background:rgba(62,207,178,.10); color:var(--pala-mint); display:flex; align-items:center; justify-content:center; font-size:.82rem; }
+.recur-row .nm { color:var(--pala-text); font-weight:500; }
+.recur-row .meta { font-size:.7rem; color:var(--pala-muted); margin-top:.05rem; }
+.recur-row .amt { color:var(--pala-text); font-variant-numeric:tabular-nums; font-size:.84rem; text-align:right; }
+
+</style>
+</head>
+<body data-page="budget-show" data-crumbs="Home/Budgets/…" data-period="1 May – 31 May 2026">
+
+<main class="pala-main">
+
+  <!-- ── Page head ────────────────────────────────────────────────── -->
+  <div class="page-head">
+    <div class="title-block">
+      <h1><span class="dot"></span>Groceries</h1>
+      <div class="sub">Envelope · feeds 3 categories · <a href="budgets.html">← all budgets</a></div>
+    </div>
+    <div class="actions">
+      <button class="btn-ghost"><i class="fa-solid fa-arrow-down-up-across-line"></i> Set rollover</button>
+      <button class="btn-ghost"><i class="fa-solid fa-pencil"></i> Edit envelope</button>
+      <button class="btn-mint"><i class="fa-solid fa-plus"></i> Add transaction</button>
+    </div>
+  </div>
+
+  <!-- ── KPI strip ────────────────────────────────────────────────── -->
+  <div class="row g-3 mb-3">
+    <div class="col-md col-sm-6">
+      <div class="card h-100"><div class="kpi-card">
+        <div class="kpi-eyebrow">Spent · May</div>
+        <div class="kpi-amount">€380<span class="text-muted" style="font-weight:400">.00</span></div>
+        <div class="kpi-meta">of €450 budgeted · 84.4%</div>
+      </div></div>
+    </div>
+    <div class="col-md col-sm-6">
+      <div class="card h-100"><div class="kpi-card">
+        <div class="kpi-eyebrow">Remaining</div>
+        <div class="kpi-amount text-mint">€70<span class="text-muted" style="font-weight:400">.00</span></div>
+        <div class="kpi-meta">3 days left · ~€23/day to spend</div>
+      </div></div>
+    </div>
+    <div class="col-md col-sm-6">
+      <div class="card h-100"><div class="kpi-card">
+        <div class="kpi-eyebrow">12-mo average</div>
+        <div class="kpi-amount">€405<span class="text-muted" style="font-weight:400">/mo</span></div>
+        <div class="kpi-meta">max €486 (Dec '25) · min €360 (Jul)</div>
+      </div></div>
+    </div>
+    <div class="col-md col-sm-6">
+      <div class="card h-100"><div class="kpi-card">
+        <div class="kpi-eyebrow">Status</div>
+        <div class="kpi-amount text-mint" style="font-size:1.3rem; display:flex; align-items:center; gap:.5rem;">
+          <i class="fa-solid fa-check-circle"></i> On pace
+        </div>
+        <div class="kpi-meta">€26 under the day-28 line</div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ── Big pace bar ─────────────────────────────────────────────── -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title">Pacing · day 28 of 31</h3>
+      <span class="text-muted small">expected to be at 90% · currently 84%</span>
+    </div>
+    <div class="big-pace-wrap">
+      <div class="big-pace-axis">
+        <span>€0</span><span>€112</span><span>€225</span><span>€338</span><span>€450</span>
+      </div>
+      <div class="big-pace">
+        <div class="fill" style="width:84.4%"></div>
+        <div class="marker" style="left:90%"><span class="marker-label">day 28 · 90%</span></div>
+      </div>
+      <div class="big-pace-meta">
+        <span><span class="text-mint num">€380.00</span> spent · <span class="num">€70.00</span> remaining</span>
+        <span class="pill">on pace · ~€23/day to spend</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Two-column body ──────────────────────────────────────────── -->
+  <div class="row g-3">
+    <!-- LEFT 8/12 -->
+    <div class="col-lg-8">
+
+      <!-- Daily burn-down -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">Daily burn-down · May</h3>
+          <span class="text-muted small">cumulative spend vs straight-line target</span>
+        </div>
+        <div class="burn-wrap">
+          <svg class="burn-chart" viewBox="0 0 600 240" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="mintGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stop-color="#3ecfb2" stop-opacity=".25"/>
+                <stop offset="100%" stop-color="#3ecfb2" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- grid lines (y) -->
+            <g class="grid">
+              <line x1="40" y1="20"  x2="580" y2="20"/>
+              <line x1="40" y1="75"  x2="580" y2="75"/>
+              <line x1="40" y1="130" x2="580" y2="130"/>
+              <line x1="40" y1="185" x2="580" y2="185"/>
+              <line x1="40" y1="220" x2="580" y2="220" stroke-dasharray="0"/>
+            </g>
+            <!-- y-axis labels (€0 / 113 / 225 / 338 / 450) -->
+            <g class="axis">
+              <text x="34" y="223" text-anchor="end">€0</text>
+              <text x="34" y="188" text-anchor="end">€113</text>
+              <text x="34" y="133" text-anchor="end">€225</text>
+              <text x="34" y="78"  text-anchor="end">€338</text>
+              <text x="34" y="23"  text-anchor="end">€450</text>
+            </g>
+            <!-- x-axis labels -->
+            <g class="axis">
+              <text x="40"  y="234" text-anchor="middle">1</text>
+              <text x="127" y="234" text-anchor="middle">5</text>
+              <text x="214" y="234" text-anchor="middle">10</text>
+              <text x="301" y="234" text-anchor="middle">15</text>
+              <text x="388" y="234" text-anchor="middle">20</text>
+              <text x="475" y="234" text-anchor="middle">25</text>
+              <text x="580" y="234" text-anchor="middle">31</text>
+            </g>
+            <!-- Target diagonal: (1, €0) → (31, €450) → screen (40,220) → (580,20) -->
+            <line class="target" x1="40" y1="220" x2="580" y2="20"/>
+            <!-- Today vertical (day 28) → x = 40 + (28-1)/30 * 540 = 40 + 486 = 526 -->
+            <line class="today" x1="526" y1="20" x2="526" y2="220"/>
+            <text class="axis" x="526" y="14" text-anchor="middle" fill="#7a9bbf">today</text>
+
+            <!-- Actual cumulative spend area (under the line) -->
+            <!-- Data points (day, cum_eur) → (x, y):
+                 x = 40 + (day-1)/30 * 540, y = 220 - cum/450 * 200
+                 (1,0)→(40,220) (3,15)→(76,213) (5,68)→(112,190) (8,82)→(166,184)
+                 (10,131)→(202,162) (12,148)→(238,154) (14,200)→(274,131)
+                 (17,228)→(328,119) (19,280)→(364,96) (21,295)→(400,89)
+                 (24,332)→(454,72) (26,355)→(490,62) (28,380)→(526,51) -->
+            <path class="actual-area"
+                  d="M40,220 L76,213 L112,190 L166,184 L202,162 L238,154 L274,131 L328,119 L364,96 L400,89 L454,72 L490,62 L526,51 L526,220 Z"/>
+            <polyline class="actual"
+                  points="40,220 76,213 112,190 166,184 202,162 238,154 274,131 328,119 364,96 400,89 454,72 490,62 526,51"/>
+            <!-- Dots -->
+            <circle class="dot" cx="40"  cy="220" r="2.5"/>
+            <circle class="dot" cx="112" cy="190" r="2.5"/>
+            <circle class="dot" cx="202" cy="162" r="2.5"/>
+            <circle class="dot" cx="274" cy="131" r="2.5"/>
+            <circle class="dot" cx="364" cy="96"  r="2.5"/>
+            <circle class="dot" cx="454" cy="72"  r="2.5"/>
+            <circle class="today-dot" cx="526" cy="51"/>
+            <!-- Annotation by today's dot -->
+            <text class="axis" x="520" y="42" text-anchor="end" fill="#3ecfb2" style="font-weight:500;">€380 · 84%</text>
+          </svg>
+          <div class="burn-legend">
+            <span><span class="sw solid"></span>Actual spend (cumulative)</span>
+            <span><span class="sw dashed"></span>Straight-line target</span>
+            <span class="ms-auto"><i class="fa-regular fa-circle-question"></i> hover any segment to see daily detail</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories feeding this envelope -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">Categories feeding Groceries</h3>
+          <span class="text-muted small">click a row to see the category's full history</span>
+        </div>
+        <div class="card-body p-0">
+          <table class="cat-table">
+            <thead>
+              <tr>
+                <th style="width:30%">Category</th>
+                <th style="width:18%">12-mo trend</th>
+                <th class="text-end" style="width:15%">This month</th>
+                <th class="text-end" style="width:15%">Last month</th>
+                <th class="text-end" style="width:12%">12-mo avg</th>
+                <th class="text-end" style="width:10%">MoM</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr onclick="location.href='category-show.html?cat=supermarket'">
+                <td><span class="swatch" style="background:var(--bud-supermarket)"></span><span class="name">Supermarket</span></td>
+                <td>
+                  <!-- 12 monthly points: 240,238,255,260,225,245,228,235,243,228,230,240 → max 260
+                       x = i/11*78 + 1, y = 22 - (v/260)*20  -->
+                  <svg class="spark" viewBox="0 0 80 24">
+                    <polyline stroke="var(--bud-supermarket)"
+                      points="1,3.5 8.1,3.7 15.2,2.4 22.3,2 29.4,4.7 36.5,3.2 43.6,4.5 50.7,3.9 57.8,3.3 64.9,4.5 72,4.3 79.1,3.5"/>
+                    <circle class="dot" fill="var(--pala-mint)" cx="79.1" cy="3.5" r="2"/>
+                  </svg>
+                </td>
+                <td class="num">€240.00</td>
+                <td class="num text-muted">€230.00</td>
+                <td class="num text-muted">€235.00</td>
+                <td class="text-end"><span class="trend-up">▲ 4.3%</span></td>
+              </tr>
+              <tr onclick="location.href='category-show.html?cat=fresh-market-butcher'">
+                <td><span class="swatch" style="background:var(--bud-fresh)"></span><span class="name">Fresh Market &amp; Butcher</span></td>
+                <td>
+                  <!-- 90,92,98,85,75,80,95,88,82,90,95,98 → max 98 -->
+                  <svg class="spark" viewBox="0 0 80 24">
+                    <polyline stroke="var(--bud-fresh)"
+                      points="1,3.6 8.1,3.2 15.2,2.0 22.3,4.7 29.4,6.7 36.5,5.7 43.6,2.6 50.7,4 57.8,5.3 64.9,3.6 72,2.6 79.1,2.0"/>
+                    <circle class="dot" fill="var(--pala-mint)" cx="79.1" cy="2.0" r="2"/>
+                  </svg>
+                </td>
+                <td class="num">€98.00</td>
+                <td class="num text-muted">€95.00</td>
+                <td class="num text-muted">€89.00</td>
+                <td class="text-end"><span class="trend-up">▲ 3.2%</span></td>
+              </tr>
+              <tr onclick="location.href='category-show.html?cat=bakeries'">
+                <td><span class="swatch" style="background:var(--bud-bakery)"></span><span class="name">Bakeries</span></td>
+                <td>
+                  <!-- 35,38,45,42,40,38,42,40,38,40,42,42 → max 45 -->
+                  <svg class="spark" viewBox="0 0 80 24">
+                    <polyline stroke="var(--bud-bakery)"
+                      points="1,6.6 8.1,5.5 15.2,2.0 22.3,3.3 29.4,4.2 36.5,5.3 43.6,3.5 50.7,4.4 57.8,5.5 64.9,4.4 72,3.5 79.1,3.5"/>
+                    <circle class="dot" fill="var(--pala-mint)" cx="79.1" cy="3.5" r="2"/>
+                  </svg>
+                </td>
+                <td class="num">€42.00</td>
+                <td class="num text-muted">€42.00</td>
+                <td class="num text-muted">€40.00</td>
+                <td class="text-end"><span class="trend-flat">— flat</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-footer text-muted small">
+          <i class="fa-solid fa-circle-info"></i> Categories are the granular bucket; Groceries is the umbrella envelope.
+          <a href="rules.html?budget_id=1" class="ms-2">Manage rules →</a>
+        </div>
+      </div>
+
+      <!-- Recent transactions -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Transactions in Groceries · May</h3>
+          <a href="transactions.html?budget_id=1" class="text-muted small">View all 23 →</a>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-hover mb-0">
+            <thead><tr><th style="width:1.5rem"></th><th>Description</th><th>Date</th><th>Category</th><th>Account</th><th class="text-end">Amount</th></tr></thead>
+            <tbody>
+              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa</a></td><td class="num">28 May</td><td><a href="category-show.html?cat=supermarket">Supermarket</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€8.40</td></tr>
+              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Spar</a></td><td class="num">26 May</td><td><a href="category-show.html?cat=supermarket">Supermarket</a></td><td class="text-muted">Revolut</td><td class="text-end num text-danger">−€23.10</td></tr>
+              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Wochenmarkt</a></td><td class="num">24 May</td><td><a href="category-show.html?cat=fresh-market-butcher">Fresh Market &amp; Butcher</a></td><td class="text-muted">Cash</td><td class="text-end num text-danger">−€18.00</td></tr>
+              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Bäckerei Felzl</a></td><td class="num">22 May</td><td><a href="category-show.html?cat=bakeries">Bakeries</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€6.20</td></tr>
+              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa Plus</a></td><td class="num">19 May</td><td><a href="category-show.html?cat=supermarket">Supermarket</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€52.40</td></tr>
+              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Hofer</a></td><td class="num">17 May</td><td><a href="category-show.html?cat=supermarket">Supermarket</a></td><td class="text-muted">Revolut</td><td class="text-end num text-danger">−€34.80</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT 4/12 -->
+    <div class="col-lg-4">
+
+      <!-- 12-month history -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">12-month history</h3>
+          <span class="text-muted small">% of budget</span>
+        </div>
+        <div class="hist-big">
+          <div class="bars">
+            <!-- Jun..May, values % used; 100% mark = top 9.1% (since max 110%) -->
+            <div class="bar" style="height:87.3%" title="Jun '25 · 96%"><span class="pct">96</span></div>
+            <div class="bar" style="height:72.7%" title="Jul '25 · 80%"><span class="pct">80</span></div>
+            <div class="bar" style="height:80.0%" title="Aug '25 · 88%"><span class="pct">88</span></div>
+            <div class="bar" style="height:82.7%" title="Sep '25 · 91%"><span class="pct">91</span></div>
+            <div class="bar" style="height:85.5%" title="Oct '25 · 94%"><span class="pct">94</span></div>
+            <div class="bar" style="height:83.6%" title="Nov '25 · 92%"><span class="pct">92</span></div>
+            <div class="bar over" style="height:98.2%" title="Dec '25 · 108% — over"><span class="pct">108</span></div>
+            <div class="bar" style="height:74.5%" title="Jan '26 · 82%"><span class="pct">82</span></div>
+            <div class="bar" style="height:79.1%" title="Feb '26 · 87%"><span class="pct">87</span></div>
+            <div class="bar" style="height:81.8%" title="Mar '26 · 90%"><span class="pct">90</span></div>
+            <div class="bar" style="height:86.4%" title="Apr '26 · 95%"><span class="pct">95</span></div>
+            <div class="bar current" style="height:76.4%" title="May '26 · 84% (current, day 28)"><span class="pct">84</span></div>
+          </div>
+          <div class="labels">
+            <span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span>
+            <span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span class="text-mint">May</span>
+          </div>
+          <div class="hist-stats">
+            <span>avg <b>91%</b></span>
+            <span>max <b class="text-danger">108%</b> (Dec)</span>
+            <span>min <b>80%</b> (Jul)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Setup -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">Setup</h3>
+          <a href="#" class="text-muted small"><i class="fa-solid fa-pencil"></i> Edit</a>
+        </div>
+        <div class="setup-list">
+          <div class="row-item"><span class="lbl">Monthly amount</span><span class="val num">€450.00</span></div>
+          <div class="row-item"><span class="lbl">Period</span><span class="val">Monthly · resets 1st</span></div>
+          <div class="row-item"><span class="lbl">Rollover</span><span class="val text-info"><i class="fa-solid fa-arrows-rotate fa-xs"></i> Carry surplus · reset overspend</span></div>
+          <div class="row-item">
+            <span class="lbl">Categories</span>
+            <span class="val chips">
+              <a href="category-show.html?cat=supermarket" class="chip">Supermarket</a>
+              <a href="category-show.html?cat=fresh-market-butcher" class="chip">Fresh M&amp;B</a>
+              <a href="category-show.html?cat=bakeries" class="chip">Bakeries</a>
+            </span>
+          </div>
+          <div class="row-item">
+            <span class="lbl">Accounts</span>
+            <span class="val chips">
+              <span class="chip">George</span><span class="chip">Revolut</span><span class="chip">Cash</span>
+            </span>
+          </div>
+          <div class="row-item"><span class="lbl">Linked rules</span><span class="val"><a href="rules.html?budget_id=1">5 rules →</a></span></div>
+          <div class="row-item"><span class="lbl">Created</span><span class="val text-muted">12 Jan 2022</span></div>
+        </div>
+      </div>
+
+      <!-- Recurring expected -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Recurring · expected</h3>
+          <a href="recurring.html?budget_id=1" class="text-muted small">All →</a>
+        </div>
+        <div style="padding:.3rem 0;">
+          <div class="recur-row">
+            <div class="ic"><i class="fa-solid fa-store"></i></div>
+            <div>
+              <div class="nm">Wochenmarkt</div>
+              <div class="meta">Weekly · Sat · next 31 May</div>
+            </div>
+            <div class="amt">≈ €30</div>
+          </div>
+          <div class="recur-row">
+            <div class="ic"><i class="fa-solid fa-bread-slice"></i></div>
+            <div>
+              <div class="nm">Bäckerei standing order</div>
+              <div class="meta">Weekly · Sun · next 1 Jun</div>
+            </div>
+            <div class="amt">≈ €8</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-live.js"></script>
+<script>
+/* Shared chrome — same NAV as account-show.html */
+(function () {
+  const NAV = [
+    { header: "Financial Control" },
+    { key:"dashboard", icon:"fa-solid fa-gauge-high",    label:"Dashboard",     href:"index.html" },
+    { key:"budgets",   icon:"fa-solid fa-chart-pie",     label:"Budgets",       href:"budgets.html" },
+    { key:"bills",     icon:"fa-regular fa-calendar",    label:"Subscriptions", href:"bills.html" },
+    { key:"piggy",     icon:"fa-solid fa-piggy-bank",    label:"Piggy Banks",   href:"piggy.html" },
+    { header: "Accounting" },
+    { key:"transactions", icon:"fa-solid fa-arrow-right-arrow-left", label:"Transactions", href:"transactions.html",
+      sub:[
+        { key:"expenses",  icon:"fa-solid fa-arrow-left text-danger",   label:"Expenses",  href:"transactions.html?type=expenses" },
+        { key:"income",    icon:"fa-solid fa-arrow-right text-success", label:"Income",    href:"transactions.html?type=income" },
+        { key:"transfers", icon:"fa-solid fa-arrows-rotate text-info",  label:"Transfers", href:"transactions.html?type=transfers" },
+        { key:"all",       icon:"fa-solid fa-arrows-turn-to-dots",      label:"All",       href:"transactions.html?type=all" },
+      ] },
+    { key:"automation", icon:"fa-solid fa-microchip", label:"Automation", expanded:true,
+      sub:[
+        { key:"rules",     icon:"fa-solid fa-shuffle", label:"Rules",     href:"rules.html" },
+        { key:"recurring", icon:"fa-solid fa-repeat",  label:"Recurring", href:"recurring.html" },
+      ] },
+    { header: "Others" },
+    { key:"accounts", icon:"fa-regular fa-credit-card", label:"Accounts", href:"accounts.html" },
+    { key:"classification", icon:"fa-solid fa-tags", label:"Classification", expanded:true,
+      sub:[
+        { key:"categories", icon:"fa-regular fa-bookmark", label:"Categories", href:"categories.html" },
+        { key:"tags",       icon:"fa-solid fa-tag",        label:"Tags",       href:"tags.html" },
+      ] },
+    { key:"reports", icon:"fa-solid fa-chart-column",   label:"Reports", href:"reports.html" },
+    { key:"search",  icon:"fa-solid fa-magnifying-glass", label:"Search",  href:"search.html" },
+    { divider:true },
+    { key:"profile",     icon:"fa-solid fa-user-gear", label:"Profile",     href:"profile.html" },
+    { key:"preferences", icon:"fa-solid fa-sliders",   label:"Preferences", href:"preferences.html" },
+  ];
+  const esc = (s) => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function renderSidebar(active) {
+    const parts = ['<div class="brand"><i class="fa-solid fa-fire-flame-curved me-2"></i>Firefly III</div>'];
+    for (const item of NAV) {
+      if (item.header)  { parts.push(`<div class="nav-header">${esc(item.header)}</div>`); continue; }
+      if (item.divider) { parts.push('<hr style="border-color:var(--pala-navy-border);margin:.6rem 0">'); continue; }
+      const isActive = item.key === active;
+      const chev = item.sub ? '<i class="fa-solid fa-chevron-down ms-auto fa-xs"></i>' : "";
+      parts.push(`<a href="${item.href||"#"}" class="nav-link${isActive?" active":""}"><i class="${item.icon}"></i> ${esc(item.label)}${chev}</a>`);
+      if (item.sub && (isActive || item.expanded)) {
+        parts.push('<div class="nav-sub">');
+        for (const s of item.sub) parts.push(`<a href="${s.href}" class="nav-link"><i class="${s.icon}"></i> ${esc(s.label)}</a>`);
+        parts.push('</div>');
+      }
+    }
+    return `<aside class="pala-sidebar">${parts.join("")}</aside>`;
+  }
+  function renderNavbar(crumbs, period) {
+    const segs = (crumbs||"").split("/").filter(Boolean);
+    const last = segs.pop();
+    const olItems = segs.map(s => `<li class="breadcrumb-item"><a href="#">${esc(s)}</a></li>`).join("");
+    const activeItem = last ? `<li class="breadcrumb-item active">${esc(last)}</li>` : "";
+    const periodHtml = period ? `<div class="period-badge"><a href="#"><i class="fa-solid fa-chevron-left fa-xs"></i></a><span>${esc(period)}</span><a href="#"><i class="fa-solid fa-chevron-right fa-xs"></i></a></div>` : "";
+    return `<nav class="pala-navbar"><ol class="breadcrumb">${olItems}${activeItem}</ol>${periodHtml}</nav>`;
+  }
+  function inject() {
+    const b = document.body;
+    b.insertAdjacentHTML("afterbegin", renderSidebar(b.dataset.page||""));
+    const main = document.querySelector("main.pala-main");
+    if (main) main.insertAdjacentHTML("beforebegin", renderNavbar(b.dataset.crumbs||"", b.dataset.period||""));
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inject);
+  else inject();
+})();
+</script>
+</body>
+</html>

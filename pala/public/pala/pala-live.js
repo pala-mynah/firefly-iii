@@ -449,12 +449,287 @@
     } catch (e) { console.warn("donut legend:", e); }
   }
 
+  /* ─── Budgets list: rewrite card links + cat-row links to real ids ─────── */
+  async function pageBudgets() {
+    try {
+      const [bRes, cRes] = await Promise.all([api("/budgets"), api("/categories")]);
+      const bMap = new Map(); // slug → id
+      bRes.data.forEach((b) => bMap.set(slug(b.attributes.name), b.id));
+      const cMap = new Map();
+      cRes.data.forEach((c) => cMap.set(slug(c.attributes.name), c.id));
+
+      document.querySelectorAll(".bud-link[data-href]").forEach((el) => {
+        const nm = el.querySelector(".bud-head .name")?.textContent || "";
+        const id = bMap.get(slug(nm));
+        if (id) el.dataset.href = `budget-show.html?id=${id}`;
+      });
+      document.querySelectorAll('a[href*="category-show.html?cat="], .cat-row[href*="category-show.html?cat="]').forEach((a) => {
+        const m = a.getAttribute("href").match(/cat=([^&]+)/);
+        if (!m) return;
+        const id = cMap.get(decodeURIComponent(m[1]));
+        if (id) a.setAttribute("href", `category-show.html?id=${id}`);
+      });
+    } catch (e) { /* leave static links as-is */ }
+
+    // Live charts when focus mode is active
+    const focusMode = new URLSearchParams(location.search).get("focus");
+    if (focusMode === "spent")    liveDayN().catch((e) => console.warn("liveDayN failed:", e));
+    if (focusMode === "budgeted") liveBudgeted().catch((e) => console.warn("liveBudgeted failed:", e));
+  }
+
+  /* ─── Total budgeted per month (last N months with data) ──────────────── */
+  async function liveBudgeted() {
+    const card = document.getElementById("budgetedCard");
+    if (!card) return;
+    const today = new Date();
+    // Try last 12 months; keep only months that have any budget limit
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+      const s = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const e = new Date(s.getFullYear(), s.getMonth() + 1, 0);
+      months.push({
+        start: s.toISOString().slice(0, 10),
+        end: e.toISOString().slice(0, 10),
+        label: s.toLocaleDateString("en", { month: "short" }),
+        ym: s.toISOString().slice(0, 7),
+      });
+    }
+    // Pull all budgets, then their limits across the full range
+    const startAll = months[0].start, endAll = months[months.length - 1].end;
+    let totalsByMonth = {};
+    try {
+      const lim = await api(`/budget-limits?start=${startAll}&end=${endAll}`);
+      for (const l of (lim.data || [])) {
+        const a = l.attributes;
+        const ym = (a.start || "").slice(0, 7);
+        if (!ym) continue;
+        totalsByMonth[ym] = (totalsByMonth[ym] || 0) + Number(a.amount || 0);
+      }
+    } catch (_) { /* fallback: sum from /budgets per period */ }
+    // If no limits returned, fallback: sum auto_budget_amount × N months
+    if (Object.keys(totalsByMonth).length === 0) {
+      const bRes = await api("/budgets");
+      const autoSum = bRes.data.reduce((a, b) => a + Number(b.attributes.auto_budget_amount || 0), 0);
+      months.forEach((m) => (totalsByMonth[m.ym] = autoSum));
+    }
+    // Keep only months with data
+    const live = months.filter((m) => totalsByMonth[m.ym] > 0).map((m) => ({ ...m, total: totalsByMonth[m.ym] }));
+    if (!live.length) return;
+    const max = Math.max(...live.map((m) => m.total), 1);
+    const cap = Math.ceil((max * 1.1) / 100) * 100 || 100;
+    const eu = (n) => "€" + Math.round(n).toLocaleString("de-AT");
+
+    // Rebuild bars to match live month count
+    const bars = card.querySelector(".budg-bars");
+    const labels = card.querySelector(".budg-labels");
+    if (bars && labels) {
+      bars.style.gridTemplateColumns = `repeat(${live.length}, 1fr)`;
+      labels.style.gridTemplateColumns = `repeat(${live.length}, 1fr)`;
+      bars.innerHTML = live.map((m, i) => {
+        const isCurr = i === live.length - 1;
+        return `<div class="dayn-col${isCurr ? " current" : ""}" title="${m.label} · ${eu(m.total)}">
+          <div class="dayn-bar${isCurr ? " current" : ""}" style="height:${(m.total / cap) * 100}%"></div>
+          <span class="v">${eu(m.total)}</span>
+        </div>`;
+      }).join("");
+      labels.innerHTML = live.map((m, i) => {
+        const isCurr = i === live.length - 1;
+        return isCurr ? `<span class="text-mint"><b>${m.label}</b></span>` : `<span>${m.label}</span>`;
+      }).join("");
+    }
+    const yaxis = card.querySelector(".budg-yaxis");
+    if (yaxis) {
+      yaxis.innerHTML = [cap, cap * 0.75, cap * 0.5, cap * 0.25, 0]
+        .map((l) => `<span>${eu(l)}</span>`).join("");
+    }
+    const stat = card.querySelector(".budg-header-stat");
+    if (stat) {
+      stat.innerHTML = `<b style="color:var(--pala-mint)">${eu(live[live.length - 1].total)}</b> this month · ${live.length} month${live.length === 1 ? "" : "s"} of data`;
+    }
+  }
+
+  /* ─── Day-N cumulative chart (last 12 months, day-of-month-today) ───── */
+  async function liveDayN() {
+    const card = document.getElementById("dayNCard");
+    if (!card) return;
+    const today = new Date();
+    const dom = today.getDate();
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+      const s = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const lastDay = new Date(s.getFullYear(), s.getMonth() + 1, 0).getDate();
+      const endDom = Math.min(dom, lastDay);
+      const e = new Date(s.getFullYear(), s.getMonth(), endDom);
+      months.push({
+        start: s.toISOString().slice(0, 10),
+        end: e.toISOString().slice(0, 10),
+        label: s.toLocaleDateString("en", { month: "short" }),
+      });
+    }
+    const totals = await Promise.all(
+      months.map(async (m) => {
+        const r = await api(`/transactions?start=${m.start}&end=${m.end}&type=withdrawal&limit=500`);
+        let sum = 0;
+        for (const t of r.data) for (const tr of t.attributes.transactions) sum += Number(tr.amount);
+        return sum;
+      })
+    );
+    const max = Math.max(...totals, 1);
+    const avg = totals.reduce((a, b) => a + b, 0) / totals.length;
+    const cap = Math.ceil((max * 1.1) / 100) * 100 || 100;
+    const eu = (n) => "€" + Math.round(n).toLocaleString("de-AT");
+
+    const cols = card.querySelectorAll(".dayn-col");
+    cols.forEach((col, i) => {
+      const bar = col.querySelector(".dayn-bar");
+      const v = col.querySelector(".v");
+      if (!bar) return;
+      const val = totals[i] || 0;
+      bar.style.height = (val / cap) * 100 + "%";
+      if (v) v.textContent = eu(val);
+      bar.classList.remove("over", "under", "current");
+      col.classList.toggle("current", i === cols.length - 1);
+      if (i === cols.length - 1) bar.classList.add("current");
+      else if (val > avg * 1.1) bar.classList.add("over");
+      else if (val < avg * 0.85) bar.classList.add("under");
+      col.setAttribute("title", `${months[i].label} · day 1–${(months[i].end || "").slice(-2)} → ${eu(val)}`);
+    });
+
+    const avgLine = card.querySelector(".dayn-avgline");
+    if (avgLine) {
+      avgLine.style.bottom = `calc(100% * ${avg} / ${cap})`;
+      const lbl = avgLine.querySelector("span");
+      if (lbl) lbl.textContent = `avg ${eu(avg)}`;
+    }
+    const yaxis = card.querySelector(".dayn-yaxis");
+    if (yaxis) {
+      yaxis.innerHTML = [cap, cap * 0.75, cap * 0.5, cap * 0.25, 0]
+        .map((l) => `<span>${eu(l)}</span>`).join("");
+    }
+    const labels = card.querySelectorAll(".dayn-labels span");
+    labels.forEach((el, i) => {
+      if (i < months.length) {
+        const isCurr = i === labels.length - 1;
+        el.innerHTML = isCurr ? `<b>${months[i].label}</b>` : months[i].label;
+        el.classList.toggle("text-mint", isCurr);
+      }
+    });
+    const current = totals[totals.length - 1] || 0;
+    const diff = avg ? ((current - avg) / avg) * 100 : 0;
+    const stat = card.querySelector(".card-header > span.text-muted.small");
+    if (stat) {
+      const color = diff < 0 ? "var(--pala-mint)" : "var(--pala-danger)";
+      const word = diff < 0 ? "under" : "over";
+      stat.innerHTML = `<b style="color:var(--pala-mint)">${eu(current)}</b> this month · 12-mo avg ${eu(avg)} · <span style="color:${color}">${Math.abs(diff).toFixed(1)}% ${word}</span>`;
+    }
+  }
+
+  /* ─── Budget detail (?id=N) ───────────────────────────────────────────── */
+  async function pageBudgetShow() {
+    const id = qs("id");
+    if (!id) return;
+    try {
+      const b = (await api(`/budgets/${id}`)).data;
+      const name = b.attributes.name;
+      const h1 = document.querySelector(".page-head h1");
+      if (h1) h1.innerHTML = `<span class="dot"></span>${esc(name)}`;
+      document.title = `${name} — Firefly III · Pala`;
+      const crumbs = document.querySelector("[data-crumbs]");
+      if (crumbs) crumbs.dataset.crumbs = `Home/Budgets/${name}`;
+
+      // Rewrite "View all N →" + rules link to real id
+      document.querySelectorAll('a[href*="budget_id=1"]').forEach((a) =>
+        a.setAttribute("href", a.getAttribute("href").replace(/budget_id=\d+/, "budget_id=" + id)));
+
+      // Live tx table = the last .card .table tbody on the page
+      const { start, end } = periodRange();
+      const tx = (await api(`/budgets/${id}/transactions?start=${start}&end=${end}&limit=200`)).data;
+      const tbodies = document.querySelectorAll(".card .table tbody");
+      const tb = tbodies[tbodies.length - 1];
+      if (tb) {
+        if (!tx.length) tb.innerHTML = emptyRow(6, "No transactions this month.");
+        else tb.innerHTML = tx.slice(0, 12).map((t) => {
+          const tr = t.attributes.transactions[0];
+          const amt = Number(tr.amount);
+          const sign = tr.type === "withdrawal" ? "−" : tr.type === "deposit" ? "+" : "";
+          const cls = tr.type === "withdrawal" ? "text-danger" : tr.type === "deposit" ? "text-mint" : "text-muted";
+          const ico = tr.type === "withdrawal" ? "fa-arrow-left text-danger" : "fa-arrow-right text-mint";
+          return `<tr>
+            <td class="text-center"><i class="fa-solid ${ico}"></i></td>
+            <td>${esc(tr.description)}</td>
+            <td class="num">${dat(tr.date)}</td>
+            <td>${tr.category_name ? esc(tr.category_name) : '<span class="text-muted">—</span>'}</td>
+            <td class="text-muted">${esc(tr.source_name || tr.destination_name || "")}</td>
+            <td class="text-end num ${cls}">${sign}€${amt.toFixed(2)}</td>
+          </tr>`;
+        }).join("");
+      }
+      const viewAll = document.querySelector('a[href*="transactions.html?budget_id"]');
+      if (viewAll) viewAll.textContent = `View all ${tx.length} →`;
+    } catch (e) {
+      const tbodies = document.querySelectorAll(".card .table tbody");
+      const tb = tbodies[tbodies.length - 1];
+      if (tb) tb.innerHTML = errorRow(6, e);
+    }
+  }
+
+  /* ─── Category detail (?id=N) ─────────────────────────────────────────── */
+  async function pageCategoryShow() {
+    const id = qs("id");
+    if (!id) return;
+    try {
+      const c = (await api(`/categories/${id}`)).data;
+      const name = c.attributes.name;
+      const h1 = document.querySelector(".page-head h1");
+      if (h1) h1.innerHTML = `<span class="dot"></span>${esc(name)}`;
+      document.title = `${name} — Firefly III · Pala`;
+      const crumbs = document.querySelector("[data-crumbs]");
+      if (crumbs) crumbs.dataset.crumbs = `Home/Categories/${name}`;
+
+      // Live tx table = last tbody on the page
+      const { start, end } = periodRange();
+      const tx = (await api(`/categories/${id}/transactions?start=${start}&end=${end}&limit=200`)).data;
+      const tbodies = document.querySelectorAll(".card .table tbody");
+      const tb = tbodies[tbodies.length - 1];
+      if (tb) {
+        if (!tx.length) tb.innerHTML = emptyRow(6, "No transactions this month.");
+        else tb.innerHTML = tx.slice(0, 12).map((t) => {
+          const tr = t.attributes.transactions[0];
+          const amt = Number(tr.amount);
+          const sign = tr.type === "withdrawal" ? "−" : tr.type === "deposit" ? "+" : "";
+          const cls = tr.type === "withdrawal" ? "text-danger" : tr.type === "deposit" ? "text-mint" : "text-muted";
+          const ico = tr.type === "withdrawal" ? "fa-arrow-left text-danger" : "fa-arrow-right text-mint";
+          const merchant = tr.type === "withdrawal" ? (tr.destination_name || "") : (tr.source_name || "");
+          return `<tr>
+            <td class="text-center"><i class="fa-solid ${ico}"></i></td>
+            <td>${esc(tr.description)}</td>
+            <td class="num">${dat(tr.date)}</td>
+            <td>${esc(merchant)}</td>
+            <td class="text-muted">${esc(tr.type === "withdrawal" ? (tr.source_name || "") : (tr.destination_name || ""))}</td>
+            <td class="text-end num ${cls}">${sign}€${amt.toFixed(2)}</td>
+          </tr>`;
+        }).join("");
+      }
+      document.querySelectorAll('a[href*="cat_id=3"]').forEach((a) =>
+        a.setAttribute("href", a.getAttribute("href").replace(/cat_id=\d+/, "cat_id=" + id)));
+      const viewAll = document.querySelector('a[href*="transactions.html?cat_id"]');
+      if (viewAll && /View all/.test(viewAll.textContent)) viewAll.textContent = `View all ${tx.length} →`;
+    } catch (e) {
+      const tbodies = document.querySelectorAll(".card .table tbody");
+      const tb = tbodies[tbodies.length - 1];
+      if (tb) tb.innerHTML = errorRow(6, e);
+    }
+  }
+
   /* ─── Boot ─────────────────────────────────────────────────────────────── */
   function boot() {
     const page = document.body.dataset.page;
     const sub  = document.body.dataset.sub;
     if (page === "accounts")                          return pageAccounts();
     if (page === "transactions")                      return pageTransactions();
+    if (page === "budgets")                           return pageBudgets();
+    if (page === "budget-show")                       return pageBudgetShow();
+    if (page === "category-show")                     return pageCategoryShow();
     if (page === "classification" && sub === "categories") return pageCategories();
     if (page === "classification" && sub === "tags")       return pageTags();
     if (page === "bills")                             return pageBills();
