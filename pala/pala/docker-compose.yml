@@ -1,0 +1,66 @@
+services:
+  db:
+    image: mariadb:lts
+    hostname: firefly_db
+    restart: unless-stopped
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: firefly
+      MYSQL_USER: firefly
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - firefly_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: ..
+    image: firefly-pala:latest
+    hostname: firefly
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "7076:8080"
+    environment:
+      APP_KEY: ${APP_KEY}
+      APP_URL: http://localhost:7076
+      TRUSTED_PROXIES: "**"
+      DB_CONNECTION: mysql
+      DB_HOST: firefly_db
+      DB_PORT: 3306
+      DB_DATABASE: firefly
+      DB_USERNAME: firefly
+      DB_PASSWORD: ${DB_PASSWORD}
+      DEFAULT_LANGUAGE: de_DE
+      DEFAULT_LOCALE: de_DE
+      TZ: Europe/Vienna
+      FIREFLY_III_LAYOUT: v2
+    volumes:
+      - firefly_upload:/var/www/html/storage/upload
+      # Bind-mount the Pala dashboard so edits on the host show up live in the
+      # container with no image rebuild. Read-only — the container should never
+      # write to source. Path is relative to this compose file.
+      - ../public/pala:/var/www/html/public/pala:ro
+
+  importer:
+    image: fireflyiii/data-importer:latest
+    hostname: importer
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "7077:8080"
+    environment:
+      FIREFLY_III_URL: http://firefly:8080
+      VANITY_URL: http://localhost:7076
+      FIREFLY_III_ACCESS_TOKEN: ${FIREFLY_ACCESS_TOKEN:-}
+      TZ: Europe/Vienna
+
+volumes:
+  firefly_db:
+  firefly_upload:

@@ -56,7 +56,7 @@
     </script>
 
     <title>
-        @if($subTitle && null === ($pageTitle ?? null))
+        @if(($subTitle ?? null) && null === ($pageTitle ?? null))
             {{ $subTitle }} »
         @endif
         @if(null !== ($pageTitle ?? null))

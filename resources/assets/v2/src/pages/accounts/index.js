@@ -366,6 +366,11 @@ let index = function () {
             }
             delete filters.type;
 
+            // balance_difference sort is only valid for asset accounts; strip it for expense/revenue
+            if (type !== 'asset' && (sorting === 'balance_difference' || sorting === '-balance_difference')) {
+                sorting = '';
+            }
+
             // get start and end from the store:
             const start = new Date(window.store.get('start'));
             const end = new Date(window.store.get('end'));
@@ -453,6 +458,12 @@ let index = function () {
                 this.accounts = sortable;
                 this.notifications.wait.show = false;
                 this.pageOptions.isLoading = false;
+            }).catch((error) => {
+                console.error('Failed to load accounts:', error);
+                this.notifications.wait.show = false;
+                this.pageOptions.isLoading = false;
+                this.notifications.error.show = true;
+                this.notifications.error.text = i18next.t('firefly.load_error') + ' (' + (error.message ?? 'unknown') + ')';
             });
         },
     }

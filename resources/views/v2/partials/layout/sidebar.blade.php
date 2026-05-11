@@ -50,7 +50,7 @@
                 </li>
                 <li class="nav-header">{{ strtoupper(__('firefly.accounting'))  }}</li>
                 <li class="nav-item @partialroute('transactions') menu-open @endpartialroute">
-                    <a href="#" class="nav-link  @partialroute('transactions') active @endpartialroute">
+                    <a href="{{ route('transactions.index', ['all']) }}" class="nav-link  @partialroute('transactions') active @endpartialroute">
                         <em class="nav-icon fa-solid fa-arrow-right-arrow-left"></em>
                         <p>
                             {{ __('firefly.transactions') }}
@@ -195,7 +195,7 @@
                 <li class="nav-item">
                     <a href="{{ route('logout') }}" class="nav-link logout-link">
                         <i class="nav-icon fa-solid fa-arrow-right-from-bracket"></i>
-                        <p>TODO {{ __('firefly.logout') }}</p>
+                        <p>{{ __('firefly.logout') }}</p>
                     </a>
                 </li>
             </ul>

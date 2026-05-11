@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — Firefly III · Pala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+/* ── Pala Design System — v2 Firefly III ───────────────────────────────── */
+:root {
+  --pala-navy:       #0f1b2d;
+  --pala-navy-mid:   #172236;
+  --pala-navy-card:  #1e2d45;
+  --pala-navy-border:#253550;
+  --pala-mint:       #3ecfb2;
+  --pala-mint-dim:   #2aa89a;
+  --pala-text:       #d6e4f0;
+  --pala-muted:      #7a9bbf;
+  --pala-danger:     #e05c6a;
+  --pala-success:    #4caf82;
+  --pala-warning:    #f0a84a;
+  --pala-info:       #5bafd6;
+  --sidebar-w:       250px;
+}
+
+body { background: var(--pala-navy); color: var(--pala-text); font-family: 'Inter', sans-serif; font-size: 0.9rem; }
+h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 600; letter-spacing: -0.005em; }
+
+/* Sidebar */
+.pala-sidebar { position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w); background:var(--pala-navy-mid); border-right:1px solid var(--pala-navy-border); overflow-y:auto; z-index:1000; }
+.pala-sidebar .brand { padding:1rem 1.25rem; font-family:'Crimson Pro',serif; font-size:1.25rem; color:var(--pala-mint); border-bottom:1px solid var(--pala-navy-border); }
+.pala-sidebar .nav-header { padding:0.75rem 1.25rem 0.25rem; font-size:0.63rem; letter-spacing:.1em; color:var(--pala-muted); text-transform:uppercase; }
+.pala-sidebar .nav-link { color:var(--pala-text); padding:.45rem 1.25rem; display:flex; align-items:center; gap:.6rem; }
+.pala-sidebar .nav-link:hover,.pala-sidebar .nav-link.active { background:rgba(62,207,178,.1); color:var(--pala-mint); }
+.pala-sidebar .nav-link i,.pala-sidebar .nav-link em { width:1.1rem; text-align:center; }
+.pala-sidebar .nav-sub .nav-link { padding:.3rem 1.25rem .3rem 2.8rem; font-size:.84rem; }
+
+/* Navbar */
+.pala-navbar { position:fixed; top:0; left:var(--sidebar-w); right:0; height:3.5rem; background:var(--pala-navy-mid); border-bottom:1px solid var(--pala-navy-border); display:flex; align-items:center; padding:0 1.5rem; gap:1rem; z-index:900; }
+.pala-navbar .breadcrumb { margin:0; font-size:.84rem; }
+.pala-navbar .breadcrumb-item,.pala-navbar .breadcrumb-item a { color:var(--pala-muted); }
+.pala-navbar .breadcrumb-item.active { color:var(--pala-text); }
+.pala-navbar .period-badge { margin-left:auto; background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.25rem .75rem; font-size:.8rem; color:var(--pala-muted); display:flex; align-items:center; gap:.4rem; }
+.pala-navbar .period-badge a { color:var(--pala-muted); text-decoration:none; }
+.pala-navbar .period-badge a:hover { color:var(--pala-mint); }
+
+/* Main */
+.pala-main { margin-left:var(--sidebar-w); margin-top:3.5rem; padding:1.5rem; }
+
+/* Cards */
+.card { background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:10px; }
+.card-header { background:transparent; border-bottom:1px solid var(--pala-navy-border); padding:.7rem 1.1rem; }
+.card-title { color:var(--pala-text); margin:0; font-size:1.05rem; }
+.card-footer { background:transparent; border-top:1px solid var(--pala-navy-border); padding:.6rem 1.1rem; }
+
+/* Tables */
+.table { color:var(--pala-text); --bs-table-bg:transparent; }
+.table > :not(caption) > * > * { border-color:var(--pala-navy-border); padding:.42rem .75rem; }
+.table thead th { color:var(--pala-muted); font-weight:500; font-size:.76rem; text-transform:uppercase; letter-spacing:.04em; }
+.table-hover > tbody > tr:hover > * { background:rgba(255,255,255,.04); }
+
+/* Buttons */
+.btn-primary { background:var(--pala-mint); border-color:var(--pala-mint); color:#0f1b2d; font-weight:500; }
+.btn-primary:hover { background:var(--pala-mint-dim); border-color:var(--pala-mint-dim); color:#0f1b2d; }
+.btn-success { background:var(--pala-success); border-color:var(--pala-success); }
+.btn-outline-secondary { border-color:var(--pala-navy-border); color:var(--pala-muted); }
+.btn-outline-secondary:hover { background:var(--pala-navy-border); color:var(--pala-text); }
+.btn-outline-danger { border-color:var(--pala-danger); color:var(--pala-danger); }
+.btn-outline-danger:hover { background:var(--pala-danger); color:#fff; }
+
+/* Text */
+.text-danger  { color:var(--pala-danger)  !important; }
+.text-success { color:var(--pala-success) !important; }
+.text-warning { color:var(--pala-warning) !important; }
+.text-info    { color:var(--pala-info)    !important; }
+.text-muted   { color:var(--pala-muted)   !important; }
+.text-mint    { color:var(--pala-mint)    !important; }
+
+/* Nav tabs */
+.nav-tabs { border-color:var(--pala-navy-border); }
+.nav-tabs .nav-link { color:var(--pala-muted); border-color:transparent; }
+.nav-tabs .nav-link.active { background:var(--pala-navy-card); border-color:var(--pala-navy-border) var(--pala-navy-border) var(--pala-navy-card); color:var(--pala-mint); }
+
+/* Progress */
+.progress { background:var(--pala-navy); height:.5rem; border-radius:3px; }
+.progress-bar { background:var(--pala-mint); }
+.progress-bar.bg-success { background:var(--pala-success)!important; }
+
+/* Pagination */
+.page-link { background:var(--pala-navy-card); border-color:var(--pala-navy-border); color:var(--pala-muted); }
+.page-item.active .page-link { background:var(--pala-mint); border-color:var(--pala-mint); color:#0f1b2d; }
+
+/* Forms */
+.form-control,.form-select { background:var(--pala-navy); border-color:var(--pala-navy-border); color:var(--pala-text); }
+.form-control:focus,.form-select:focus { background:var(--pala-navy); border-color:var(--pala-mint); color:var(--pala-text); box-shadow:0 0 0 2px rgba(62,207,178,.2); }
+.form-check-input:checked { background-color:var(--pala-mint); border-color:var(--pala-mint); }
+
+/* List group */
+.list-group-item { background:transparent; border-color:var(--pala-navy-border); color:var(--pala-text); }
+.list-group-item-action:hover { background:rgba(255,255,255,.04); color:var(--pala-mint); }
+
+/* Badges */
+.badge.bg-success { background:var(--pala-success)!important; }
+.badge.bg-warning { background:var(--pala-warning)!important; color:#0f1b2d!important; }
+.badge.bg-secondary { background:var(--pala-navy-border)!important; color:var(--pala-text)!important; }
+
+/* ── Dashboard-specific ──────────────────────────────────────────────── */
+
+/* Hero net-worth card */
+.hero-card { padding: 1.5rem 1.75rem; }
+.hero-eyebrow { color:var(--pala-muted); font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; }
+.hero-amount { font-family:'Crimson Pro', serif; font-weight:600; font-size:3rem; line-height:1.05; letter-spacing:-0.02em; color:var(--pala-text); }
+.hero-amount .cents { color:var(--pala-muted); font-weight:400; font-size:0.55em; margin-left:.1em; }
+.hero-delta { display:inline-flex; align-items:center; gap:.35rem; font-size:.85rem; color:var(--pala-mint); }
+.hero-delta.neg { color:var(--pala-danger); }
+
+/* Period toggle */
+.period-pills { display:inline-flex; background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:999px; padding:2px; }
+.period-pills button { background:transparent; border:0; color:var(--pala-muted); font-size:.78rem; padding:.25rem .8rem; border-radius:999px; cursor:pointer; font-family: inherit; }
+.period-pills button.active { background:var(--pala-navy-card); color:var(--pala-mint); }
+.period-pills button:hover:not(.active) { color:var(--pala-text); }
+
+/* Stat tiles */
+.stat-card { padding:1rem 1.1rem; }
+.stat-link { color:inherit; display:block; transition:border-color .15s ease, transform .15s ease; position:relative; }
+.stat-link::after { content:"\f061"; font-family:"Font Awesome 6 Free"; font-weight:900; position:absolute; top:.85rem; right:.9rem; font-size:.65rem; color:var(--pala-muted); opacity:0; transition:opacity .15s ease, transform .15s ease; }
+.stat-link:hover { border-color:var(--pala-mint); color:inherit; }
+.stat-link:hover::after { opacity:.7; transform:translateX(2px); }
+/* Clickable card headers — same affordance as stat tiles */
+.card-header.card-header-link { color:inherit; text-decoration:none; cursor:pointer; transition:background .12s ease; position:relative; }
+.card-header.card-header-link:hover { background:rgba(62,207,178,.06); }
+.card-header.card-header-link:hover .card-title { color:var(--pala-mint); }
+.card-header.card-header-link:hover .card-header-cta { color:var(--pala-mint); }
+.card-header-cta { color:var(--pala-muted); font-size:.78rem; transition:color .12s ease; }
+.card-header-cta i { margin-left:.25rem; font-size:.65rem; }
+.stat-eyebrow { color:var(--pala-muted); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; display:flex; justify-content:space-between; align-items:baseline; gap:.5rem;}
+.stat-eyebrow .stat-trend { font-size:.66rem; letter-spacing:.04em; text-transform:none; color:var(--pala-muted);}
+.stat-eyebrow .stat-trend.up { color:var(--pala-mint);}
+.stat-eyebrow .stat-trend.down { color:var(--pala-danger);}
+.stat-amount { font-family:'Crimson Pro', serif; font-weight:600; font-size:1.55rem; line-height:1.1; margin-top:.15rem; }
+.stat-meta { color:var(--pala-muted); font-size:.78rem; margin-top:.15rem; }
+.stat-spark { display:block; width:100%; height:32px; margin-top:.5rem; }
+
+/* Inline flags ('needs category', 'no budget') */
+.flag { display:inline-flex; align-items:center; gap:.3rem; font-size:.66rem; letter-spacing:.04em; text-transform:uppercase; padding:.08rem .42rem; border-radius:3px; font-family:'Inter',sans-serif; font-weight:500; vertical-align:middle; }
+.flag.warn  { background:rgba(240,168,74,.14); color:var(--pala-warning); }
+.flag.info  { background:rgba(91,175,214,.14); color:var(--pala-info); }
+.flag.mint  { background:rgba(62,207,178,.14); color:var(--pala-mint); }
+.flag i { font-size:.62rem; }
+.flag-btn { background:transparent; border:0; padding:0; margin-left:.35rem; color:var(--pala-muted); cursor:pointer; font-size:.7rem; }
+.flag-btn:hover { color:var(--pala-mint); }
+
+/* Cashflow chart */
+.cashflow-chart { width:100%; height:240px; display:block; }
+.cashflow-axis { fill:var(--pala-muted); font-size:10px; font-family:'Inter',sans-serif; }
+.cashflow-grid { stroke:var(--pala-navy-border); stroke-width:1; stroke-dasharray:2 4; }
+.cashflow-area-mint { fill:url(#grad-mint); }
+.cashflow-line-mint { stroke:var(--pala-mint); stroke-width:1.75; fill:none; }
+.cashflow-marker circle { fill:var(--pala-mint); stroke:var(--pala-navy-card); stroke-width:2; }
+.cashflow-marker text { fill:var(--pala-text); font-size:10px; font-family:'Inter',sans-serif; }
+.cashflow-marker.neg circle { fill:var(--pala-danger); }
+
+/* Donut */
+.donut-wrap { display:flex; align-items:center; gap:1.25rem; }
+.donut-svg { flex:0 0 auto; }
+.donut-center-amount { font-family:'Crimson Pro', serif; font-size:1.4rem; fill:var(--pala-text); font-weight:600; }
+.donut-center-label { fill:var(--pala-muted); font-size:.7rem; letter-spacing:.06em; }
+.donut-legend { flex:1 1 auto; }
+.donut-legend-row { display:flex; align-items:center; gap:.6rem; padding:.3rem 0; font-size:.84rem; border-bottom:1px solid var(--pala-navy-border); }
+.donut-legend-row:last-child { border-bottom:0; }
+.donut-legend-swatch { width:8px; height:8px; border-radius:2px; flex:0 0 auto; }
+.donut-legend-name { flex:1 1 auto; color:var(--pala-text); }
+.donut-legend-amt  { color:var(--pala-muted); font-variant-numeric: tabular-nums; }
+.donut-legend-delta { color:var(--pala-muted); font-size:.72rem; width:48px; text-align:right; font-variant-numeric: tabular-nums; }
+.donut-legend-delta.up { color:var(--pala-danger); }
+.donut-legend-delta.down { color:var(--pala-mint); }
+
+/* Need attention tray */
+.attention-row { display:flex; align-items:center; gap:.85rem; padding:.7rem 1.1rem; border-bottom:1px solid var(--pala-navy-border); text-decoration:none; color:inherit; }
+.attention-row:last-child { border-bottom:0; }
+.attention-row:hover { background:rgba(255,255,255,.03); color:var(--pala-text); }
+.attention-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.attention-icon.warn   { background:rgba(240,168,74,.14);  color:var(--pala-warning); }
+.attention-icon.danger { background:rgba(224,92,106,.14);  color:var(--pala-danger); }
+.attention-icon.info   { background:rgba(91,175,214,.14);  color:var(--pala-info); }
+.attention-icon.mint   { background:rgba(62,207,178,.14);  color:var(--pala-mint); }
+.attention-body { flex:1 1 auto; min-width:0; }
+.attention-title { color:var(--pala-text); font-size:.88rem; line-height:1.3; }
+.attention-meta { color:var(--pala-muted); font-size:.74rem; margin-top:.1rem; }
+.attention-row .fa-chevron-right { color:var(--pala-muted); font-size:.7rem; }
+
+/* Budget pacing rows */
+.pace-row { padding:.6rem 0; border-bottom:1px solid var(--pala-navy-border); }
+.pace-row:last-child { border-bottom:0; padding-bottom:0; }
+.pace-row:first-child { padding-top:0; }
+.pace-head { display:flex; justify-content:space-between; align-items:baseline; font-size:.85rem; margin-bottom:.3rem; }
+.pace-head .name { color:var(--pala-text); }
+.pace-head .vals { color:var(--pala-muted); font-variant-numeric: tabular-nums; font-size:.78rem; }
+.pace-track { position:relative; height:.5rem; background:var(--pala-navy); border-radius:3px; overflow:hidden; }
+.pace-fill  { position:absolute; left:0; top:0; bottom:0; background:var(--pala-mint); border-radius:3px; }
+.pace-fill.over { background:var(--pala-danger); }
+.pace-fill.under { background:var(--pala-success); }
+.pace-marker { position:absolute; top:-2px; bottom:-2px; width:1px; background:var(--pala-text); opacity:.45; }
+.pace-marker::after { content:""; position:absolute; top:-3px; left:-2px; width:5px; height:5px; background:var(--pala-text); border-radius:50%; opacity:.55; }
+.pace-status { font-size:.72rem; margin-top:.25rem; color:var(--pala-muted); display:flex; justify-content:space-between; }
+.pace-status .pill { font-size:.68rem; padding:.05rem .4rem; border-radius:3px; letter-spacing:.04em; text-transform:uppercase; }
+.pace-status .pill.over { background:rgba(224,92,106,.16); color:var(--pala-danger); }
+.pace-status .pill.under { background:rgba(76,175,130,.16); color:var(--pala-success); }
+.pace-status .pill.ok { background:rgba(62,207,178,.14); color:var(--pala-mint); }
+.pace-status .pill.rollover { background:rgba(91,175,214,.14); color:var(--pala-info); }
+.pace-cats { font-size:.78rem; margin-top:.55rem; padding-top:.5rem; border-top:1px dashed rgba(255,255,255,.06); display:flex; flex-wrap:wrap; gap:.15rem .35rem; align-items:baseline; line-height:1.5; }
+.pace-cats .cat-chip { color:var(--pala-text); text-decoration:none; padding:.12rem .5rem; border-radius:3px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.05); transition:background .12s ease, border-color .12s ease, color .12s ease; white-space:nowrap; display:inline-flex; align-items:baseline; gap:.4rem; }
+.pace-cats .cat-chip:hover { background:rgba(62,207,178,.12); border-color:rgba(62,207,178,.35); color:var(--pala-mint); }
+.pace-cats .cat-amt { color:var(--pala-muted); font-variant-numeric:tabular-nums; font-size:.72rem; }
+.pace-cats .cat-chip:hover .cat-amt { color:var(--pala-mint); }
+.pace-cats .rollover-note { color:var(--pala-info); padding:.12rem .25rem; white-space:nowrap; }
+.pace-cats .rollover-note i { margin:0 .25rem; }
+.pace-row.hero { padding:.85rem 0; }
+.pace-row.hero .pace-head { font-size:.95rem; }
+.pace-row.hero .pace-head .vals { font-size:.85rem; }
+
+.pace-row.hero .pace-track { height:.6rem; }
+a.pace-row, a.piggy-row, a.donut-legend-row, a.sub-row { color:inherit; text-decoration:none; transition:background-color .12s ease; cursor:pointer; }
+a.pace-row { display:block; }
+a.pace-row:hover, a.piggy-row:hover { background:rgba(255,255,255,.025); }
+a.donut-legend-row:hover { background:rgba(255,255,255,.03); }
+a.sub-row:hover { background:rgba(255,255,255,.03); }
+a.pace-row:hover .name, a.piggy-row:hover .name, a.donut-legend-row:hover .donut-legend-name, a.sub-row:hover .sub-name { color:var(--pala-mint); }
+
+/* Budget hero card pulls visual weight — budgets are the centre of gravity. */
+.budget-hero .card-header { padding:1rem 1.25rem; }
+.budget-hero .card-title { font-size:1.2rem; }
+.budget-hero .card-body { padding:1rem 1.25rem 1.25rem; }
+
+/* Outside-budgets strip in the budget-hero footer. */
+.outside-budgets { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; padding:.85rem 1.25rem; }
+.outside-budgets .ob-label { color:var(--pala-muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; margin-right:.25rem; }
+.outside-budgets .ob-chip { display:inline-flex; align-items:baseline; gap:.5rem; padding:.3rem .65rem; border-radius:3px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); color:var(--pala-text); text-decoration:none; font-size:.82rem; transition:background .12s ease, border-color .12s ease, color .12s ease; }
+.outside-budgets .ob-chip:hover { background:rgba(62,207,178,.10); border-color:rgba(62,207,178,.35); color:var(--pala-mint); }
+.outside-budgets .ob-chip i { color:var(--pala-muted); }
+.outside-budgets .ob-chip:hover i { color:var(--pala-mint); }
+.outside-budgets .ob-amt { color:var(--pala-text); font-variant-numeric:tabular-nums; }
+.outside-budgets .ob-chip:hover .ob-amt { color:var(--pala-mint); }
+.outside-budgets .ob-chip.needs-tag { border-color:rgba(240,168,74,.30); background:rgba(240,168,74,.08); color:var(--pala-warning); }
+.outside-budgets .ob-chip.needs-tag i { color:var(--pala-warning); }
+.outside-budgets .ob-chip.needs-tag:hover { background:rgba(240,168,74,.16); border-color:rgba(240,168,74,.55); }
+.outside-budgets .ob-count { color:var(--pala-muted); font-size:.7rem; padding:.05rem .35rem; border:1px solid rgba(255,255,255,.10); border-radius:3px; margin-left:.1rem; }
+.outside-budgets .ob-chip.needs-tag .ob-count { color:var(--pala-warning); border-color:rgba(240,168,74,.30); }
+
+/* Tx list rows */
+.tx-row { display:grid; grid-template-columns:24px 1fr auto auto; gap:.75rem; align-items:center; padding:.55rem 1.1rem; border-bottom:1px solid var(--pala-navy-border); text-decoration:none; color:inherit; }
+.tx-row:last-child { border-bottom:0; }
+.tx-row:hover { background:rgba(255,255,255,.03); }
+.tx-row .tx-dir { font-size:.85rem; }
+.tx-row .tx-name { color:var(--pala-text); font-size:.88rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tx-row .tx-meta { color:var(--pala-muted); font-size:.72rem; margin-top:.1rem; }
+.tx-row .tx-amt { font-variant-numeric: tabular-nums; font-size:.88rem; }
+.tx-row .tx-date { color:var(--pala-muted); font-size:.72rem; font-variant-numeric: tabular-nums; min-width:64px; text-align:right; }
+
+/* Sub list rows */
+.sub-row { display:flex; align-items:center; gap:.75rem; padding:.5rem 1.1rem; border-bottom:1px solid var(--pala-navy-border); }
+.sub-row:last-child { border-bottom:0; }
+.sub-row .sub-dot { width:8px; height:8px; border-radius:50%; flex:0 0 auto; background:var(--pala-muted); }
+.sub-row .sub-dot.due-now { background:var(--pala-warning); box-shadow:0 0 0 3px rgba(240,168,74,.18); }
+.sub-row .sub-dot.due-soon { background:var(--pala-info); }
+.sub-row .sub-name { flex:1 1 auto; color:var(--pala-text); font-size:.85rem; }
+.sub-row .sub-when { color:var(--pala-muted); font-size:.74rem; min-width:64px; text-align:right; }
+.sub-row .sub-amt  { color:var(--pala-text); font-size:.85rem; font-variant-numeric: tabular-nums; min-width:62px; text-align:right; }
+
+/* Piggy rows */
+.piggy-row { padding:.6rem 0; border-bottom:1px solid var(--pala-navy-border); }
+.piggy-row:last-child { border-bottom:0; padding-bottom:0; }
+.piggy-row:first-child { padding-top:0; }
+.piggy-head { display:flex; justify-content:space-between; align-items:baseline; font-size:.85rem; margin-bottom:.3rem; }
+.piggy-head .name { color:var(--pala-text); }
+.piggy-head .vals { color:var(--pala-muted); font-size:.76rem; font-variant-numeric: tabular-nums; }
+.piggy-meta { display:flex; justify-content:space-between; font-size:.7rem; color:var(--pala-muted); margin-top:.25rem; }
+
+</style>
+</head>
+<body data-page="dashboard" data-crumbs="Home" data-period="1 May – 31 May 2026">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="grad-mint" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#3ecfb2" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#3ecfb2" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="grad-mint-spark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#3ecfb2" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#3ecfb2" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="grad-danger-spark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#e05c6a" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#e05c6a" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="grad-info-spark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#5bafd6" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#5bafd6" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<main class="pala-main">
+
+  <!-- (Net-worth hero chart removed — net worth is now a stat tile below.) -->
+  <template id="_legacy_hero_disabled">
+  <svg class="cashflow-chart" viewBox="0 0 800 240" preserveAspectRatio="none" role="img" aria-label="Net balance over time">
+            <!-- Grid + y-axis labels -->
+            <g class="cashflow-axis">
+              <line class="cashflow-grid" x1="40" x2="780" y1="30"  y2="30"/>
+              <line class="cashflow-grid" x1="40" x2="780" y1="90"  y2="90"/>
+              <line class="cashflow-grid" x1="40" x2="780" y1="150" y2="150"/>
+              <line class="cashflow-grid" x1="40" x2="780" y1="210" y2="210"/>
+              <text x="36" y="34"  text-anchor="end">€3.0k</text>
+              <text x="36" y="94"  text-anchor="end">€2.0k</text>
+              <text x="36" y="154" text-anchor="end">€1.0k</text>
+              <text x="36" y="214" text-anchor="end">€0</text>
+            </g>
+
+            <!-- X-axis labels (week ticks) -->
+            <g class="cashflow-axis">
+              <text x="40"  y="232" text-anchor="middle">May 1</text>
+              <text x="225" y="232" text-anchor="middle">May 8</text>
+              <text x="410" y="232" text-anchor="middle">May 15</text>
+              <text x="595" y="232" text-anchor="middle">May 22</text>
+              <text x="780" y="232" text-anchor="middle">May 29</text>
+            </g>
+
+            <!-- Area + line: starts at €98 (≈209 y), spikes to €2898 on May1 (≈42 y), descends to €1658 (≈111 y).
+                 30 daily points across x=40..780 (step ≈25.5px). y = 210 − (val/3000)*180 -->
+            <path class="cashflow-area-mint" d="
+              M 40 210
+              L 40 42
+              L 65 47 L 91 51 L 116 56 L 141 61 L 166 64
+              L 191 70 L 217 73 L 242 77 L 267 80 L 292 84
+              L 318 87 L 343 90 L 368 93 L 393 95 L 418 98
+              L 444 100 L 469 102 L 494 104 L 519 105 L 545 106
+              L 570 107 L 595 108 L 620 109 L 646 110 L 671 110
+              L 696 110 L 721 111 L 746 111 L 780 111
+              L 780 210 Z"/>
+            <path class="cashflow-line-mint" d="
+              M 40 210 L 40 42
+              L 65 47 L 91 51 L 116 56 L 141 61 L 166 64
+              L 191 70 L 217 73 L 242 77 L 267 80 L 292 84
+              L 318 87 L 343 90 L 368 93 L 393 95 L 418 98
+              L 444 100 L 469 102 L 494 104 L 519 105 L 545 106
+              L 570 107 L 595 108 L 620 109 L 646 110 L 671 110
+              L 696 110 L 721 111 L 746 111 L 780 111"/>
+
+            <!-- Markers: salary, big tx, end -->
+            <g class="cashflow-marker">
+              <circle cx="40" cy="42" r="4"/>
+              <text x="48" y="38">+€2,800 salary</text>
+            </g>
+            <g class="cashflow-marker neg">
+              <circle cx="166" cy="64" r="3.5"/>
+              <text x="172" y="60">−€280 rent</text>
+            </g>
+            <g class="cashflow-marker">
+              <circle cx="780" cy="111" r="4"/>
+              <text x="773" y="103" text-anchor="end">€1,658</text>
+            </g>
+          </svg>
+  </template>
+
+  <!-- ─── Stat tiles ─── -->
+  <div class="row g-3 mb-3">
+    <div class="col-xl col-md-6">
+      <a href="accounts.html?type=asset" class="card h-100 stat-link text-decoration-none" title="Open asset accounts"><div class="stat-card">
+        <div class="stat-eyebrow">Net worth <span class="stat-trend up" data-pala="networth-delta"><i class="fa-solid fa-arrow-trend-up"></i> +€1,559.50</span></div>
+        <div class="stat-amount" data-pala="networth">€1,658<span class="text-muted" style="font-weight:400">.30</span></div>
+        <div class="stat-meta" data-pala="networth-meta">across 2 asset accounts</div>
+        <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+          <path fill="url(#grad-mint-spark)" d="M0,30 L8,28 L18,26 L30,23 L44,20 L60,17 L78,14 L96,12 L116,10 L138,8 L160,7 L180,6 L200,5 L200,32 L0,32 Z"/>
+          <path fill="none" stroke="#3ecfb2" stroke-width="1.5" d="M0,30 L8,28 L18,26 L30,23 L44,20 L60,17 L78,14 L96,12 L116,10 L138,8 L160,7 L180,6 L200,5"/>
+        </svg>
+      </div></a>
+    </div>
+    <div class="col-xl col-md-6">
+      <a href="transactions.html?type=expense&period=may" class="card h-100 stat-link text-decoration-none" title="All expenses in May"><div class="stat-card">
+        <div class="stat-eyebrow" data-pala="spent-label">Spent · May <span class="stat-trend down" data-pala="spent-delta">−8% vs Apr</span></div>
+        <div class="stat-amount text-danger" data-pala="spent">€1,240.50</div>
+        <div class="stat-meta" data-pala="spent-meta">47 transactions</div>
+        <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+          <path fill="url(#grad-danger-spark)" d="M0,28 L8,20 L18,22 L28,16 L40,18 L52,12 L64,14 L78,8 L90,12 L104,9 L118,14 L132,11 L148,13 L164,10 L180,14 L200,11 L200,32 L0,32 Z"/>
+          <path fill="none" stroke="#e05c6a" stroke-width="1.5" d="M0,28 L8,20 L18,22 L28,16 L40,18 L52,12 L64,14 L78,8 L90,12 L104,9 L118,14 L132,11 L148,13 L164,10 L180,14 L200,11"/>
+        </svg>
+      </div></a>
+    </div>
+    <div class="col-xl col-md-6">
+      <a href="transactions.html?type=income&period=may" class="card h-100 stat-link text-decoration-none" title="All income in May"><div class="stat-card">
+        <div class="stat-eyebrow" data-pala="earned-label">Earned · May <span class="stat-trend" data-pala="earned-delta">flat vs Apr</span></div>
+        <div class="stat-amount text-success" data-pala="earned">€2,800.00</div>
+        <div class="stat-meta" data-pala="earned-meta">1 deposit</div>
+        <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+          <path fill="url(#grad-mint-spark)" d="M0,30 L20,30 L20,4 L40,4 L40,30 L80,30 L80,4 L100,4 L100,30 L140,30 L140,4 L160,4 L160,30 L200,30 L200,32 L0,32 Z"/>
+          <path fill="none" stroke="#3ecfb2" stroke-width="1.5" d="M0,30 L20,30 L20,4 L40,4 L40,30 L80,30 L80,4 L100,4 L100,30 L140,30 L140,4 L160,4 L160,30 L200,30"/>
+        </svg>
+      </div></a>
+    </div>
+    <div class="col-xl col-md-6">
+      <a href="reports.html?period=may" class="card h-100 stat-link text-decoration-none" title="Monthly savings report"><div class="stat-card">
+        <div class="stat-eyebrow" data-pala="saved-label">Saved · May <span class="stat-trend up" data-pala="saved-delta">56% rate</span></div>
+        <div class="stat-amount text-mint" data-pala="saved">€1,559.50</div>
+        <div class="stat-meta" data-pala="saved-meta">earned − spent</div>
+        <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+          <path fill="url(#grad-mint-spark)" d="M0,26 L16,28 L32,24 L48,22 L64,20 L80,16 L96,18 L112,14 L128,12 L144,10 L160,8 L176,6 L200,4 L200,32 L0,32 Z"/>
+          <path fill="none" stroke="#3ecfb2" stroke-width="1.5" d="M0,26 L16,28 L32,24 L48,22 L64,20 L80,16 L96,18 L112,14 L128,12 L144,10 L160,8 L176,6 L200,4"/>
+        </svg>
+      </div></a>
+    </div>
+    <div class="col-xl col-md-6">
+      <a href="budgets.html" class="card h-100 stat-link text-decoration-none" title="Manage budgets"><div class="stat-card">
+        <div class="stat-eyebrow" data-pala="avail-label">Available budget <span class="stat-trend" data-pala="avail-delta">3 days left</span></div>
+        <div class="stat-amount" data-pala="avail">€383<span class="text-muted" style="font-weight:400">.03</span></div>
+        <div class="stat-meta" data-pala="avail-meta">remaining of €1,340 across 8 budgets</div>
+        <svg class="stat-spark" viewBox="0 0 200 32" preserveAspectRatio="none">
+          <path fill="url(#grad-info-spark)" d="M0,4 L20,5 L40,8 L60,10 L80,13 L100,16 L120,18 L140,20 L160,23 L180,25 L200,28 L200,32 L0,32 Z"/>
+          <path fill="none" stroke="#5bafd6" stroke-width="1.5" d="M0,4 L20,5 L40,8 L60,10 L80,13 L100,16 L120,18 L140,20 L160,23 L180,25 L200,28"/>
+        </svg>
+      </div></a>
+    </div>
+  </div>
+
+  <!-- ─── Budget pacing · hero block ─── -->
+  <div class="row g-3 mb-3">
+    <div class="col-12">
+      <div class="card budget-hero">
+        <a href="budgets.html" class="card-header card-header-link d-flex justify-content-between align-items-center" title="Manage all budgets">
+          <div class="d-flex align-items-baseline gap-3">
+            <h3 class="card-title">Budgets · May</h3>
+            <span class="text-muted small">8 envelopes · €956.97 of €1,340 spent</span>
+          </div>
+          <div class="text-muted small">
+            Day 28 of 31 · expected
+            <span class="text-mint" style="font-variant-numeric:tabular-nums">90%</span>
+          </div>
+        </a>
+        <div class="card-body">
+          <div class="row g-4">
+
+            <!-- Groceries: 380/450 = 84.4%, marker 90% → -6% under -->
+            <div class="col-md-6">
+              <a href="budgets.html?budget=groceries" class="pace-row hero">
+                <div class="pace-head"><span class="name">Groceries</span><span class="vals">€380.00 / €450.00</span></div>
+                <div class="pace-track">
+                  <div class="pace-fill" style="width:84.4%"></div>
+                  <div class="pace-marker" style="left:90%" title="Day 28 of 31"></div>
+                </div>
+                <div class="pace-status">
+                  <span>€70 left · ~€23/day to spend</span>
+                  <span class="pill ok">on pace</span>
+                </div>
+                <div class="pace-cats">
+                  <a href="categories.html?cat=groceries" class="cat-chip">Groceries<span class="cat-amt">€240</span></a>
+                  <a href="categories.html?cat=fresh-market-and-butcher" class="cat-chip">Fresh Market &amp; Butcher<span class="cat-amt">€98</span></a>
+                  <a href="categories.html?cat=bakeries" class="cat-chip">Bakeries<span class="cat-amt">€42</span></a>
+                </div>
+              </a>
+            </div>
+
+            <!-- Going Out: 145/180 = 80.6%, marker 90% → on pace -->
+            <div class="col-md-6">
+              <a href="budgets.html?budget=going-out" class="pace-row hero">
+                <div class="pace-head"><span class="name">Going Out</span><span class="vals">€145.00 / €180.00</span></div>
+                <div class="pace-track">
+                  <div class="pace-fill" style="width:80.6%"></div>
+                  <div class="pace-marker" style="left:90%"></div>
+                </div>
+                <div class="pace-status">
+                  <span>€35 left · 3 days remaining</span>
+                  <span class="pill ok">on pace</span>
+                </div>
+                <div class="pace-cats">
+                  <a href="categories.html?cat=restaurants-and-cafes" class="cat-chip">Restaurants &amp; Cafes<span class="cat-amt">€145</span></a>
+                </div>
+              </a>
+            </div>
+
+            <!-- Sins: 74/60 = 123%, over -->
+            <div class="col-md-6">
+              <a href="budgets.html?budget=sins" class="pace-row hero">
+                <div class="pace-head"><span class="name">Sins</span><span class="vals">€74.00 / €60.00</span></div>
+                <div class="pace-track">
+                  <div class="pace-fill over" style="width:100%"></div>
+                  <div class="pace-marker" style="left:90%"></div>
+                </div>
+                <div class="pace-status">
+                  <span>€14 over · mostly Bars on Sat</span>
+                  <span class="pill over">over by 23%</span>
+                </div>
+                <div class="pace-cats">
+                  <a href="categories.html?cat=drinking" class="cat-chip">Drinking<span class="cat-amt">€58</span></a>
+                  <a href="categories.html?cat=smoking" class="cat-chip">Smoking<span class="cat-amt">€16</span></a>
+                </div>
+              </a>
+            </div>
+
+            <!-- Transport: 51/120 = 42.5%, marker 90% → way under -->
+            <div class="col-md-6">
+              <a href="budgets.html?budget=transport" class="pace-row hero">
+                <div class="pace-head"><span class="name">Transport</span><span class="vals">€51.00 / €120.00</span></div>
+                <div class="pace-track">
+                  <div class="pace-fill under" style="width:42.5%"></div>
+                  <div class="pace-marker" style="left:90%"></div>
+                </div>
+                <div class="pace-status">
+                  <span>€69 left · monthly pass already paid</span>
+                  <span class="pill under">−48% under pace</span>
+                </div>
+                <div class="pace-cats">
+                  <a href="categories.html?cat=public-transport" class="cat-chip">Public Transport<span class="cat-amt">€51</span></a>
+                  <a href="categories.html?cat=fuel" class="cat-chip">Fuel<span class="cat-amt">€0</span></a>
+                </div>
+              </a>
+            </div>
+
+            <!-- Subscriptions: 60.97/60 = 102%, over -->
+            <div class="col-md-6">
+              <a href="budgets.html?budget=subscriptions" class="pace-row hero">
+                <div class="pace-head"><span class="name">Subscriptions</span><span class="vals">€60.97 / €60.00</span></div>
+                <div class="pace-track">
+                  <div class="pace-fill over" style="width:100%"></div>
+                  <div class="pace-marker" style="left:90%"></div>
+                </div>
+                
+                <div class="pace-cats">
+                  <a href="categories.html?cat=subs-infrastructure" class="cat-chip">Subs — Infrastructure<span class="cat-amt">€33</span></a>
+                  <a href="categories.html?cat=subs-lifestyle" class="cat-chip">Subs — Lifestyle<span class="cat-amt">€27.97</span></a>
+                </div>
+              </a>
+            </div>
+
+            <!-- Lifestyle: 98/150 = 65.3%, on pace -->
+            <div class="col-md-6">
+              <a href="budgets.html?budget=lifestyle" class="pace-row hero">
+                <div class="pace-head"><span class="name">Lifestyle</span><span class="vals">€98.00 / €150.00</span></div>
+                <div class="pace-track">
+                  <div class="pace-fill" style="width:65.3%"></div>
+                  <div class="pace-marker" style="left:90%"></div>
+                </div>
+                <div class="pace-status">
+                  <span>€52 left · Volkstheater ticket queued</span>
+                  <span class="pill ok">on pace</span>
+                </div>
+                <div class="pace-cats">
+                  <a href="categories.html?cat=entertainment-and-culture" class="cat-chip">Entertainment &amp; Culture<span class="cat-amt">€58</span></a>
+                  <a href="categories.html?cat=sports-and-activities" class="cat-chip">Sports &amp; Activities<span class="cat-amt">€40</span></a>
+                </div>
+              </a>
+            </div>
+
+            <!-- Living: 148/200 = 74%, on pace (-16%) -->
+            <div class="col-md-6">
+              <a href="budgets.html?budget=living" class="pace-row hero">
+                <div class="pace-head"><span class="name">Living</span><span class="vals">€148.00 / €200.00</span></div>
+                <div class="pace-track">
+                  <div class="pace-fill" style="width:74%"></div>
+                  <div class="pace-marker" style="left:90%"></div>
+                </div>
+                <div class="pace-status">
+                  <span>€52 left · Health was the big line</span>
+                  <span class="pill ok">on pace</span>
+                </div>
+                <div class="pace-cats">
+                  <a href="categories.html?cat=health" class="cat-chip">Health<span class="cat-amt">€93</span></a>
+                  <a href="categories.html?cat=home-and-hardware" class="cat-chip">Home &amp; Hardware<span class="cat-amt">€42</span></a>
+                  <a href="categories.html?cat=bureaucracy" class="cat-chip">Bureaucracy<span class="cat-amt">€13</span></a>
+                </div>
+              </a>
+            </div>
+
+            <!-- Travel: 0/120 = 0%, rollover to Holiday 2026 piggy -->
+            <div class="col-md-6">
+              <a href="budgets.html?budget=travel" class="pace-row hero">
+                <div class="pace-head"><span class="name">Travel</span><span class="vals">€0.00 / €120.00</span></div>
+                <div class="pace-track">
+                  <div class="pace-fill under" style="width:0%"></div>
+                  <div class="pace-marker" style="left:90%"></div>
+                </div>
+                <div class="pace-status">
+                  <span>No spending this month</span>
+                  <span class="pill rollover"><i class="fa-solid fa-piggy-bank fa-xs"></i> rollover</span>
+                </div>
+                <div class="pace-cats">
+                  <a href="categories.html?cat=travel-and-accommodation" class="cat-chip">Travel &amp; Accommodation<span class="cat-amt">€0</span></a>
+                  <span class="rollover-note"><i class="fa-solid fa-arrow-right fa-xs"></i> €120 sweeps to <strong>Holiday 2026</strong> on Jun 1</span>
+                </div>
+              </a>
+            </div>
+
+          </div>
+        </div>
+        <div class="card-footer outside-budgets">
+          <span class="ob-label">Outside budgets</span>
+          <a href="categories.html?cat=cash-withdrawals" class="ob-chip" title="Deliberately unbudgeted — cash spending tracked by category only">
+            <i class="fa-solid fa-money-bill-wave fa-xs"></i>
+            <span class="ob-name">Cash Withdrawals</span>
+            <span class="ob-amt">€80</span>
+          </a>
+          <a href="transactions.html?filter=uncategorised" class="ob-chip needs-tag" title="4 transactions still need a category">
+            <i class="fa-solid fa-tag fa-xs"></i>
+            <span class="ob-name">Uncategorised</span>
+            <span class="ob-amt">€203.53</span>
+            <span class="ob-count">4 tx</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Spend by category + Need attention ─── -->
+  <div class="row g-3 mb-3">
+    <div class="col-xl-8">
+      <div class="card h-100">
+        <a href="categories.html" class="card-header card-header-link d-flex justify-content-between align-items-center" title="Open all categories">
+          <h3 class="card-title">Spend by category · May</h3>
+          <span class="card-header-cta">All categories <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+        <div class="card-body">
+          <div class="donut-wrap">
+            <svg class="donut-svg" viewBox="0 0 140 140" width="180" height="180" role="img" aria-label="Spend by category donut">
+              <!-- Track circle -->
+              <circle cx="70" cy="70" r="56" fill="none" stroke="var(--pala-navy)" stroke-width="22"/>
+              <!-- Segments. circumference at r=56 ≈ 351.86. Rotate -90° so start is at 12 o'clock.
+                   Groceries €240 (19.35%), Restaurants & Cafes €145 (11.69%), Fresh Market & Butcher €98 (7.90%),
+                   Health €93 (7.50%), Other €460.97 (37.16%), Uncategorised €203.53 (16.41%) -->
+              <g transform="rotate(-90 70 70)" fill="none" stroke-width="22">
+                <circle cx="70" cy="70" r="56" stroke="#3ecfb2" stroke-dasharray="68.10 351.86" stroke-dashoffset="0"/>
+                <circle cx="70" cy="70" r="56" stroke="#5bafd6" stroke-dasharray="41.13 351.86" stroke-dashoffset="-68.10"/>
+                <circle cx="70" cy="70" r="56" stroke="#f0a84a" stroke-dasharray="27.79 351.86" stroke-dashoffset="-109.23"/>
+                <circle cx="70" cy="70" r="56" stroke="#a48cd2" stroke-dasharray="26.39 351.86" stroke-dashoffset="-137.02"/>
+                <circle cx="70" cy="70" r="56" stroke="#e05c6a" stroke-dasharray="130.75 351.86" stroke-dashoffset="-163.41"/>
+                <circle cx="70" cy="70" r="56" stroke="#7a9bbf" stroke-dasharray="57.74 351.86" stroke-dashoffset="-294.16"/>
+              </g>
+              </svg>
+            <div class="donut-legend">
+              <a href="categories.html?cat=groceries" class="donut-legend-row">
+                <span class="donut-legend-swatch" style="background:#3ecfb2"></span>
+                <span class="donut-legend-name">Groceries</span>
+                <span class="donut-legend-amt">€240.00</span>
+                <span class="donut-legend-delta up">+8%</span>
+              </a>
+              <a href="categories.html?cat=restaurants-cafes" class="donut-legend-row">
+                <span class="donut-legend-swatch" style="background:#5bafd6"></span>
+                <span class="donut-legend-name">Restaurants &amp; Cafes</span>
+                <span class="donut-legend-amt">€145.00</span>
+                <span class="donut-legend-delta up">+24%</span>
+              </a>
+              <a href="categories.html?cat=fresh-market-butcher" class="donut-legend-row">
+                <span class="donut-legend-swatch" style="background:#f0a84a"></span>
+                <span class="donut-legend-name">Fresh Market &amp; Butcher</span>
+                <span class="donut-legend-amt">€98.00</span>
+                <span class="donut-legend-delta up">+5%</span>
+              </a>
+              <a href="categories.html?cat=health" class="donut-legend-row">
+                <span class="donut-legend-swatch" style="background:#a48cd2"></span>
+                <span class="donut-legend-name">Health</span>
+                <span class="donut-legend-amt">€93.00</span>
+                <span class="donut-legend-delta down">−6%</span>
+              </a>
+              <a href="categories.html?cat=all" class="donut-legend-row">
+                <span class="donut-legend-swatch" style="background:#e05c6a"></span>
+                <span class="donut-legend-name">11 other categories</span>
+                <span class="donut-legend-amt">€460.97</span>
+                <span class="donut-legend-delta">—</span>
+              </a>
+              <a href="transactions.html?filter=uncategorised" class="donut-legend-row">
+                <span class="donut-legend-swatch" style="background:#7a9bbf"></span>
+                <span class="donut-legend-name">Uncategorised <a href="transactions.html?filter=uncategorised" class="flag info" title="4 transactions need a category"><i class="fa-solid fa-tag"></i> 4 to tag</a></span>
+                <span class="donut-legend-amt">€203.53</span>
+                <span class="donut-legend-delta">—</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title">Needs attention</h3>
+          <span class="text-muted small">4 items</span>
+        </div>
+        <div class="card-body p-0">
+          <a href="transactions.html?filter=uncategorised" class="attention-row">
+            <div class="attention-icon warn"><i class="fa-solid fa-question"></i></div>
+            <div class="attention-body">
+              <div class="attention-title">4 transactions need a category</div>
+              <div class="attention-meta">€118.40 · oldest from May 12</div>
+            </div>
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+          <a href="bills.html" class="attention-row">
+            <div class="attention-icon danger"><i class="fa-solid fa-clock"></i></div>
+            <div class="attention-body">
+              <div class="attention-title">A1 Mobile is due today</div>
+              <div class="attention-meta">~€29.99 · bill not yet matched</div>
+            </div>
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+          <a href="rules.html" class="attention-row">
+            <div class="attention-icon info"><i class="fa-solid fa-shuffle"></i></div>
+            <div class="attention-body">
+              <div class="attention-title">Rule "Auto-tag SEPA" hasn't fired in 47 days</div>
+              <div class="attention-meta">Possibly stale · review trigger</div>
+            </div>
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+          <a href="account-show.html" class="attention-row">
+            <div class="attention-icon mint"><i class="fa-solid fa-scale-balanced"></i></div>
+            <div class="attention-body">
+              <div class="attention-title">Erste Giro is €2.40 off reconciled balance</div>
+              <div class="attention-meta">Last reconciled May 16</div>
+            </div>
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Recent + Subs + Piggy ─── -->
+  <div class="row g-3">
+    <div class="col-xl-7">
+      <div class="card h-100">
+        <a href="transactions.html" class="card-header card-header-link d-flex justify-content-between align-items-center" title="Open transactions">
+          <h3 class="card-title">Recent transactions</h3>
+          <span class="card-header-cta">See all <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+        <div class="card-body p-0">
+          <a href="account-show.html?account=erste-sparziel" class="tx-row">
+            <i class="fa-solid fa-piggy-bank text-info tx-dir"></i>
+            <div>
+              <div class="tx-name">Sparauftrag → Holiday 2026 <span class="flag mint" title="Real money moved between bank accounts at Erste · reconciled May 30"><i class="fa-solid fa-building-columns"></i> Bank-executed</span></div>
+              <div class="tx-meta">Transfer · Erste Giro → Erste Sparziel · Piggy: Holiday 2026</div>
+            </div>
+            <span class="tx-amt text-info">€50.00</span>
+            <span class="tx-date">May 30</span>
+          </a>
+          <a href="account-show.html" class="tx-row">
+            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
+            <div>
+              <div class="tx-name">PAYPAL *DIGISTORE24 <span class="flag warn" title="Click to assign a category"><i class="fa-solid fa-tag"></i> Needs category</span></div>
+              <div class="tx-meta">Uncategorised · Erste Giro</div>
+            </div>
+            <span class="tx-amt text-danger">−€39.00</span>
+            <span class="tx-date">May 28</span>
+          </a>
+          <a href="account-show.html" class="tx-row">
+            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
+            <div>
+              <div class="tx-name">Billa Supermarkt</div>
+              <div class="tx-meta">Groceries · Erste Giro</div>
+            </div>
+            <span class="tx-amt text-danger">−€42.30</span>
+            <span class="tx-date">May 28</span>
+          </a>
+          <a href="account-show.html" class="tx-row">
+            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
+            <div>
+              <div class="tx-name">U-Bahn Monatskarte</div>
+              <div class="tx-meta">Public Transport · Erste Giro</div>
+            </div>
+            <span class="tx-amt text-danger">−€51.00</span>
+            <span class="tx-date">May 27</span>
+          </a>
+          <a href="account-show.html" class="tx-row">
+            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
+            <div>
+              <div class="tx-name">Netflix</div>
+              <div class="tx-meta">Subs — Lifestyle · Visa</div>
+            </div>
+            <span class="tx-amt text-danger">−€17.99</span>
+            <span class="tx-date">May 25</span>
+          </a>
+          <a href="account-show.html" class="tx-row">
+            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
+            <div>
+              <div class="tx-name">Apotheke Wien Mitte</div>
+              <div class="tx-meta">Health · Erste Giro</div>
+            </div>
+            <span class="tx-amt text-danger">−€12.80</span>
+            <span class="tx-date">May 24</span>
+          </a>
+          <a href="account-show.html" class="tx-row">
+            <i class="fa-solid fa-arrows-rotate text-info tx-dir"></i>
+            <div>
+              <div class="tx-name">Erste Giro → Holiday 2026 <span class="flag mint" title="Real money moved between bank accounts at Erste"><i class="fa-solid fa-building-columns"></i> Bank-executed</span></div>
+              <div class="tx-meta">Transfer · Piggy bank top-up</div>
+            </div>
+            <span class="tx-amt text-info">€80.00</span>
+            <span class="tx-date">May 15</span>
+          </a>
+          <a href="account-show.html" class="tx-row">
+            <i class="fa-solid fa-arrow-right text-success tx-dir"></i>
+            <div>
+              <div class="tx-name">Gehalt Mai</div>
+              <div class="tx-meta">Salary · ACME GmbH → Erste Giro</div>
+            </div>
+            <span class="tx-amt text-success">+€2,800.00</span>
+            <span class="tx-date">May 1</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-5">
+      <div class="card mb-3">
+        <a href="bills.html" class="card-header card-header-link d-flex justify-content-between align-items-center" title="Open subscriptions / bills">
+          <h3 class="card-title">Subscriptions due</h3>
+          <span class="card-header-cta">All <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+        <div class="card-body p-0">
+          <a href="bills.html?bill=a1-mobile" class="sub-row">
+            <span class="sub-dot due-now"></span>
+            <span class="sub-name">A1 Mobile</span>
+            <span class="sub-when">today</span>
+            <span class="sub-amt">~€29.99</span>
+          </a>
+          <a href="bills.html?bill=netflix" class="sub-row">
+            <span class="sub-dot due-soon"></span>
+            <span class="sub-name">Netflix</span>
+            <span class="sub-when">in 3 days</span>
+            <span class="sub-amt">~€17.99</span>
+          </a>
+          <a href="bills.html?bill=spotify" class="sub-row">
+            <span class="sub-dot due-soon"></span>
+            <span class="sub-name">Spotify</span>
+            <span class="sub-when">in 5 days</span>
+            <span class="sub-amt">~€11.99</span>
+          </a>
+          <a href="bills.html?bill=icloud-plus" class="sub-row">
+            <span class="sub-dot"></span>
+            <span class="sub-name">iCloud+</span>
+            <span class="sub-when">in 17 days</span>
+            <span class="sub-amt">~€2.99</span>
+          </a>
+        </div>
+        <div class="card-footer d-flex justify-content-between text-muted small">
+          <span>Next 30 days · 4 bills</span>
+          <span class="text-text">~€62.96</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <a href="piggy.html" class="card-header card-header-link d-flex justify-content-between align-items-center" title="Open piggy banks">
+          <h3 class="card-title">Piggy banks</h3>
+          <span class="card-header-cta">All <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+        <div class="card-body">
+          <a href="piggy.html?piggy=emergency-fund" class="piggy-row">
+            <div class="piggy-head"><span class="name">Emergency fund</span><span class="vals">€1,200 / €2,000</span></div>
+            <div class="pace-track"><div class="pace-fill" style="width:60%"></div></div>
+            <div class="piggy-meta"><span>60% funded</span><span>~€100/mo to hit Dec 2026</span></div>
+          </a>
+          <a href="piggy.html?piggy=holiday-2026" class="piggy-row">
+            <div class="piggy-head"><span class="name">Holiday 2026</span><span class="vals">€234 / €500</span></div>
+            <div class="pace-track"><div class="pace-fill under" style="width:46.8%"></div></div>
+            <div class="piggy-meta"><span>47% funded</span><span>auto-saving €80/mo</span></div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ── Firefly III · Pala — shared chrome (sidebar + navbar) ──────────────
+   Each page sets:
+     <body data-page="transactions" data-crumbs="Home/Withdrawals" data-period="1 May – 31 May 2026">
+   data-crumbs is "/"-separated; last segment is rendered as active.
+   data-period is optional — omit to hide the period badge.
+   data-sub is optional — sets the active sub-link inside its parent group.
+*/
+(function () {
+  const NAV = [
+    { header: "Financial Control" },
+    { key: "dashboard",  icon: "fa-solid fa-gauge-high",        label: "Dashboard",     href: "index.html" },
+    { key: "budgets",    icon: "fa-solid fa-chart-pie",         label: "Budgets",       href: "budgets.html" },
+    { key: "bills",      icon: "fa-regular fa-calendar",        label: "Subscriptions", href: "bills.html" },
+    { key: "piggy",      icon: "fa-solid fa-piggy-bank",        label: "Piggy Banks",   href: "piggy.html" },
+
+    { header: "Accounting" },
+    { key: "transactions", icon: "fa-solid fa-arrow-right-arrow-left", label: "Transactions", href: "transactions.html",
+      sub: [
+        { key: "expenses",  icon: "fa-solid fa-arrow-left text-danger",       label: "Expenses",  href: "transactions.html?type=expenses" },
+        { key: "income",    icon: "fa-solid fa-arrow-right text-success",     label: "Income",    href: "transactions.html?type=income" },
+        { key: "transfers", icon: "fa-solid fa-arrows-rotate text-info",      label: "Transfers", href: "transactions.html?type=transfers" },
+        { key: "all",       icon: "fa-solid fa-arrows-turn-to-dots",          label: "All",       href: "transactions.html?type=all" },
+      ] },
+    { key: "automation", icon: "fa-solid fa-microchip", label: "Automation", expanded: true,
+      sub: [
+        { key: "rules",     icon: "fa-solid fa-shuffle",  label: "Rules",     href: "rules.html" },
+        { key: "recurring", icon: "fa-solid fa-repeat",   label: "Recurring", href: "recurring.html" },
+      ] },
+
+    { header: "Others" },
+    { key: "accounts", icon: "fa-regular fa-credit-card", label: "Accounts", href: "accounts.html",
+      sub: [
+        { key: "asset",       icon: "fa-solid fa-money-bills",           label: "Asset",       href: "accounts.html?type=asset" },
+        { key: "expense",     icon: "fa-solid fa-cart-shopping",         label: "Expense",     href: "accounts.html?type=expense" },
+        { key: "revenue",     icon: "fa-solid fa-money-bill-trend-up",   label: "Revenue",     href: "accounts.html?type=revenue" },
+        { key: "liabilities", icon: "fa-solid fa-landmark",              label: "Liabilities", href: "accounts.html?type=liabilities" },
+      ] },
+    { key: "classification", icon: "fa-solid fa-tags", label: "Classification", expanded: true,
+      sub: [
+        { key: "categories", icon: "fa-regular fa-bookmark", label: "Categories", href: "categories.html" },
+        { key: "tags",       icon: "fa-solid fa-tag",        label: "Tags",       href: "tags.html" },
+      ] },
+    { key: "reports", icon: "fa-solid fa-chart-column",         label: "Reports", href: "reports.html" },
+    { key: "search",  icon: "fa-solid fa-magnifying-glass",     label: "Search",  href: "search.html" },
+    { key: "export",  icon: "fa-solid fa-upload",               label: "Export",  href: "#" },
+
+    { divider: true },
+    { key: "profile",     icon: "fa-solid fa-user-gear",  label: "Profile",     href: "profile.html" },
+    { key: "preferences", icon: "fa-solid fa-sliders",    label: "Preferences", href: "preferences.html" },
+    { key: "logout",      icon: "fa-solid fa-arrow-right-from-bracket", label: "Logout", href: "#" },
+  ];
+
+  const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+
+  function renderSidebar(activePage, activeSub) {
+    const parts = ['<div class="brand"><i class="fa-solid fa-fire-flame-curved me-2"></i>Firefly III</div>'];
+    for (const item of NAV) {
+      if (item.header)  { parts.push(`<div class="nav-header">${escapeHtml(item.header)}</div>`); continue; }
+      if (item.divider) { parts.push('<hr style="border-color:var(--pala-navy-border);margin:0.6rem 0">'); continue; }
+
+      const isActive = item.key === activePage;
+      const cls = "nav-link" + (isActive ? " active" : "");
+      const chev = item.sub ? '<i class="fa-solid fa-chevron-down ms-auto fa-xs"></i>' : "";
+      parts.push(`<a href="${item.href || "#"}" class="${cls}"><i class="${item.icon}"></i> ${escapeHtml(item.label)}${chev}</a>`);
+
+      if (item.sub) {
+        const showSub = isActive || item.expanded;
+        if (showSub) {
+          parts.push('<div class="nav-sub">');
+          for (const s of item.sub) {
+            const sActive = (isActive && s.key === activeSub) ? " active" : "";
+            parts.push(`<a href="${s.href}" class="nav-link${sActive}"><i class="${s.icon}"></i> ${escapeHtml(s.label)}</a>`);
+          }
+          parts.push('</div>');
+        }
+      }
+    }
+    return `<aside class="pala-sidebar">${parts.join("")}</aside>`;
+  }
+
+  function renderNavbar(crumbs, period) {
+    const segs = (crumbs || "").split("/").filter(Boolean);
+    const last = segs.pop();
+    const olItems = segs.map(s => `<li class="breadcrumb-item"><a href="#">${escapeHtml(s)}</a></li>`).join("");
+    const activeItem = last ? `<li class="breadcrumb-item active">${escapeHtml(last)}</li>` : "";
+    const periodHtml = period
+      ? `<div class="period-badge"><a href="#"><i class="fa-solid fa-chevron-left fa-xs"></i></a><span>${escapeHtml(period)}</span><a href="#"><i class="fa-solid fa-chevron-right fa-xs"></i></a></div>`
+      : "";
+    return `<nav class="pala-navbar"><ol class="breadcrumb">${olItems}${activeItem}</ol>${periodHtml}</nav>`;
+  }
+
+  function inject() {
+    const body = document.body;
+    const page = body.dataset.page || "";
+    const sub  = body.dataset.sub  || "";
+    const crumbs = body.dataset.crumbs || "";
+    const period = body.dataset.period || "";
+
+    body.insertAdjacentHTML("afterbegin", renderSidebar(page, sub));
+    const main = document.querySelector("main.pala-main");
+    if (main) main.insertAdjacentHTML("beforebegin", renderNavbar(crumbs, period));
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", inject);
+  } else {
+    inject();
+  }
+})();
+
+/* Period pills toggle */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.period-pills button');
+  if (!btn) return;
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+});
+</script>
+<!-- ── Pala live data layer (pass 2) ──────────────────────────────────
+     Hydrates the 4 stat tiles + period badge from the live Firefly API.
+     Auth: pastes a Personal Access Token into localStorage on first load.
+     Origin: assumes the page is served from the SAME origin as Firefly
+     (typically Firefly's own public/pala/index.html). If you open this
+     file via file:// the fetches will CORS-fail — that's expected. -->
+<div id="pala-setup-modal" style="display:none;position:fixed;inset:0;background:rgba(15,27,45,.85);z-index:9999;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">
+  <div style="background:var(--pala-navy-card);border:1px solid var(--pala-navy-border);border-radius:6px;padding:1.5rem 1.75rem;max-width:480px;width:90%;">
+    <div style="color:var(--pala-mint);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;">Pala dashboard · setup</div>
+    <div style="font-family:'Crimson Pro',serif;font-size:1.4rem;color:var(--pala-text);margin-bottom:.85rem;">Paste your Firefly III token</div>
+    <p style="color:var(--pala-muted);font-size:.85rem;margin-bottom:1rem;">Stored in your browser's localStorage. Get one from Firefly → Profile → OAuth → Personal Access Tokens, or use the value from your <code style="color:var(--pala-mint)">FIREFLY_ACCESS_TOKEN</code> env var.</p>
+    <input id="pala-pat-input" type="password" placeholder="eyJ0eXAi…" style="width:100%;padding:.55rem .75rem;background:var(--pala-navy);border:1px solid var(--pala-navy-border);border-radius:3px;color:var(--pala-text);font-family:monospace;font-size:.78rem;margin-bottom:.65rem;">
+    <input id="pala-url-input" type="text" placeholder="http://localhost:7076" value="" style="width:100%;padding:.55rem .75rem;background:var(--pala-navy);border:1px solid var(--pala-navy-border);border-radius:3px;color:var(--pala-text);font-family:monospace;font-size:.78rem;margin-bottom:.85rem;">
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+      <button id="pala-setup-clear" style="background:transparent;border:1px solid var(--pala-navy-border);color:var(--pala-muted);padding:.4rem .9rem;border-radius:3px;font-size:.82rem;cursor:pointer;">Cancel</button>
+      <button id="pala-setup-save" style="background:var(--pala-mint);border:0;color:#0f1b2d;padding:.4rem 1rem;border-radius:3px;font-size:.82rem;font-weight:500;cursor:pointer;">Connect</button>
+    </div>
+  </div>
+</div>
+<div id="pala-live-banner" style="display:none;position:fixed;bottom:14px;right:14px;z-index:9998;background:var(--pala-navy-card);border:1px solid var(--pala-navy-border);border-radius:3px;padding:.4rem .75rem;font-size:.72rem;color:var(--pala-muted);font-family:'Inter',sans-serif;">
+  <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--pala-mint);margin-right:.4rem;vertical-align:middle;"></span><span id="pala-live-status">connecting…</span>
+  <button id="pala-disconnect" style="background:transparent;border:0;color:var(--pala-muted);font-size:.7rem;margin-left:.5rem;cursor:pointer;" title="disconnect">✕</button>
+</div>
+<script>
+(function() {
+  const LS_PAT = 'pala_pat';
+  const LS_URL = 'pala_url';
+  const DEFAULT_URL = (location.protocol === 'http:' || location.protocol === 'https:')
+    ? location.origin
+    : 'http://localhost:7076';
+
+  const fmtEUR = n => '€' + Math.round(n).toLocaleString('en-US');
+  const fmtEURc = n => {
+    const s = (Math.abs(n)).toFixed(2);
+    const [whole, cents] = s.split('.');
+    const sign = n < 0 ? '−' : '';
+    return sign + '€' + Number(whole).toLocaleString('en-US') + '<span class="text-muted" style="font-weight:400">.' + cents + '</span>';
+  };
+  const $$ = sel => document.querySelectorAll(sel);
+  const $  = sel => document.querySelector(sel);
+
+  function setText(selector, html) {
+    const el = $(selector);
+    if (el) el.innerHTML = html;
+  }
+
+  function showSetup() {
+    $('#pala-url-input').value = localStorage.getItem(LS_URL) || DEFAULT_URL;
+    $('#pala-pat-input').value = localStorage.getItem(LS_PAT) || '';
+    $('#pala-setup-modal').style.display = 'flex';
+  }
+  function hideSetup() { $('#pala-setup-modal').style.display = 'none'; }
+
+  $('#pala-setup-save').addEventListener('click', () => {
+    const pat = $('#pala-pat-input').value.trim();
+    const url = $('#pala-url-input').value.trim().replace(/\/$/, '');
+    if (!pat) return;
+    localStorage.setItem(LS_PAT, pat);
+    localStorage.setItem(LS_URL, url || DEFAULT_URL);
+    hideSetup();
+    boot();
+  });
+  $('#pala-setup-clear').addEventListener('click', hideSetup);
+  $('#pala-disconnect').addEventListener('click', () => {
+    localStorage.removeItem(LS_PAT);
+    location.reload();
+  });
+
+  async function api(path) {
+    const base = localStorage.getItem(LS_URL) || DEFAULT_URL;
+    const pat  = localStorage.getItem(LS_PAT);
+    const r = await fetch(base + '/api/v1' + path, {
+      headers: { 'Authorization': 'Bearer ' + pat, 'Accept': 'application/vnd.api+json' },
+    });
+    if (!r.ok) throw new Error(path + ' → ' + r.status);
+    return r.json();
+  }
+
+  function monthBounds(d = new Date()) {
+    const y = d.getFullYear(), m = d.getMonth();
+    const start = new Date(y, m, 1);
+    const end   = new Date(y, m + 1, 0);
+    const iso = x => x.toISOString().slice(0, 10);
+    return { start: iso(start), end: iso(end) };
+  }
+
+  function monthLabel(d = new Date()) {
+    return d.toLocaleString('en-US', { month: 'short' });
+  }
+
+  function periodLabel(start, end) {
+    const s = new Date(start), e = new Date(end);
+    const month = e.toLocaleString('en-US', { month: 'long' });
+    return s.getDate() + ' – ' + e.getDate() + ' ' + month + ' ' + e.getFullYear();
+  }
+
+  async function hydrate() {
+    const status = $('#pala-live-status');
+    const banner = $('#pala-live-banner');
+    banner.style.display = 'block';
+    status.textContent = 'fetching summary…';
+
+    const { start, end } = monthBounds();
+    // /summary/basic returns a dict keyed by 'balance-in-CURRENCY', 'spent-in-CURRENCY', 'earned-in-CURRENCY', 'net-worth-in-CURRENCY', 'bills-paid-in-CURRENCY', 'bills-unpaid-in-CURRENCY'
+    const sum = await api(`/summary/basic?start=${start}&end=${end}`);
+
+    let netWorth = 0, spent = 0, earned = 0;
+    for (const k of Object.keys(sum)) {
+      if (k.startsWith('net-worth-in-')) netWorth = parseFloat(sum[k].monetary_value);
+      else if (k.startsWith('spent-in-'))  spent    = Math.abs(parseFloat(sum[k].monetary_value));
+      else if (k.startsWith('earned-in-')) earned   = parseFloat(sum[k].monetary_value);
+    }
+    const saved = earned - spent;
+    const savingsRate = earned > 0 ? Math.round((saved / earned) * 100) : 0;
+
+    setText('[data-pala="networth"]', fmtEURc(netWorth));
+    setText('[data-pala="spent"]',    '€' + spent.toFixed(2));
+    setText('[data-pala="earned"]',   '€' + earned.toFixed(2));
+    setText('[data-pala="saved"]',    '€' + saved.toFixed(2));
+
+    // labels / metas
+    const mlabel = monthLabel();
+    setText('[data-pala="spent-label"]',  `Spent · ${mlabel}`);
+    setText('[data-pala="earned-label"]', `Earned · ${mlabel}`);
+    setText('[data-pala="saved-label"]',  `Saved · ${mlabel} <span class="stat-trend up">${savingsRate}% rate</span>`);
+    setText('[data-pala="networth-delta"]', '');
+    setText('[data-pala="spent-delta"]',    '');
+    setText('[data-pala="earned-delta"]',   '');
+
+    // available-budget across all budgets for this period
+    status.textContent = 'fetching budgets…';
+    try {
+      const budgets = await api(`/budgets?start=${start}&end=${end}`);
+      let budgeted = 0, budSpent = 0;
+      for (const b of budgets.data) {
+        const a = b.attributes || {};
+        if (Array.isArray(a.spent)) for (const s of a.spent) budSpent += Math.abs(parseFloat(s.sum) || 0);
+        if (Array.isArray(a.auto_budget_amount)) {
+          // newer API
+        }
+        if (a.auto_budget_amount) budgeted += parseFloat(a.auto_budget_amount);
+      }
+      const avail = Math.max(0, budgeted - budSpent);
+      setText('[data-pala="avail"]', fmtEURc(avail));
+      setText('[data-pala="avail-meta"]', `remaining of ${fmtEUR(budgeted)} across ${budgets.data.length} budgets`);
+      const daysLeft = (new Date(end) - new Date()) / 86400000 | 0;
+      setText('[data-pala="avail-label"]', `Available budget <span class="stat-trend">${Math.max(0, daysLeft)} days left</span>`);
+    } catch (e) {
+      console.warn('budget fetch failed', e);
+    }
+
+    // update period badge in the navbar
+    const body = document.body;
+    body.setAttribute('data-period', periodLabel(start, end));
+    const periodEl = document.querySelector('[data-crumbs-period]') || document.querySelector('.period-badge');
+    if (periodEl) periodEl.textContent = periodLabel(start, end);
+
+    status.textContent = '✓ live';
+    setTimeout(() => { status.textContent = 'live · ' + (new Date()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }, 1200);
+  }
+
+  async function boot() {
+    if (!localStorage.getItem(LS_PAT)) { showSetup(); return; }
+    try {
+      await hydrate();
+    } catch (e) {
+      console.error('pala live data failed:', e);
+      $('#pala-live-banner').style.display = 'block';
+      $('#pala-live-status').textContent = '⚠ ' + e.message + ' — click ✕ to re-enter token';
+    }
+  }
+
+  // expose for console debugging
+  window.palaReconnect = showSetup;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>

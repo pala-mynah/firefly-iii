@@ -81,7 +81,7 @@ final class IndexController extends Controller
         }
 
         $subTitleIcon  = config('firefly.transactionIconsByType.'.$objectType);
-        $types         = config('firefly.transactionTypesByType.'.$objectType);
+        $types         = config('firefly.transactionTypesByType.'.$objectType) ?? ['Withdrawal', 'Deposit', 'Transfer'];
         $page          = (int) $request->get('page');
         $pageSize      = (int) Preferences::get('listPageSize', 50)->data;
 
@@ -98,7 +98,9 @@ final class IndexController extends Controller
         [$start, $end] = $end < $start ? [$end, $start] : [$start, $end];
         $startStr      = $start->isoFormat($this->monthAndDayFormat);
         $endStr        = $end->isoFormat($this->monthAndDayFormat);
-        $subTitle      = (string) trans(sprintf('firefly.title_%s_between', $objectType), ['start' => $startStr, 'end' => $endStr]);
+        $subTitle      = 'all' === $objectType
+            ? (string) trans('firefly.all_transactions')
+            : (string) trans(sprintf('firefly.title_%s_between', $objectType), ['start' => $startStr, 'end' => $endStr]);
         $path          = route('transactions.index', [$objectType, $start->format('Y-m-d'), $end->format('Y-m-d')]);
         $firstJournal  = $this->repository->firstNull();
         $startPeriod   = $firstJournal instanceof TransactionJournal ? $firstJournal->date : new Carbon();
@@ -110,7 +112,9 @@ final class IndexController extends Controller
             $startPeriod = now()->subYears($max);
         }
 
-        $periods       = $this->getTransactionPeriodOverview($objectType, $startPeriod, $endPeriod);
+        $periods       = 'all' !== $objectType
+            ? $this->getTransactionPeriodOverview($objectType, $startPeriod, $endPeriod)
+            : [];
 
         /** @var GroupCollectorInterface $collector */
         $collector     = app(GroupCollectorInterface::class);
