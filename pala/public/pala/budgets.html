@@ -54,22 +54,41 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 .text-warning { color:var(--pala-warning)!important; } .text-info{color:var(--pala-info)!important;}
 .text-muted   { color:var(--pala-muted)!important; }   .text-mint{color:var(--pala-mint)!important;}
 
-/* ── Day-N cumulative chart (shown when focus=spent) ──────────────── */
-.dayn-wrap { padding:1.25rem 1.25rem 1rem; position:relative; }
-.dayn-yaxis { position:absolute; left:.5rem; top:1.25rem; bottom:2.5rem; width:3rem; display:flex; flex-direction:column; justify-content:space-between; font-size:.65rem; color:var(--pala-muted); text-align:right; padding-right:.4rem; pointer-events:none; }
-.dayn-grid { margin-left:3.5rem; height:240px; position:relative; border-bottom:1px solid var(--pala-navy-border); }
-.dayn-avgline { position:absolute; left:0; right:0; border-top:1px dashed var(--pala-mint); pointer-events:none; }
-.dayn-avgline span { position:absolute; right:0; top:-.85rem; font-size:.65rem; color:var(--pala-mint); background:var(--pala-navy-card); padding:0 .3rem; }
-.dayn-bars { display:grid; grid-template-columns:repeat(12, 1fr); gap:.45rem; height:100%; align-items:end; padding-bottom:0; }
-.dayn-col { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; position:relative; }
-.dayn-col .v { position:absolute; bottom:100%; margin-bottom:.25rem; font-size:.6rem; color:var(--pala-muted); white-space:nowrap; opacity:0; transition:opacity .15s; }
-.dayn-col:hover .v, .dayn-col.current .v { opacity:1; color:var(--pala-mint); }
-.dayn-bar { width:100%; max-width:38px; background:linear-gradient(180deg, var(--pala-info) 0%, rgba(76,167,224,.5) 100%); border-radius:3px 3px 0 0; transition:opacity .15s; }
-.dayn-bar.over { background:linear-gradient(180deg, var(--pala-danger) 0%, rgba(255,107,107,.5) 100%); }
-.dayn-bar.under { background:linear-gradient(180deg, #4a6480 0%, rgba(74,100,128,.4) 100%); }
-.dayn-bar.current { background:linear-gradient(180deg, var(--pala-mint) 0%, rgba(62,207,178,.6) 100%); box-shadow:0 0 12px rgba(62,207,178,.4); }
-.dayn-col:hover .dayn-bar { opacity:.85; }
-.dayn-labels { display:grid; grid-template-columns:repeat(12, 1fr); gap:.45rem; margin-top:.5rem; font-size:.7rem; color:var(--pala-muted); text-align:center; }
+/* ── Historic chart modes (Total + Day-N) live inside .history-wrap ── */
+.history-month .euro { position:absolute; bottom:1.2rem; left:50%; transform:translateX(-50%); font-size:.6rem; color:var(--pala-text); opacity:0; transition:opacity .12s ease; font-variant-numeric:tabular-nums; pointer-events:none; white-space:nowrap; }
+.history-month:hover .euro { opacity:.9; }
+.history-month .nodata { position:absolute; bottom:0; left:0; right:0; height:3px; background:repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 4px, transparent 4px 8px); border-radius:2px; opacity:0; }
+.history-bars { position:relative; }
+.history-avgline { position:absolute; left:0; right:0; border-top:1px dashed var(--pala-mint); pointer-events:none; opacity:0; transition:opacity .15s; }
+.history-avgline span { position:absolute; right:0; top:-.8rem; font-size:.62rem; color:var(--pala-mint); background:var(--pala-navy-card); padding:0 .3rem; }
+
+/* Mode: % used / € per-envelope — live wiring TBD, hide mocked segments so we don’t flash crumbs */
+.history-wrap.mode-pct .history-seg,
+.history-wrap.mode-eur .history-seg { display:none; }
+
+/* Mode: Total budgeted — flatten segments into one mint bar */
+.history-wrap.mode-total .history-seg { display:none; }
+.history-wrap.mode-total .history-stack { background:linear-gradient(180deg, var(--pala-mint) 0%, rgba(62,207,178,.55) 100%); border-radius:3px 3px 0 0; }
+.history-wrap.mode-total .history-month.current .history-stack { box-shadow:0 0 12px rgba(62,207,178,.35); }
+.history-wrap.mode-total .history-month .pct { display:none; }
+.history-wrap.mode-total .history-month .euro { opacity:.85; }
+.history-wrap.mode-total .history-bars::after { display:none; }
+
+/* Mode: Day-N cumulative — flatten segments into one info-blue bar, current=mint, over=red, under=grey */
+.history-wrap.mode-dayn .history-seg { display:none; }
+.history-wrap.mode-dayn .history-stack { background:linear-gradient(180deg, var(--pala-info) 0%, rgba(76,167,224,.5) 100%); border-radius:3px 3px 0 0; }
+.history-wrap.mode-dayn .history-month.over .history-stack { background:linear-gradient(180deg, var(--pala-danger) 0%, rgba(255,107,107,.5) 100%); }
+.history-wrap.mode-dayn .history-month.under .history-stack { background:linear-gradient(180deg, #4a6480 0%, rgba(74,100,128,.4) 100%); }
+.history-wrap.mode-dayn .history-month.current .history-stack { background:linear-gradient(180deg, var(--pala-mint) 0%, rgba(62,207,178,.6) 100%); box-shadow:0 0 12px rgba(62,207,178,.35); }
+.history-wrap.mode-dayn .history-month .pct { display:none; }
+.history-wrap.mode-dayn .history-month .euro { opacity:.85; }
+.history-wrap.mode-dayn .history-avgline { opacity:1; }
+.history-wrap.mode-dayn .history-bars::after { display:none; }
+
+/* Missing month (no budget + no transactions): hide stack, show striped baseline tick */
+.history-month.nodata-month .history-stack { display:none; }
+.history-month.nodata-month .pct, .history-month.nodata-month .euro { display:none !important; }
+.history-month.nodata-month .nodata { opacity:1; }
 
 /* KPI strip */
 .kpi-card { padding:1rem 1.1rem; }
@@ -85,6 +104,11 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 .bud-link.is-watch { box-shadow:0 0 0 1px var(--pala-warn,#e0b46c), 0 8px 24px -12px rgba(224,180,108,.35) !important; border-color:var(--pala-warn,#e0b46c) !important; }
 .bud-link.is-on { box-shadow:0 0 0 1px var(--pala-mint), 0 8px 24px -12px rgba(62,207,178,.35) !important; border-color:var(--pala-mint) !important; }
 .bud-link.dim { opacity:.45; }
+/* Headroom mode: lead with "€X left" — swap text hierarchy in card head */
+.bud-link.is-headroom .bud-head .vals { display:flex; flex-direction:column; align-items:flex-end; }
+.bud-link.is-headroom .bud-head .vals .delta { order:-1; font-family:'Crimson Pro',serif; font-size:1.5rem; line-height:1; color:var(--pala-mint) !important; margin-bottom:.2rem; font-variant-numeric:tabular-nums; }
+.bud-link.is-headroom .bud-head .vals .big { font-size:.78rem; color:var(--pala-muted); font-weight:400; }
+.bud-link.is-headroom .bud-head .vals .big .text-muted { display:none; }
 .focus-banner { background:rgba(62,207,178,.08); border:1px solid rgba(62,207,178,.35); color:var(--pala-text); border-radius:8px; padding:.55rem .85rem; margin-bottom:.75rem; display:flex; align-items:center; gap:.6rem; font-size:.82rem; }
 .focus-banner .x { margin-left:auto; color:var(--pala-muted); text-decoration:none; cursor:pointer; }
 .focus-banner .x:hover { color:var(--pala-mint); }
@@ -264,7 +288,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
   <!-- Page header -->
   <div class="page-head">
     <div>
-      <h1>Budgets <span class="sub">8 envelopes · €1,340/mo</span></h1>
+      <h1>Budgets <span class="sub" id="budTitleSub">—</span></h1>
     </div>
     <div class="actions">
       <div class="bud-tabs" id="viewTabs">
@@ -284,34 +308,34 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
   <div class="row g-3 mb-3">
     <div class="col-md col-sm-6">
       <a class="card h-100 kpi-link" href="?focus=budgeted" data-focus="budgeted" style="text-decoration:none; color:inherit; display:block;"><div class="kpi-card">
-        <div class="kpi-eyebrow">Budgeted · May <i class="fa-solid fa-arrow-right kpi-arrow"></i></div>
-        <div class="kpi-amount">€1,340<span class="text-muted" style="font-weight:400">.00</span></div>
-        <div class="kpi-meta">across 8 envelopes</div>
+        <div class="kpi-eyebrow" data-k="budgeted-eyebrow">Budgeted <i class="fa-solid fa-arrow-right kpi-arrow"></i></div>
+        <div class="kpi-amount" data-k="budgeted-amount"><span class="text-muted">—</span></div>
+        <div class="kpi-meta" data-k="budgeted-meta">—</div>
       </div></a>
     </div>
     <div class="col-md col-sm-6">
       <a class="card h-100 kpi-link" href="?focus=spent" data-focus="spent" style="text-decoration:none; color:inherit; display:block;"><div class="kpi-card">
         <div class="kpi-eyebrow">Spent · so far <i class="fa-solid fa-arrow-right kpi-arrow"></i></div>
-        <div class="kpi-amount text-danger">€956.97</div>
-        <div class="kpi-meta">71% used · day 28 of 31</div>
+        <div class="kpi-amount" data-k="spent-amount"><span class="text-muted">—</span></div>
+        <div class="kpi-meta" data-k="spent-meta">—</div>
       </div></a>
     </div>
     <div class="col-md col-sm-6">
       <a class="card h-100 kpi-link" href="?focus=available" data-focus="available" style="text-decoration:none; color:inherit; display:block;"><div class="kpi-card">
         <div class="kpi-eyebrow">Available <i class="fa-solid fa-arrow-right kpi-arrow"></i></div>
-        <div class="kpi-amount text-mint">€383.03</div>
-        <div class="kpi-meta">3 days left in period</div>
+        <div class="kpi-amount text-mint" data-k="available-amount"><span class="text-muted">—</span></div>
+        <div class="kpi-meta" data-k="available-meta">—</div>
       </div></a>
     </div>
     <div class="col-md col-sm-6">
       <a class="card h-100 kpi-link" href="?focus=status" data-focus="status" style="text-decoration:none; color:inherit; display:block;"><div class="kpi-card">
         <div class="kpi-eyebrow">Status <i class="fa-solid fa-arrow-right kpi-arrow"></i></div>
         <div style="display:flex; gap:1rem; margin-top:.2rem; font-family:'Crimson Pro',serif; align-items:flex-end;">
-          <div style="display:flex; flex-direction:column; line-height:1;"><span style="font-size:1.6rem; font-weight:600; color:var(--pala-mint);">5</span><span class="text-muted" style="font-size:.62rem; text-transform:uppercase; margin-top:.15rem; white-space:nowrap;">on pace</span></div>
-          <div style="display:flex; flex-direction:column; line-height:1;"><span style="font-size:1.6rem; font-weight:600; color:var(--pala-danger);">2</span><span class="text-muted" style="font-size:.62rem; text-transform:uppercase; margin-top:.15rem; white-space:nowrap;">over</span></div>
-          <div style="display:flex; flex-direction:column; line-height:1;"><span style="font-size:1.6rem; font-weight:600; color:var(--pala-info);">1</span><span class="text-muted" style="font-size:.62rem; text-transform:uppercase; margin-top:.15rem; white-space:nowrap;">sweep</span></div>
+          <div style="display:flex; flex-direction:column; line-height:1;"><span style="font-size:1.6rem; font-weight:600; color:var(--pala-mint);" data-stat="on">—</span><span class="text-muted" style="font-size:.62rem; text-transform:uppercase; margin-top:.15rem; white-space:nowrap;">on pace</span></div>
+          <div style="display:flex; flex-direction:column; line-height:1;"><span style="font-size:1.6rem; font-weight:600; color:var(--pala-warn,#e0b46c);" data-stat="watch">—</span><span class="text-muted" style="font-size:.62rem; text-transform:uppercase; margin-top:.15rem; white-space:nowrap;">watch</span></div>
+          <div style="display:flex; flex-direction:column; line-height:1;"><span style="font-size:1.6rem; font-weight:600; color:var(--pala-danger);" data-stat="over">—</span><span class="text-muted" style="font-size:.62rem; text-transform:uppercase; margin-top:.15rem; white-space:nowrap;">over</span></div>
         </div>
-        <div class="kpi-meta">3 days left in period</div>
+        <div class="kpi-meta" data-k="status-meta">—</div>
       </div></a>
     </div>
   </div>
@@ -323,13 +347,14 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
         <h3 class="card-title">Budget pacing · last 12 months</h3>
         <span class="text-muted small">% of monthly budget used, stacked by envelope</span>
       </div>
-      <div class="bud-tabs">
-        <button class="active">% used</button>
-        <button>€ amount</button>
-        <button>vs target</button>
+      <div class="bud-tabs" id="histTabs">
+        <button data-mode="pct" title="per-envelope view — coming soon">% used</button>
+        <button data-mode="eur" title="per-envelope € — coming soon">€ per-envelope</button>
+        <button class="active" data-mode="total">Total</button>
+        <button data-mode="dayn">Day-N</button>
       </div>
     </div>
-    <div class="history-wrap">
+    <div class="history-wrap mode-total" id="histWrap">
       <div class="history-grid">
         <div class="history-yaxis">
           <span>110%</span>
@@ -345,7 +370,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Jun 2025 — 96% used; one envelope over (sins) -->
           <div class="history-month" title="Jun 2025 · 96% used (€1,286/€1,340)">
-            <div class="history-stack" style="height:87.3%">
+            <div class="history-stack">
               <!-- segments sum to 96 (out of 110). column-reverse means first listed is at the bottom. -->
               <div class="history-seg" style="height:32.3%; background:var(--bud-groceries)"   title="Groceries 31% (€420)"></div>
               <div class="history-seg" style="height:14.6%; background:var(--bud-going-out)"   title="Going Out 14%"></div>
@@ -363,7 +388,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Jul 2025 — 113% (vacation overrun) -->
           <div class="history-month" title="Jul 2025 · 113% used (€1,514/€1,340) — Italy trip">
-            <div class="history-stack" style="height:102.7%">
+            <div class="history-stack">
               <div class="history-seg" style="height:20.0%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:18.2%; background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:6.4%;  background:var(--bud-sins)"></div>
@@ -380,7 +405,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Aug 2025 — 78% (post-vacation) -->
           <div class="history-month" title="Aug 2025 · 78% used (€1,045/€1,340)">
-            <div class="history-stack" style="height:70.9%">
+            <div class="history-stack">
               <div class="history-seg" style="height:25.5%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:9.1%;  background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:3.6%;  background:var(--bud-sins)"></div>
@@ -397,7 +422,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Sep 2025 — 88% -->
           <div class="history-month" title="Sep 2025 · 88% used (€1,179/€1,340)">
-            <div class="history-stack" style="height:80.0%">
+            <div class="history-stack">
               <div class="history-seg" style="height:30.0%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:11.8%; background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:4.5%;  background:var(--bud-sins)"></div>
@@ -414,7 +439,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Oct 2025 — 102% (sins blow-up) -->
           <div class="history-month current" title="Oct 2025 · 102% used (€1,366/€1,340) — Sins +€40 over">
-            <div class="history-stack" style="height:92.7%">
+            <div class="history-stack">
               <div class="history-seg" style="height:31.8%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:14.5%; background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:9.1%;  background:var(--bud-sins)"      title="Sins 9% (over)"></div>
@@ -431,7 +456,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Nov 2025 — 91% -->
           <div class="history-month" title="Nov 2025 · 91% used (€1,219/€1,340)">
-            <div class="history-stack" style="height:82.7%">
+            <div class="history-stack">
               <div class="history-seg" style="height:30.9%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:10.9%; background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:4.5%;  background:var(--bud-sins)"></div>
@@ -448,7 +473,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Dec 2025 — 105% (Christmas) -->
           <div class="history-month" title="Dec 2025 · 105% used (€1,407/€1,340) — Christmas">
-            <div class="history-stack" style="height:95.4%">
+            <div class="history-stack">
               <div class="history-seg" style="height:36.4%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:14.5%; background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:5.5%;  background:var(--bud-sins)"></div>
@@ -465,7 +490,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Jan 2026 — 80% -->
           <div class="history-month" title="Jan 2026 · 80% used (€1,072/€1,340)">
-            <div class="history-stack" style="height:72.7%">
+            <div class="history-stack">
               <div class="history-seg" style="height:27.3%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:8.2%;  background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:3.6%;  background:var(--bud-sins)"></div>
@@ -482,7 +507,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Feb 2026 — 84% -->
           <div class="history-month" title="Feb 2026 · 84% used (€1,126/€1,340)">
-            <div class="history-stack" style="height:76.4%">
+            <div class="history-stack">
               <div class="history-seg" style="height:29.1%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:10.0%; background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:5.5%;  background:var(--bud-sins)"></div>
@@ -499,7 +524,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Mar 2026 — 87% -->
           <div class="history-month" title="Mar 2026 · 87% used (€1,166/€1,340)">
-            <div class="history-stack" style="height:79.1%">
+            <div class="history-stack">
               <div class="history-seg" style="height:30.0%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:10.9%; background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:5.5%;  background:var(--bud-sins)"></div>
@@ -516,7 +541,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- Apr 2026 — 92% -->
           <div class="history-month" title="Apr 2026 · 92% used (€1,233/€1,340)">
-            <div class="history-stack" style="height:83.6%">
+            <div class="history-stack">
               <div class="history-seg" style="height:31.8%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:11.8%; background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:5.5%;  background:var(--bud-sins)"></div>
@@ -533,7 +558,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
           <!-- May 2026 (current, partial) — 71% with 3 days left -->
           <div class="history-month current" title="May 2026 · 71% used (€956.97/€1,340) · day 28 of 31">
-            <div class="history-stack" style="height:64.5%">
+            <div class="history-stack">
               <div class="history-seg" style="height:25.7%; background:var(--bud-groceries)"></div>
               <div class="history-seg" style="height:9.8%;  background:var(--bud-going-out)"></div>
               <div class="history-seg" style="height:5.0%;  background:var(--bud-sins)"></div>
@@ -561,75 +586,6 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
       <a href="budgets.html?budget=living" class="lg-item"><span class="lg-swatch" style="background:var(--bud-living)"></span>Living<span class="lg-amt">€158/mo</span></a>
       <a href="budgets.html?budget=travel" class="lg-item"><span class="lg-swatch" style="background:var(--bud-travel)"></span>Travel<span class="lg-amt">€44/mo</span></a>
       <a href="categories.html?cat=outside" class="lg-item"><span class="lg-swatch" style="background:var(--bud-outside)"></span>Outside budgets<span class="lg-amt">€42/mo</span></a>
-    </div>
-  </div>
-
-  <!-- ─────────── BUDGETED TOTALS (shown when focus=budgeted) ─────────── -->
-  <div class="card mb-3" id="budgetedCard" style="display:none;">
-    <div class="card-header">
-      <div style="display:flex; align-items:baseline; gap:.6rem;">
-        <h3 class="card-title">Total budgeted per month</h3>
-        <span class="text-muted small">sum of all envelope allocations — no per-envelope split</span>
-      </div>
-      <span class="text-muted small budg-header-stat"><b style="color:var(--pala-mint)">€1,340</b> this month</span>
-    </div>
-    <div class="dayn-wrap">
-      <div class="dayn-yaxis budg-yaxis">
-        <span>€1,500</span><span>€1,125</span><span>€750</span><span>€375</span><span>€0</span>
-      </div>
-      <div class="dayn-grid budg-grid">
-        <div class="dayn-bars budg-bars" style="grid-template-columns:repeat(3, 1fr);">
-          <div class="dayn-col" title="Mar '26"><div class="dayn-bar" style="height:calc(100% * 1300 / 1500)"></div><span class="v">€1,300</span></div>
-          <div class="dayn-col" title="Apr '26"><div class="dayn-bar" style="height:calc(100% * 1320 / 1500)"></div><span class="v">€1,320</span></div>
-          <div class="dayn-col current" title="May '26 (current)"><div class="dayn-bar current" style="height:calc(100% * 1340 / 1500)"></div><span class="v">€1,340</span></div>
-        </div>
-        <div class="dayn-labels budg-labels" style="grid-template-columns:repeat(3, 1fr);">
-          <span>Mar</span><span>Apr</span><span class="text-mint"><b>May</b></span>
-        </div>
-      </div>
-    </div>
-    <div class="card-footer text-muted small">
-      <i class="fa-solid fa-circle-info"></i> Each bar is the total amount allocated across all envelopes for that month. Click an envelope below to see how it changed individually over time.
-    </div>
-  </div>
-
-  <!-- ─────────── DAY-N CUMULATIVE (shown when focus=spent) ─────────── -->
-  <div class="card mb-3" id="dayNCard" style="display:none;">
-    <div class="card-header">
-      <div style="display:flex; align-items:baseline; gap:.6rem;">
-        <h3 class="card-title">Spent through day 28 · same window each month</h3>
-        <span class="text-muted small">apples-to-apples comparison — cumulative spend across all envelopes by day 28 of each month</span>
-      </div>
-      <span class="text-muted small"><b style="color:var(--pala-mint)">€957</b> this month · 12-mo avg €1,015 · <span style="color:var(--pala-mint)">5.7% under</span></span>
-    </div>
-    <div class="dayn-wrap">
-      <div class="dayn-yaxis">
-        <span>€1,200</span><span>€900</span><span>€600</span><span>€300</span><span>€0</span>
-      </div>
-      <div class="dayn-grid">
-        <div class="dayn-avgline" style="bottom:calc(85% * 1015 / 1200);"><span>avg €1,015</span></div>
-        <div class="dayn-bars">
-          <div class="dayn-col" title="Jun '25 · day 28 → €1,020"><div class="dayn-bar" style="height:calc(100% * 1020 / 1200)"></div><span class="v">€1,020</span></div>
-          <div class="dayn-col" title="Jul '25 · day 28 → €1,180 (Italy)"><div class="dayn-bar over" style="height:calc(100% * 1180 / 1200)"></div><span class="v">€1,180</span></div>
-          <div class="dayn-col" title="Aug '25 · day 28 → €920"><div class="dayn-bar" style="height:calc(100% * 920 / 1200)"></div><span class="v">€920</span></div>
-          <div class="dayn-col" title="Sep '25 · day 28 → €1,015"><div class="dayn-bar" style="height:calc(100% * 1015 / 1200)"></div><span class="v">€1,015</span></div>
-          <div class="dayn-col" title="Oct '25 · day 28 → €1,090"><div class="dayn-bar" style="height:calc(100% * 1090 / 1200)"></div><span class="v">€1,090</span></div>
-          <div class="dayn-col" title="Nov '25 · day 28 → €1,005"><div class="dayn-bar" style="height:calc(100% * 1005 / 1200)"></div><span class="v">€1,005</span></div>
-          <div class="dayn-col" title="Dec '25 · day 28 → €1,185 (Christmas)"><div class="dayn-bar over" style="height:calc(100% * 1185 / 1200)"></div><span class="v">€1,185</span></div>
-          <div class="dayn-col" title="Jan '26 · day 28 → €850"><div class="dayn-bar under" style="height:calc(100% * 850 / 1200)"></div><span class="v">€850</span></div>
-          <div class="dayn-col" title="Feb '26 · day 28 → €945"><div class="dayn-bar" style="height:calc(100% * 945 / 1200)"></div><span class="v">€945</span></div>
-          <div class="dayn-col" title="Mar '26 · day 28 → €1,020"><div class="dayn-bar" style="height:calc(100% * 1020 / 1200)"></div><span class="v">€1,020</span></div>
-          <div class="dayn-col" title="Apr '26 · day 28 → €990"><div class="dayn-bar" style="height:calc(100% * 990 / 1200)"></div><span class="v">€990</span></div>
-          <div class="dayn-col current" title="May '26 · day 28 → €957 (today)"><div class="dayn-bar current" style="height:calc(100% * 957 / 1200)"></div><span class="v">€957</span></div>
-        </div>
-        <div class="dayn-labels">
-          <span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span>
-          <span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span class="text-mint"><b>May</b></span>
-        </div>
-      </div>
-    </div>
-    <div class="card-footer text-muted small">
-      <i class="fa-solid fa-circle-info"></i> Each bar is the sum of all withdrawals 1 → 28 of that month, across every envelope. Holiday months (Jul Italy, Dec Christmas) sit above the 12-month average; quiet months (Jan, Aug) below.
     </div>
   </div>
 
@@ -1316,30 +1272,32 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
   }
 })();
 
-/* ── KPI-driven focus modes (Budgeted / Spent / Available / Status) ───── */
-(function(){
+/* ── KPI-driven focus modes (Budgeted / Spent / Available / Status) ──────
+   Exposed on window so live data (pala-live.js) can re-apply after cards rewrite. */
+window.applyBudgetFocus = function applyBudgetFocus(){
   const params = new URLSearchParams(location.search);
   const focus = params.get('focus');
+  // Reset previous focus state — safe to call repeatedly
+  document.querySelectorAll('.focus-banner').forEach(el => el.remove());
+  document.querySelectorAll('.kpi-link.is-active').forEach(el => el.classList.remove('is-active'));
+  document.querySelectorAll('.bud-link').forEach(el => el.classList.remove('is-over','is-watch','is-on','is-headroom','dim'));
   if (!focus) return;
 
   // Mark the clicked KPI as active
   const activeKpi = document.querySelector(`.kpi-link[data-focus="${focus}"]`);
   if (activeKpi) activeKpi.classList.add('is-active');
 
-  // Read pace info from every envelope card → {card, pacePct, pillText}
+  // Read pace info from every envelope card — status comes from pct width
   const cards = [...document.querySelectorAll('.bud-link')];
   const info = cards.map(card => {
     const fill = card.querySelector('.bud-pace .fill');
     const pct = fill ? parseFloat(fill.style.width) || 0 : 0;
-    const pillEl = card.querySelector('.bud-pill');
-    const pill = (pillEl?.textContent || '').toLowerCase().trim();
     let status = 'on';
-    if (pillEl?.classList.contains('over') || /over/.test(pill)) status = 'over';
-    else if (pillEl?.classList.contains('warn') || /watch|behind/.test(pill)) status = 'watch';
+    if (pct > 100) status = 'over';
+    else if (pct >= 85) status = 'watch';
     return { card, pct, status, parent: card.parentElement };
   });
 
-  const scrollTo = (sel) => document.querySelector(sel)?.scrollIntoView({ behavior:'smooth', block:'start' });
   const banner = (html) => {
     const b = document.createElement('div');
     b.className = 'focus-banner';
@@ -1347,28 +1305,22 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
     return b;
   };
 
-  if (focus === 'budgeted') {
-    const target = [...document.querySelectorAll('.card')].find(c => /historic|history/i.test(c.querySelector('.card-title')?.textContent || ''));
-    const budgetedCard = document.getElementById('budgetedCard');
-    if (budgetedCard) {
-      budgetedCard.style.display = '';
-      if (target) target.style.display = 'none';
-      budgetedCard.parentNode.insertBefore(banner('<i class="fa-solid fa-chart-column text-mint"></i> <b>Budgeted</b> — total amount allocated across all envelopes each month.'), budgetedCard);
-    }
-  }
-
-  if (focus === 'spent') {
-    const target = [...document.querySelectorAll('.card')].find(c => /historic|history/i.test(c.querySelector('.card-title')?.textContent || '')) ||
-      document.querySelector('.history-wrap')?.closest('.card');
-    const dayN = document.getElementById('dayNCard');
-    if (dayN) {
-      dayN.style.display = '';
-      if (target) target.style.display = 'none';
-      dayN.parentNode.insertBefore(banner('<i class="fa-solid fa-gauge-high text-mint"></i> <b>Spent so far</b> — comparing day-28 cumulative spend across the last 12 months. This month is the mint bar.'), dayN);
-      dayN.scrollIntoView({ behavior:'smooth', block:'start' });
-    } else if (target) {
-      target.parentNode.insertBefore(banner('<i class="fa-solid fa-gauge-high text-mint"></i> <b>Spent so far</b>'), target);
-      target.scrollIntoView({ behavior:'smooth', block:'start' });
+  if (focus === 'budgeted' || focus === 'spent') {
+    const wrap = document.getElementById('histWrap');
+    const tabs = document.getElementById('histTabs');
+    if (wrap && tabs) {
+      const mode = focus === 'budgeted' ? 'total' : 'dayn';
+      // Switch the historic chart into the right mode
+      wrap.classList.remove('mode-pct','mode-eur','mode-total','mode-dayn');
+      wrap.classList.add('mode-' + mode);
+      tabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+      // Banner + scroll
+      const card = wrap.closest('.card');
+      const text = focus === 'budgeted'
+        ? '<i class="fa-solid fa-chart-column text-mint"></i> <b>Total budgeted</b> — each bar is the sum of all envelope allocations for that month.'
+        : '<i class="fa-solid fa-gauge-high text-mint"></i> <b>Day-N cumulative</b> — each bar is total spend from day 1 to today\u2019s day-of-month, so months compare apples-to-apples.';
+      card.parentNode.insertBefore(banner(text), card);
+      // No scrollIntoView — the chart is already in view; scrolling is jarring.
     }
   }
 
@@ -1378,9 +1330,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
     if (grid) {
       const sorted = [...info].sort((a,b) => a.pct - b.pct); // low pct = most available
       sorted.forEach(o => grid.appendChild(o.parent));
-      const section = grid.closest('.row')?.previousElementSibling;
-      const insertBefore = grid.parentNode === document.body ? grid : grid;
-      grid.parentNode.insertBefore(banner('<i class="fa-solid fa-arrow-down-wide-short text-mint"></i> <b>Available</b> — envelopes ordered by % left this period (most headroom first).'), grid);
+      info.forEach(o => o.card.classList.add('is-headroom'));
+      grid.parentNode.insertBefore(banner('<i class="fa-solid fa-arrow-down-wide-short text-mint"></i> <b>Available</b> — each card leads with what’s left; ordered most-headroom first.'), grid);
       grid.scrollIntoView({ behavior:'smooth', block:'start' });
     }
   }
@@ -1395,7 +1346,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
       grid.scrollIntoView({ behavior:'smooth', block:'start' });
     }
   }
-})();
+};
+applyBudgetFocus();
 
 /* Decorative tabs inside cards (not the view-switcher) */
 document.addEventListener('click', (e) => {
@@ -1403,6 +1355,14 @@ document.addEventListener('click', (e) => {
   if (!btn) return;
   btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  // If this is the historic-chart tab strip, switch chart mode
+  if (btn.parentElement.id === 'histTabs' && btn.dataset.mode) {
+    const wrap = document.getElementById('histWrap');
+    if (wrap) {
+      wrap.classList.remove('mode-pct','mode-eur','mode-total','mode-dayn');
+      wrap.classList.add('mode-' + btn.dataset.mode);
+    }
+  }
 });
 
 /* Bud-card click-through: navigate when clicking a .bud-link card body,

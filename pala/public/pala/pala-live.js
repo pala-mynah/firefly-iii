@@ -449,179 +449,409 @@
     } catch (e) { console.warn("donut legend:", e); }
   }
 
-  /* ─── Budgets list: rewrite card links + cat-row links to real ids ─────── */
-  async function pageBudgets() {
-    try {
-      const [bRes, cRes] = await Promise.all([api("/budgets"), api("/categories")]);
-      const bMap = new Map(); // slug → id
-      bRes.data.forEach((b) => bMap.set(slug(b.attributes.name), b.id));
-      const cMap = new Map();
-      cRes.data.forEach((c) => cMap.set(slug(c.attributes.name), c.id));
+  /* ─── Budgets list: live KPIs + simplified envelope cards ──────────────── */
+  const BUDGET_COLOR_BY_SLUG = {
+    "groceries":     "var(--bud-groceries)",
+    "going-out":     "var(--bud-going-out)",
+    "sins":          "var(--bud-sins)",
+    "transport":     "var(--bud-transport)",
+    "subscription":  "var(--bud-subs)",
+    "subscriptions": "var(--bud-subs)",
+    "lifestyle":     "var(--bud-lifestyle)",
+    "living":        "var(--bud-living)",
+    "travel":        "var(--bud-travel)",
+  };
+  const BUDGET_FALLBACK_PALETTE = ["#3ecfb2","#5dd9bf","#86e3cd","#4ca7e0","#e0b46c","#b59ad8","#9ad8be","#d8a5a5","#7fbcd2","#c8b89d"];
 
-      document.querySelectorAll(".bud-link[data-href]").forEach((el) => {
-        const nm = el.querySelector(".bud-head .name")?.textContent || "";
-        const id = bMap.get(slug(nm));
-        if (id) el.dataset.href = `budget-show.html?id=${id}`;
-      });
-      document.querySelectorAll('a[href*="category-show.html?cat="], .cat-row[href*="category-show.html?cat="]').forEach((a) => {
-        const m = a.getAttribute("href").match(/cat=([^&]+)/);
-        if (!m) return;
-        const id = cMap.get(decodeURIComponent(m[1]));
-        if (id) a.setAttribute("href", `category-show.html?id=${id}`);
-      });
-    } catch (e) { /* leave static links as-is */ }
-
-    // Live charts when focus mode is active
-    const focusMode = new URLSearchParams(location.search).get("focus");
-    if (focusMode === "spent")    liveDayN().catch((e) => console.warn("liveDayN failed:", e));
-    if (focusMode === "budgeted") liveBudgeted().catch((e) => console.warn("liveBudgeted failed:", e));
+  function budgetColor(name, fallbackIdx) {
+    return BUDGET_COLOR_BY_SLUG[slug(name)] || BUDGET_FALLBACK_PALETTE[fallbackIdx % BUDGET_FALLBACK_PALETTE.length];
   }
 
-  /* ─── Total budgeted per month (last N months with data) ──────────────── */
-  async function liveBudgeted() {
-    const card = document.getElementById("budgetedCard");
-    if (!card) return;
+  function fmtEur(n) {
+    const abs = Math.abs(n);
+    const s = abs.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (n < 0 ? "-\u20ac" : "\u20ac") + s;
+  }
+  function fmtEurInt(n) {
+    return "\u20ac" + Math.round(n).toLocaleString("de-AT");
+  }
+
+  async function pageBudgets() {
     const today = new Date();
-    // Try last 12 months; keep only months that have any budget limit
-    const months = [];
-    for (let i = 11; i >= 0; i--) {
-      const s = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const e = new Date(s.getFullYear(), s.getMonth() + 1, 0);
-      months.push({
-        start: s.toISOString().slice(0, 10),
-        end: e.toISOString().slice(0, 10),
-        label: s.toLocaleDateString("en", { month: "short" }),
-        ym: s.toISOString().slice(0, 7),
+    const y = today.getFullYear(), m = today.getMonth();
+    const monthStart = new Date(y, m, 1);
+    const monthEnd   = new Date(y, m + 1, 0);
+    const iso = (d) => d.toISOString().slice(0, 10);
+    const startStr = iso(monthStart), endStr = iso(monthEnd);
+    const dayOfMonth = today.getDate();
+    const daysInMonth = monthEnd.getDate();
+    const daysLeft = Math.max(0, daysInMonth - dayOfMonth);
+    const monthLabel = monthStart.toLocaleDateString("en", { month: "short", year: "numeric" });
+
+    // Update page-head subtitle + body data-period (navbar reads from this)
+    document.body.setAttribute("data-period",
+      `${monthStart.getDate()} ${monthStart.toLocaleDateString("en", { month: "short" })} \u2013 ${daysInMonth} ${monthEnd.toLocaleDateString("en", { month: "short" })} ${y}`);
+    const periodEl = document.querySelector(".pala-navbar .period-badge span");
+    if (periodEl) periodEl.textContent = document.body.getAttribute("data-period");
+
+    let budgets = [], limits = [];
+    try {
+      [budgets, limits] = await Promise.all([
+        api(`/budgets?start=${startStr}&end=${endStr}`).then((r) => r.data || []),
+        api(`/budget-limits?start=${startStr}&end=${endStr}`).then((r) => r.data || []),
+      ]);
+    } catch (e) {
+      console.warn("pageBudgets: API failed, leaving static markup", e);
+      liveHistoricChart().catch(() => {});
+      return;
+    }
+
+    // Fetch 12-month spent series in parallel (one call per past month, current included)
+    const HIST_MONTHS = 12;
+    const monthRanges = [];
+    for (let k = HIST_MONTHS - 1; k >= 0; k--) {
+      const ms = new Date(y, m - k, 1);
+      const me = new Date(y, m - k + 1, 0);
+      monthRanges.push({
+        start: iso(ms), end: iso(me),
+        label: ms.toLocaleDateString("en", { month: "short" }),
+        isCurrent: k === 0,
       });
     }
-    // Pull all budgets, then their limits across the full range
-    const startAll = months[0].start, endAll = months[months.length - 1].end;
-    let totalsByMonth = {};
+    let historyByBudget = new Map(); // id → [{label, pct, spent, isCurrent, isOver}]
+    try {
+      const monthResponses = await Promise.all(
+        monthRanges.map((r) =>
+          api(`/budgets?start=${r.start}&end=${r.end}`).then((res) => res.data || [])
+        )
+      );
+      monthResponses.forEach((data, mi) => {
+        const range = monthRanges[mi];
+        data.forEach((b) => {
+          const s = Math.abs(Number(b.attributes?.spent?.[0]?.sum || 0));
+          if (!historyByBudget.has(b.id)) historyByBudget.set(b.id, []);
+          historyByBudget.get(b.id).push({
+            label: range.label, spent: s, isCurrent: range.isCurrent,
+          });
+        });
+      });
+    } catch (e) {
+      console.warn("pageBudgets: per-month history failed (mini-hist will be empty)", e);
+    }
+
+    // Sum limits per budget id (a budget can have multiple limit rows in a period)
+    const limitByBudget = new Map();
+    for (const l of limits) {
+      const a = l.attributes || {};
+      const bid = String(a.budget_id || "");
+      if (!bid) continue;
+      limitByBudget.set(bid, (limitByBudget.get(bid) || 0) + Number(a.amount || 0));
+    }
+
+    // Build records, keep only active budgets
+    const records = budgets
+      .filter((b) => b.attributes && b.attributes.active !== false)
+      .map((b, i) => {
+        const a = b.attributes;
+        const name = a.name;
+        const limit = limitByBudget.get(String(b.id)) || 0;
+        const spent = Math.abs(Number(a.spent?.[0]?.sum || 0));
+        const pctRaw = limit > 0 ? (spent / limit) * 100 : (spent > 0 ? 100 : 0);
+        const pct = Math.min(pctRaw, 110); // clamp visual fill
+        const left = limit - spent;
+        let status = "on";
+        if (pctRaw > 100) status = "over";
+        else if (pctRaw >= 85) status = "watch";
+        return {
+          id: b.id, name, slug: slug(name),
+          color: budgetColor(name, i),
+          limit, spent, left, pct, pctRaw, status,
+        };
+      })
+      .filter((r) => r.limit > 0 || r.spent > 0) // hide truly empty budgets
+      .sort((a, b) => b.limit - a.limit);        // biggest budgets first
+
+    // Find the cards grid (the row containing .bud-link cards)
+    const anchorCard = document.querySelector(".bud-link");
+    const grid = anchorCard?.closest(".row");
+    if (grid) {
+      grid.innerHTML = "";
+      const expectedPacePct = daysInMonth > 0 ? (dayOfMonth / daysInMonth) * 100 : 0;
+      records.forEach((r) => {
+        const leftColor =
+          r.status === "over"  ? "var(--pala-danger)"
+        : r.status === "watch" ? "var(--pala-warn,#e0b46c)"
+        : "var(--pala-mint)";
+        const leftLabel = r.left >= 0
+          ? `${fmtEur(r.left)} left`
+          : `${fmtEur(Math.abs(r.left))} over`;
+        const pillCls = r.status === "over" ? "over" : (r.status === "watch" ? "warn" : "ok");
+        const pillText = r.status === "over" ? "over" : (r.status === "watch" ? "watch" : "on pace");
+        const expectedPctTxt = Math.round(expectedPacePct);
+
+        // Build mini-history bars from per-budget series (denominator = current limit)
+        const series = historyByBudget.get(r.id) || [];
+        const denom = r.limit > 0 ? r.limit : Math.max(1, ...series.map(s => s.spent));
+        const histSpents = series.map(s => s.spent);
+        const histAvg = series.length ? series.reduce((a,b) => a + b, 0) / series.length : 0;
+        const histMaxPct = denom > 0 ? Math.max(...histSpents, 0) / denom * 100 : 0;
+        const histAvgPct = denom > 0 ? histAvg / denom * 100 : 0;
+        const barsHtml = series.map(s => {
+          const pct = denom > 0 ? (s.spent / denom) * 100 : 0;
+          const isOver = pct > 100;
+          const cls = [s.isCurrent ? "current" : "", isOver ? "over" : ""].filter(Boolean).join(" ");
+          const h = Math.min(pct, 110);
+          const title = `${s.label} ${Math.round(pct)}% \u00b7 ${fmtEur(s.spent)}`;
+          return `<div class="col ${cls}" style="height:${h}%" title="${title}"></div>`;
+        }).join("");
+        const firstLabel = series[0]?.label || "";
+        const lastLabel = series[series.length - 1]?.label || "";
+        const histHtml = series.length ? `
+          <div class="mini-hist-block">
+            <div class="cat-stack-label">% of budget used \u00b7 last ${series.length} months</div>
+            <div class="mini-hist">${barsHtml}</div>
+            <div class="mini-hist-legend"><span>${escapeHtml(firstLabel)}</span><span>avg ${Math.round(histAvgPct)}% \u00b7 max ${Math.round(histMaxPct)}%</span><span>${escapeHtml(lastLabel)}</span></div>
+          </div>` : "";
+
+        const col = document.createElement("div");
+        col.className = "col-lg-6 col-xl-4";
+        col.innerHTML = `
+          <a class="card bud-link" href="budget-show.html?id=${r.id}" data-budget-id="${r.id}" style="text-decoration:none; color:inherit; display:block;">
+            <div class="bud-card">
+              <div class="bud-head">
+                <div class="name"><span class="swatch" style="background:${r.color}"></span>${escapeHtml(r.name)}</div>
+                <div class="vals">
+                  <div class="big">${fmtEur(r.spent)} <span class="text-muted">/ ${fmtEur(r.limit)}</span></div>
+                  <div class="delta" style="color:${leftColor}; font-variant-numeric:tabular-nums;">${leftLabel}</div>
+                </div>
+              </div>
+              <div class="bud-pace" title="${Math.round(r.pctRaw)}% used">
+                <div class="fill" style="width:${r.pct}%; background:${r.color}"></div>
+                <div class="marker" style="left:${expectedPacePct}%"></div>
+              </div>
+              <div class="bud-status-row">
+                <span>Day ${dayOfMonth}/${daysInMonth} \u00b7 expected ${expectedPctTxt}%</span>
+                <span class="bud-pill ${pillCls}">${pillText}</span>
+              </div>
+              ${histHtml}
+            </div>
+          </a>
+        `;
+        grid.appendChild(col);
+      });
+    }
+
+    // ─── KPI strip ───
+    const totBudgeted = records.reduce((a, r) => a + r.limit, 0);
+    const totSpent    = records.reduce((a, r) => a + r.spent, 0);
+    const totAvail    = totBudgeted - totSpent;
+    const pctUsed     = totBudgeted > 0 ? (totSpent / totBudgeted) * 100 : 0;
+    const counts = { on: 0, watch: 0, over: 0 };
+    records.forEach((r) => { counts[r.status]++; });
+    const envCount = records.length;
+
+    const setText = (sel, txt) => { const el = document.querySelector(sel); if (el) el.textContent = txt; };
+    const setHtml = (sel, html) => { const el = document.querySelector(sel); if (el) el.innerHTML = html; };
+
+    setText("#budTitleSub", `${envCount} envelope${envCount === 1 ? "" : "s"} \u00b7 ${fmtEurInt(totBudgeted)}/mo`);
+    setText('[data-k="budgeted-eyebrow"]',
+      monthStart.toLocaleDateString("en", { month: "short" }) + " budgeted");
+    // re-inject the arrow icon (textContent wiped it)
+    const eyebrowEl = document.querySelector('[data-k="budgeted-eyebrow"]');
+    if (eyebrowEl) eyebrowEl.innerHTML = `${monthStart.toLocaleDateString("en", { month: "short" })} budgeted <i class="fa-solid fa-arrow-right kpi-arrow"></i>`;
+    setHtml('[data-k="budgeted-amount"]', `${fmtEurInt(totBudgeted)}<span class="text-muted" style="font-weight:400">.00</span>`);
+    setText('[data-k="budgeted-meta"]', `across ${envCount} envelope${envCount === 1 ? "" : "s"}`);
+
+    setHtml('[data-k="spent-amount"]',
+      `<span class="${totSpent > totBudgeted ? 'text-danger' : ''}">${fmtEur(totSpent)}</span>`);
+    setText('[data-k="spent-meta"]', `${Math.round(pctUsed)}% used \u00b7 day ${dayOfMonth} of ${daysInMonth}`);
+
+    const availColor = totAvail < 0 ? "var(--pala-danger)" : "var(--pala-mint)";
+    setHtml('[data-k="available-amount"]', `<span style="color:${availColor}">${fmtEur(totAvail)}</span>`);
+    setText('[data-k="available-meta"]', daysLeft > 0
+      ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in period`
+      : "last day of period");
+
+    setText('[data-stat="on"]',    counts.on);
+    setText('[data-stat="watch"]', counts.watch);
+    setText('[data-stat="over"]',  counts.over);
+    setText('[data-k="status-meta"]', daysLeft > 0
+      ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in period`
+      : "last day of period");
+
+    // Re-apply focus styling now that cards exist
+    if (typeof window.applyBudgetFocus === "function") {
+      try { window.applyBudgetFocus(); } catch (e) { console.warn(e); }
+    }
+
+    // Live historic chart (always — supports tab clicks regardless of focus)
+    liveHistoricChart().catch((e) => console.warn("liveHistoricChart failed:", e));
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+  }
+
+  /* ─── Historic chart: live data for Total + Day-N modes ───────────── */
+  async function liveHistoricChart() {
+    const wrap = document.getElementById("histWrap");
+    if (!wrap) return;
+    const monthsEls = wrap.querySelectorAll(".history-month");
+    if (!monthsEls.length) return;
+    // Hide mocked stacks immediately — stay empty until live data lands
+    monthsEls.forEach((el) => {
+      const stack = el.querySelector(".history-stack");
+      if (stack) stack.style.height = "0%";
+    });
+    const today = new Date();
+    const dom = today.getDate();
+    // Update Day-N tab label to today's day-of-month
+    const dnTab = document.querySelector('#histTabs button[data-mode="dayn"]');
+    if (dnTab) dnTab.textContent = `Day-${dom}`;
+
+    // Build 12 month windows ending with the current month
+    const monthDefs = [];
+    for (let i = 11; i >= 0; i--) {
+      const s = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const me = new Date(s.getFullYear(), s.getMonth() + 1, 0);
+      const lastDay = me.getDate();
+      const endDom = Math.min(dom, lastDay);
+      const dnEnd = new Date(s.getFullYear(), s.getMonth(), endDom);
+      monthDefs.push({
+        start: s.toISOString().slice(0, 10),
+        end: me.toISOString().slice(0, 10),
+        dnEnd: dnEnd.toISOString().slice(0, 10),
+        ym: s.toISOString().slice(0, 7),
+        label: s.toLocaleDateString("en", { month: "short" }),
+      });
+    }
+    const startAll = monthDefs[0].start;
+    const endAll = monthDefs[monthDefs.length - 1].end;
+
+    // Budgeted totals across full range
+    let budgetedByMonth = {};
     try {
       const lim = await api(`/budget-limits?start=${startAll}&end=${endAll}`);
       for (const l of (lim.data || [])) {
         const a = l.attributes;
         const ym = (a.start || "").slice(0, 7);
         if (!ym) continue;
-        totalsByMonth[ym] = (totalsByMonth[ym] || 0) + Number(a.amount || 0);
+        budgetedByMonth[ym] = (budgetedByMonth[ym] || 0) + Number(a.amount || 0);
       }
-    } catch (_) { /* fallback: sum from /budgets per period */ }
-    // If no limits returned, fallback: sum auto_budget_amount × N months
-    if (Object.keys(totalsByMonth).length === 0) {
-      const bRes = await api("/budgets");
-      const autoSum = bRes.data.reduce((a, b) => a + Number(b.attributes.auto_budget_amount || 0), 0);
-      months.forEach((m) => (totalsByMonth[m.ym] = autoSum));
-    }
-    // Keep only months with data
-    const live = months.filter((m) => totalsByMonth[m.ym] > 0).map((m) => ({ ...m, total: totalsByMonth[m.ym] }));
-    if (!live.length) return;
-    const max = Math.max(...live.map((m) => m.total), 1);
-    const cap = Math.ceil((max * 1.1) / 100) * 100 || 100;
-    const eu = (n) => "€" + Math.round(n).toLocaleString("de-AT");
+    } catch (_) { /* swallow */ }
 
-    // Rebuild bars to match live month count
-    const bars = card.querySelector(".budg-bars");
-    const labels = card.querySelector(".budg-labels");
-    if (bars && labels) {
-      bars.style.gridTemplateColumns = `repeat(${live.length}, 1fr)`;
-      labels.style.gridTemplateColumns = `repeat(${live.length}, 1fr)`;
-      bars.innerHTML = live.map((m, i) => {
-        const isCurr = i === live.length - 1;
-        return `<div class="dayn-col${isCurr ? " current" : ""}" title="${m.label} · ${eu(m.total)}">
-          <div class="dayn-bar${isCurr ? " current" : ""}" style="height:${(m.total / cap) * 100}%"></div>
-          <span class="v">${eu(m.total)}</span>
-        </div>`;
-      }).join("");
-      labels.innerHTML = live.map((m, i) => {
-        const isCurr = i === live.length - 1;
-        return isCurr ? `<span class="text-mint"><b>${m.label}</b></span>` : `<span>${m.label}</span>`;
-      }).join("");
-    }
-    const yaxis = card.querySelector(".budg-yaxis");
-    if (yaxis) {
-      yaxis.innerHTML = [cap, cap * 0.75, cap * 0.5, cap * 0.25, 0]
-        .map((l) => `<span>${eu(l)}</span>`).join("");
-    }
-    const stat = card.querySelector(".budg-header-stat");
-    if (stat) {
-      stat.innerHTML = `<b style="color:var(--pala-mint)">${eu(live[live.length - 1].total)}</b> this month · ${live.length} month${live.length === 1 ? "" : "s"} of data`;
-    }
-  }
-
-  /* ─── Day-N cumulative chart (last 12 months, day-of-month-today) ───── */
-  async function liveDayN() {
-    const card = document.getElementById("dayNCard");
-    if (!card) return;
-    const today = new Date();
-    const dom = today.getDate();
-    const months = [];
-    for (let i = 11; i >= 0; i--) {
-      const s = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const lastDay = new Date(s.getFullYear(), s.getMonth() + 1, 0).getDate();
-      const endDom = Math.min(dom, lastDay);
-      const e = new Date(s.getFullYear(), s.getMonth(), endDom);
-      months.push({
-        start: s.toISOString().slice(0, 10),
-        end: e.toISOString().slice(0, 10),
-        label: s.toLocaleDateString("en", { month: "short" }),
-      });
-    }
-    const totals = await Promise.all(
-      months.map(async (m) => {
-        const r = await api(`/transactions?start=${m.start}&end=${m.end}&type=withdrawal&limit=500`);
-        let sum = 0;
-        for (const t of r.data) for (const tr of t.attributes.transactions) sum += Number(tr.amount);
-        return sum;
+    // Day-N spend per month, parallel
+    const dn = await Promise.all(
+      monthDefs.map(async (m) => {
+        try {
+          const r = await api(`/transactions?start=${m.start}&end=${m.dnEnd}&type=withdrawal&limit=500`);
+          let sum = 0, count = 0;
+          for (const t of (r.data || [])) for (const tr of t.attributes.transactions) { sum += Number(tr.amount); count++; }
+          return { spend: sum, txCount: count };
+        } catch (_) { return { spend: 0, txCount: 0 }; }
       })
     );
-    const max = Math.max(...totals, 1);
-    const avg = totals.reduce((a, b) => a + b, 0) / totals.length;
-    const cap = Math.ceil((max * 1.1) / 100) * 100 || 100;
-    const eu = (n) => "€" + Math.round(n).toLocaleString("de-AT");
 
-    const cols = card.querySelectorAll(".dayn-col");
-    cols.forEach((col, i) => {
-      const bar = col.querySelector(".dayn-bar");
-      const v = col.querySelector(".v");
-      if (!bar) return;
-      const val = totals[i] || 0;
-      bar.style.height = (val / cap) * 100 + "%";
-      if (v) v.textContent = eu(val);
-      bar.classList.remove("over", "under", "current");
-      col.classList.toggle("current", i === cols.length - 1);
-      if (i === cols.length - 1) bar.classList.add("current");
-      else if (val > avg * 1.1) bar.classList.add("over");
-      else if (val < avg * 0.85) bar.classList.add("under");
-      col.setAttribute("title", `${months[i].label} · day 1–${(months[i].end || "").slice(-2)} → ${eu(val)}`);
-    });
-
-    const avgLine = card.querySelector(".dayn-avgline");
-    if (avgLine) {
-      avgLine.style.bottom = `calc(100% * ${avg} / ${cap})`;
-      const lbl = avgLine.querySelector("span");
-      if (lbl) lbl.textContent = `avg ${eu(avg)}`;
-    }
-    const yaxis = card.querySelector(".dayn-yaxis");
-    if (yaxis) {
-      yaxis.innerHTML = [cap, cap * 0.75, cap * 0.5, cap * 0.25, 0]
-        .map((l) => `<span>${eu(l)}</span>`).join("");
-    }
-    const labels = card.querySelectorAll(".dayn-labels span");
-    labels.forEach((el, i) => {
-      if (i < months.length) {
-        const isCurr = i === labels.length - 1;
-        el.innerHTML = isCurr ? `<b>${months[i].label}</b>` : months[i].label;
-        el.classList.toggle("text-mint", isCurr);
+    // Wire the last N month-elements (HTML has 12 hardcoded)
+    const elems = Array.from(monthsEls).slice(-monthDefs.length);
+    const eu = (n) => "\u20ac" + Math.round(n).toLocaleString("de-AT");
+    elems.forEach((el, i) => {
+      const m = monthDefs[i];
+      const budgeted = budgetedByMonth[m.ym] || 0;
+      const spend = dn[i].spend;
+      const hasData = budgeted > 0 || dn[i].txCount > 0;
+      el.dataset.budgeted = budgeted;
+      el.dataset.spend = spend;
+      el.dataset.hasData = hasData ? "1" : "0";
+      el.classList.toggle("nodata-month", !hasData);
+      el.classList.toggle("current", i === elems.length - 1);
+      el.setAttribute("title", hasData
+        ? `${m.label} \u00b7 budgeted ${eu(budgeted)} \u00b7 spent through day ${dom} ${eu(spend)}`
+        : `${m.label} \u00b7 no data`);
+      const labelEl = el.querySelector(".history-label");
+      if (labelEl) labelEl.textContent = m.label;
+      if (!el.querySelector(".euro")) {
+        const eP = document.createElement("div"); eP.className = "euro"; el.appendChild(eP);
+      }
+      if (!el.querySelector(".nodata")) {
+        const nd = document.createElement("div"); nd.className = "nodata"; el.appendChild(nd);
       }
     });
-    const current = totals[totals.length - 1] || 0;
-    const diff = avg ? ((current - avg) / avg) * 100 : 0;
-    const stat = card.querySelector(".card-header > span.text-muted.small");
-    if (stat) {
-      const color = diff < 0 ? "var(--pala-mint)" : "var(--pala-danger)";
-      const word = diff < 0 ? "under" : "over";
-      stat.innerHTML = `<b style="color:var(--pala-mint)">${eu(current)}</b> this month · 12-mo avg ${eu(avg)} · <span style="color:${color}">${Math.abs(diff).toFixed(1)}% ${word}</span>`;
+
+    function repaint() {
+      const mode = (wrap.className.match(/mode-(total|dayn|pct|eur)/) || [, "pct"])[1];
+      const valFor = (el) => mode === "total" ? Number(el.dataset.budgeted)
+                          : mode === "dayn"  ? Number(el.dataset.spend) : null;
+      const header = wrap.parentElement.querySelector(".card-header .text-muted.small");
+
+      if (mode === "pct" || mode === "eur") {
+        // Live wiring for stacked envelope modes not yet implemented — leave bars empty.
+        elems.forEach((el) => {
+          el.classList.remove("over", "under");
+          const stack = el.querySelector(".history-stack");
+          if (stack) stack.style.height = "0%";
+          const eP = el.querySelector(".euro"); if (eP) eP.textContent = "";
+        });
+        wrap.querySelector(".history-avgline")?.remove();
+        if (header) header.textContent = mode === "pct"
+          ? "% used \u00b7 per-envelope view \u2014 coming soon"
+          : "\u20ac amount per envelope \u2014 coming soon";
+        return;
+      }
+
+      const valid = elems.filter((el) => el.dataset.hasData === "1").map((el) => ({ el, v: valFor(el) }));
+      if (!valid.length) return;
+      const max = Math.max(...valid.map((x) => x.v), 1);
+      const cap = Math.ceil((max * 1.1) / 50) * 50 || 100;
+      const denom = valid.length;
+      const avg = mode === "dayn" ? valid.reduce((a, x) => a + x.v, 0) / denom : 0;
+
+      elems.forEach((el, i) => {
+        const stack = el.querySelector(".history-stack");
+        const eP = el.querySelector(".euro");
+        const isCurr = i === elems.length - 1;
+        el.classList.remove("over", "under");
+        if (el.dataset.hasData !== "1") {
+          if (stack) stack.style.height = "0%";
+          if (eP) eP.textContent = "";
+          return;
+        }
+        const v = valFor(el);
+        if (stack) stack.style.height = (v / cap * 100) + "%";
+        if (eP) eP.textContent = eu(v);
+        if (mode === "dayn" && !isCurr) {
+          if (v > avg * 1.1) el.classList.add("over");
+          else if (v < avg * 0.85) el.classList.add("under");
+        }
+      });
+
+      let avgEl = wrap.querySelector(".history-avgline");
+      if (mode === "dayn") {
+        if (!avgEl) {
+          avgEl = document.createElement("div");
+          avgEl.className = "history-avgline";
+          avgEl.innerHTML = "<span></span>";
+          wrap.querySelector(".history-bars")?.appendChild(avgEl);
+        }
+        avgEl.style.bottom = (avg / cap * 100) + "%";
+        avgEl.querySelector("span").textContent = `avg ${eu(avg)} \u00b7 ${denom} mo`;
+      } else if (avgEl) {
+        avgEl.remove();
+      }
+
+      if (header) {
+        header.textContent = mode === "total"
+          ? `Total budgeted per month \u00b7 last ${denom} month${denom === 1 ? "" : "s"} with data`
+          : `Cumulative spend day 1 \u2192 ${dom} each month \u00b7 ${denom}-mo average`;
+      }
     }
+
+    document.getElementById("histTabs")?.addEventListener("click", (e) => {
+      if (e.target.matches("button[data-mode]")) setTimeout(repaint, 0);
+    });
+    repaint();
   }
 
   /* ─── Budget detail (?id=N) ───────────────────────────────────────────── */
