@@ -1635,6 +1635,7 @@
     if (page === "budgets")                           return pageBudgets();
     if (page === "budget-show") return (window.__palaExtra && window.__palaExtra.pageBudgetShow ? window.__palaExtra.pageBudgetShow() : null);
     if (page === "category-show") return (window.__palaExtra && window.__palaExtra.pageCategoryShow ? window.__palaExtra.pageCategoryShow() : null);
+    if (page === "transaction-show") return (window.__palaExtra && window.__palaExtra.pageTransactionShow ? window.__palaExtra.pageTransactionShow() : null);
     if (page === "classification" && sub === "categories") return pageCategories();
     if (page === "classification" && sub === "tags") return (window.__palaExtra && window.__palaExtra.pageTags ? window.__palaExtra.pageTags() : null);
     if (page === "bills")                             return pageBills();

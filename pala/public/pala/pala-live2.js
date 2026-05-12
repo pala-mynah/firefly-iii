@@ -642,7 +642,7 @@
     }
   }
 
-  window.__palaExtra = { pageAccountShow, pageTags, pageBudgetShow, pageCategoryShow };
+  window.__palaExtra = { pageAccountShow, pageTags, pageBudgetShow, pageCategoryShow, pageTransactionShow };
 
   // Self-boot in case pala-live.js is already past its boot() call.
   function boot2() {
@@ -651,7 +651,162 @@
     if (page === "account-show")  return pageAccountShow();
     if (page === "budget-show")   return pageBudgetShow();
     if (page === "category-show") return pageCategoryShow();
+    if (page === "transaction-show") return pageTransactionShow();
     if (page === "classification" && sub === "tags") return pageTags();
+  }
+
+  /* ─── Transaction detail ─────────────────────────────────────────────── */
+  async function pageTransactionShow() {
+    const $k = (k) => document.querySelector(`[data-k="${k}"]`);
+    const setText = (k, v) => { const el = $k(k); if (el) el.textContent = v; };
+    const setHTML = (k, v) => { const el = $k(k); if (el) el.innerHTML = v; };
+    const id = qs("tx") || qs("id");
+    if (!id) { setText("tx-desc", "No transaction specified"); return; }
+    const rawPeriod = qs("period") || "";
+    const periodQS = rawPeriod ? `?period=${encodeURIComponent(rawPeriod)}` : "";
+    const backBtn = $k("tx-back-btn");
+    if (backBtn) backBtn.setAttribute("href", `transactions.html${periodQS}`);
+
+    try {
+      const res = await api(`/transactions/${id}`);
+      const splits = (res.data && res.data.attributes && res.data.attributes.transactions) || [];
+      if (!splits.length) { setText("tx-desc", "Transaction has no splits"); return; }
+      const first = splits[0];
+      const type = (first.type || "").toLowerCase();
+      const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+      const chip = $k("tx-type-chip");
+      if (chip) chip.className = "tx-type-chip " + type;
+      setText("tx-type-label", typeLabel);
+      const isSplit = splits.length > 1;
+      const totalAmt = splits.reduce((s, x) => s + Math.abs(Number(x.amount || 0)), 0);
+      const amtCls = type === "deposit" ? "text-success" : type === "transfer" ? "text-info" : "text-danger";
+      const amtSign = type === "deposit" ? "+" : type === "transfer" ? "" : "−";
+      const amtEl = $k("tx-amount");
+      if (amtEl) { amtEl.className = "tx-amount " + amtCls; amtEl.textContent = amtSign + fmt(totalAmt) + (isSplit ? " (split)" : ""); }
+      const desc = isSplit ? (res.data.attributes.group_title || first.description || "Split transaction") : (first.description || "—");
+      setText("tx-desc", desc);
+      document.title = desc + " — Firefly III · Pala";
+      setText("tx-date", dat(first.date));
+      setText("tx-id-line", "#" + id + (isSplit ? " · " + splits.length + " splits" : ""));
+
+      if (!isSplit && first.foreign_amount && first.foreign_currency_code) {
+        const fEl = $k("tx-foreign");
+        if (fEl) { fEl.hidden = false; fEl.textContent = `≈ ${first.foreign_currency_symbol || ""}${Number(first.foreign_amount).toFixed(2)} ${first.foreign_currency_code}`; }
+        const fRow = $k("tx-foreign-row");
+        if (fRow) fRow.hidden = false;
+        setText("tx-foreign-amt", `${first.foreign_currency_symbol || ""}${Number(first.foreign_amount).toFixed(2)} ${first.foreign_currency_code}`);
+      }
+
+      const acctPill = (aid, name, icon) => aid
+        ? `<a class="acct-pill" href="account-show.html?id=${aid}"><i class="fa-solid ${icon} fa-fw"></i>${esc(name || "—")}</a>`
+        : `<span class="acct-pill"><i class="fa-solid ${icon} fa-fw"></i>${esc(name || "—")}</span>`;
+      const srcIcon = type === "deposit" ? "fa-money-bill-trend-up" : "fa-wallet";
+      const dstIcon = type === "deposit" ? "fa-wallet" : type === "transfer" ? "fa-piggy-bank" : "fa-cart-shopping";
+      setHTML("tx-flow", acctPill(first.source_id, first.source_name, srcIcon) + '<i class="fa-solid fa-arrow-right"></i>' + acctPill(first.destination_id, first.destination_name, dstIcon));
+
+      setHTML("tx-category", first.category_id ? `<a class="kv-link" href="category-show.html?id=${first.category_id}">${esc(first.category_name || "—")}</a>` : '<span class="text-muted">—</span>');
+      setHTML("tx-budget",   first.budget_id   ? `<a class="kv-link" href="budget-show.html?id=${first.budget_id}">${esc(first.budget_name || "—")}</a>`     : '<span class="text-muted">—</span>');
+      setHTML("tx-bill",     first.bill_id     ? `<a class="kv-link" href="bills.html#bill-${first.bill_id}">${esc(first.bill_name || "Bill #" + first.bill_id)}</a>` : '<span class="text-muted">—</span>');
+      const tags = (first.tags || []).map(t => `<a class="tag-pill" href="transactions.html?tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join("");
+      setHTML("tx-tags", tags || '<span class="text-muted">—</span>');
+      setText("tx-currency", first.currency_code ? `${first.currency_code} (${first.currency_symbol || ""})` : "—");
+      const proc = (first.book_date ? dat(first.book_date) + " · book" : "") + (first.process_date ? (first.book_date ? " · " : "") + dat(first.process_date) + " · process" : "");
+      setText("tx-process", proc || dat(first.date));
+      const note = first.notes && String(first.notes).trim();
+      setHTML("tx-notes", note ? `<div class="note-box">${esc(note)}</div>` : '<span class="text-muted">—</span>');
+
+      if (isSplit) {
+        const card = $k("tx-splits-card");
+        if (card) card.hidden = false;
+        setText("tx-splits-count", `· ${splits.length} parts`);
+        const body = $k("tx-splits-body");
+        if (body) {
+          body.innerHTML = splits.map((s, i) => {
+            const sAmt = Math.abs(Number(s.amount || 0));
+            const sCat = s.category_id ? `<a class="kv-link" href="category-show.html?id=${s.category_id}">${esc(s.category_name || "—")}</a>` : '<span class="text-muted">—</span>';
+            const sBud = s.budget_id ? ` · <a class="kv-link" href="budget-show.html?id=${s.budget_id}">${esc(s.budget_name)}</a>` : "";
+            const sCounter = type === "deposit" ? s.source_name : s.destination_name;
+            return `<div class="split-row"><div class="d-flex justify-content-between align-items-baseline"><div><div class="split-num">Split ${i + 1}</div><div>${esc(s.description || "—")}</div><div class="text-muted small">${sCat}${sBud} · ${esc(sCounter || "")}</div></div><div class="${amtCls}" style="font-variant-numeric:tabular-nums; font-weight:500;">${amtSign}${fmt(sAmt)}</div></div></div>`;
+          }).join("");
+        }
+      }
+
+      const attrs = res.data.attributes;
+      setText("tx-created", attrs.created_at ? new Date(attrs.created_at).toLocaleString("en-GB") : "—");
+      setText("tx-updated", attrs.updated_at ? new Date(attrs.updated_at).toLocaleString("en-GB") : "—");
+      setText("tx-internal-ref", first.internal_reference || "—");
+      setText("tx-external-id", first.external_id || "—");
+      const url = first.external_url;
+      setHTML("tx-external-url", url ? `<a class="kv-link" href="${esc(url)}" target="_blank" rel="noopener">${esc(url)} <i class="fa-solid fa-arrow-up-right-from-square fa-xs"></i></a>` : '<span class="text-muted">—</span>');
+      setText("tx-reconciled", first.reconciled ? "Yes" : "No");
+
+      const baseUrl = (localStorage.getItem("pala_url") || location.origin).replace(/\/$/, "");
+      const editBtn = $k("tx-edit-btn");   if (editBtn)  editBtn.setAttribute("href",  `${baseUrl}/transactions/edit/${id}`);
+      const cloneBtn = $k("tx-clone-btn"); if (cloneBtn) cloneBtn.setAttribute("href", `${baseUrl}/transactions/clone/${id}`);
+      const delBtn = $k("tx-delete-btn");
+      if (delBtn) {
+        delBtn.addEventListener("click", async () => {
+          if (!confirm("Delete this transaction? This cannot be undone.")) return;
+          try { await api(`/transactions/${id}`, { method: "DELETE" }); location.href = `transactions.html${periodQS}`; }
+          catch (e) { alert("Delete failed: " + e.message); }
+        });
+      }
+
+      const counterId   = type === "deposit" ? first.source_id   : first.destination_id;
+      const counterName = type === "deposit" ? first.source_name : first.destination_name;
+      if (counterId) {
+        try {
+          const sim = await api(`/accounts/${counterId}/transactions?limit=5`);
+          const list = (sim.data || []).filter(t => t.id !== id).slice(0, 4);
+          setText("tx-similar-label", `More with ${counterName}`);
+          setHTML("tx-similar", list.length ? list.map(t => {
+            const inner = t.attributes.transactions[0];
+            const a = Number(inner.amount);
+            const aSign = inner.type === "deposit" ? "+" : inner.type === "transfer" ? "" : "−";
+            const aCls = inner.type === "deposit" ? "text-success" : inner.type === "transfer" ? "text-info" : "text-danger";
+            return `<a href="transaction-show.html?tx=${t.id}${rawPeriod ? '&period=' + encodeURIComponent(rawPeriod) : ''}" class="d-flex justify-content-between py-1 text-decoration-none" style="color:var(--pala-text);"><span>${esc(inner.description || "—")} <span class="text-muted small">· ${dat(inner.date)}</span></span><span class="${aCls}">${aSign}${fmt(a)}</span></a>`;
+          }).join("") : '<span class="text-muted small">No other transactions.</span>');
+        } catch { setHTML("tx-similar", '<span class="text-muted small">—</span>'); }
+      } else { setHTML("tx-similar", '<span class="text-muted small">—</span>'); }
+
+      if (first.category_id) {
+        try {
+          const cr = await api(`/categories/${first.category_id}/transactions?limit=5`);
+          const list = (cr.data || []).filter(t => t.id !== id).slice(0, 4);
+          setText("tx-cat-recent-label", `More in ${first.category_name}`);
+          setHTML("tx-cat-recent", list.length ? list.map(t => {
+            const inner = t.attributes.transactions[0];
+            const a = Number(inner.amount);
+            const aSign = inner.type === "deposit" ? "+" : inner.type === "transfer" ? "" : "−";
+            const aCls = inner.type === "deposit" ? "text-success" : inner.type === "transfer" ? "text-info" : "text-danger";
+            return `<a href="transaction-show.html?tx=${t.id}${rawPeriod ? '&period=' + encodeURIComponent(rawPeriod) : ''}" class="d-flex justify-content-between py-1 text-decoration-none" style="color:var(--pala-text);"><span>${esc(inner.description || "—")} <span class="text-muted small">· ${dat(inner.date)}</span></span><span class="${aCls}">${aSign}${fmt(a)}</span></a>`;
+          }).join("") : '<span class="text-muted small">No other transactions in this category.</span>');
+        } catch { setHTML("tx-cat-recent", '<span class="text-muted small">—</span>'); }
+      } else { setHTML("tx-cat-recent", '<span class="text-muted small">—</span>'); }
+
+      try {
+        const lk = await api(`/transactions/${id}/links`);
+        const links = lk.data || [];
+        const linksEl = $k("tx-links");
+        if (linksEl) {
+          if (!links.length) linksEl.innerHTML = '<div class="text-muted small p-3">No linked transactions.</div>';
+          else linksEl.innerHTML = links.map(l => {
+            const a = l.attributes || {};
+            const otherId = a.inward_id === id ? a.outward_id : a.inward_id;
+            return `<a href="transaction-show.html?tx=${otherId}" class="d-block px-3 py-2 text-decoration-none" style="color:var(--pala-text); border-bottom:1px solid var(--pala-navy-border);"><span class="text-muted small">${esc(a.link_type_name || "linked")}</span> · #${otherId}</a>`;
+          }).join("");
+        }
+      } catch {
+        const linksEl = $k("tx-links");
+        if (linksEl) linksEl.innerHTML = '<div class="text-muted small p-3">No linked transactions.</div>';
+      }
+
+      const b = document.body;
+      if (b) b.dataset.crumbs = `Home/Transactions/${desc.slice(0, 60)}`;
+    } catch (e) {
+      console.error(e);
+      setText("tx-desc", "Failed to load: " + e.message);
+    }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot2);
   else boot2();

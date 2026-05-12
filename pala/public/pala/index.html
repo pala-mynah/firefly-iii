@@ -1155,8 +1155,9 @@ document.addEventListener('click', (e) => {
       else { icon = 'fa-arrow-left'; cls = 'text-danger'; amtPrefix = '−'; }
       const cat = tx.category_name || (type === 'transfer' ? 'Transfer' : (type === 'deposit' ? 'Income' : 'Uncategorised'));
       const acct = tx.source_name && tx.destination_name ? `${tx.source_name} → ${tx.destination_name}` : (tx.source_name || tx.destination_name || '');
-      // Per-row link: Firefly's native transaction show page (full detail, splits, attachments, edit)
-      return `<a href="/transactions/show/${t.id}" class="tx-row" data-tx-id="${t.id}">
+      // Per-row link: pala transaction-show page, carrying selected period
+      const txQS = `?tx=${t.id}${rawPeriod ? '&period=' + encodeURIComponent(rawPeriod) : ''}`;
+      return `<a href="transaction-show.html${txQS}" class="tx-row" data-tx-id="${t.id}">
         <i class="fa-solid ${icon} ${cls} tx-dir"></i>
         <div>
           <div class="tx-name">${escapeHtml(tx.description || '—')}</div>
