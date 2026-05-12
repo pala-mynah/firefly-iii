@@ -123,15 +123,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
       <h3 class="card-title">Tag cloud</h3>
       <a href="#" class="btn btn-success btn-sm"><i class="fa-solid fa-plus fa-fw"></i> New tag</a>
     </div>
-    <div class="card-body tag-cloud">
-      <a href="#" style="font-size:1.4rem">#vienna-trip <small>23</small></a>
-      <a href="#" style="font-size:1.1rem">#work-reimburse <small>14</small></a>
-      <a href="#" style="font-size:1rem">#christmas-2025 <small>11</small></a>
-      <a href="#" style="font-size:.95rem">#tax-deductible <small>9</small></a>
-      <a href="#">#refund-pending <small>5</small></a>
-      <a href="#">#shared-flat <small>4</small></a>
-      <a href="#">#cash <small>3</small></a>
-      <a href="#" style="font-size:.85rem">#gift <small>2</small></a>
+    <div class="card-body tag-cloud" data-k="tags-cloud">
+      <span class="text-muted">Loading…</span>
     </div>
   </div>
   <div class="card">
@@ -139,12 +132,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
     <div class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <thead><tr><th style="width:1%"></th><th>Tag</th><th class="text-end">Transactions</th><th class="text-end d-none d-md-table-cell">Sum</th><th class="d-none d-lg-table-cell">Last activity</th></tr></thead>
-        <tbody>
-          <tr><td><div class="btn-group btn-group-sm"><a href="#" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pencil fa-fw"></i></a><a href="#" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash fa-fw"></i></a></div></td><td><a href="#">vienna-trip</a></td><td class="text-end">23</td><td class="text-end text-danger d-none d-md-table-cell">−€842.10</td><td class="d-none d-lg-table-cell text-muted small">12 Apr 2026</td></tr>
-          <tr><td><div class="btn-group btn-group-sm"><a href="#" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pencil fa-fw"></i></a><a href="#" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash fa-fw"></i></a></div></td><td><a href="#">work-reimburse</a></td><td class="text-end">14</td><td class="text-end text-success d-none d-md-table-cell">+€312.55</td><td class="d-none d-lg-table-cell text-muted small">23 May 2026</td></tr>
-          <tr><td><div class="btn-group btn-group-sm"><a href="#" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pencil fa-fw"></i></a><a href="#" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash fa-fw"></i></a></div></td><td><a href="#">christmas-2025</a></td><td class="text-end">11</td><td class="text-end text-danger d-none d-md-table-cell">−€478.00</td><td class="d-none d-lg-table-cell text-muted small">28 Dec 2025</td></tr>
-          <tr><td><div class="btn-group btn-group-sm"><a href="#" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pencil fa-fw"></i></a><a href="#" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash fa-fw"></i></a></div></td><td><a href="#">tax-deductible</a></td><td class="text-end">9</td><td class="text-end text-danger d-none d-md-table-cell">−€231.40</td><td class="d-none d-lg-table-cell text-muted small">17 Mar 2026</td></tr>
-          <tr><td><div class="btn-group btn-group-sm"><a href="#" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pencil fa-fw"></i></a><a href="#" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash fa-fw"></i></a></div></td><td><a href="#">refund-pending</a></td><td class="text-end">5</td><td class="text-end text-success d-none d-md-table-cell">+€89.20</td><td class="d-none d-lg-table-cell text-muted small">8 May 2026</td></tr>
+        <tbody data-k="tags-tbody">
+          <tr><td colspan="5" class="text-muted p-3">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -153,6 +142,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="pala-live.js"></script>
+<script src="pala-live2.js"></script>
 <script>
 /* ── Firefly III · Pala — shared chrome (sidebar + navbar) ──────────────
    Each page sets:

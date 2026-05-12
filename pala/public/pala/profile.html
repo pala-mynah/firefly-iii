@@ -120,11 +120,12 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
     <div class="tab-content">
       <div class="tab-pane fade show active" id="pt-options">
         <div class="card"><div class="card-body">
-          <p class="text-muted">Your user ID is <strong>1</strong>.</p>
+          <p class="text-muted">Your user ID is <strong id="pf-uid">—</strong>.</p>
+          <p class="small">Signed in as <span id="pf-email" class="text-mint">—</span> <span id="pf-role" class="text-muted"></span></p>
           <ul class="list-unstyled">
             <li class="mb-1"><a href="#">Change email address</a></li>
             <li class="mb-1"><a href="#">Change password</a></li>
-            <li class="mb-1"><a href="#">Manage MFA settings</a> <span class="text-muted small">(3 backup codes left)</span></li>
+            <li class="mb-1"><a href="#">Manage MFA settings</a></li>
             <li class="mb-1"><a href="#">Logout other sessions</a></li>
             <li class="mb-1"><a href="#">Logout</a></li>
           </ul>
@@ -132,9 +133,13 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
       </div>
       <div class="tab-pane fade" id="pt-token">
         <div class="card"><div class="card-body">
-          <p class="text-muted small">Use this token in CLI scripts to access the Firefly III API.</p>
-          <input type="text" class="form-control font-monospace mb-3" value="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9..." readonly>
-          <button class="btn btn-danger btn-sm"><i class="fa-solid fa-rotate fa-fw"></i> Regenerate token</button>
+          <p class="text-muted small">Personal Access Token used by Pala to call the Firefly III API from this browser. Stored locally in <code>localStorage</code>.</p>
+          <label class="form-label small text-muted">Token</label>
+          <input type="text" class="form-control font-monospace mb-2" id="pf-token" placeholder="eyJ0eXAiOiJKV1Qi…">
+          <label class="form-label small text-muted">Firefly III base URL</label>
+          <input type="text" class="form-control font-monospace mb-3" id="pf-url" placeholder="https://firefly.example.com">
+          <button class="btn btn-primary btn-sm" id="pf-save"><i class="fa-solid fa-floppy-disk fa-fw"></i> Save</button>
+          <span id="pf-token-status" class="ms-2 small text-muted"></span>
         </div></div>
       </div>
       <div class="tab-pane fade" id="pt-delete">
@@ -148,6 +153,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-live.js"></script>
 <script>
 /* ── Firefly III · Pala — shared chrome (sidebar + navbar) ──────────────
    Each page sets:

@@ -90,7 +90,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
 /* ── Daily burn-down chart ─────────────────────────────────────────── */
 .burn-wrap { padding:.5rem 1.25rem 1rem; }
-.burn-chart { width:100%; height:240px; }
+.burn-chart { width:100%; aspect-ratio: 600/240; height:auto; max-height:280px; }
 .burn-chart .grid line { stroke:var(--pala-navy-border); stroke-dasharray:2 4; opacity:.4; }
 .burn-chart .axis text { fill:var(--pala-muted); font-size:10px; font-family:Inter,sans-serif; font-variant-numeric:tabular-nums; }
 .burn-chart .target { stroke:var(--pala-warning); stroke-width:1.4; stroke-dasharray:4 4; fill:none; opacity:.7; }
@@ -168,8 +168,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
   <!-- ── Page head ────────────────────────────────────────────────── -->
   <div class="page-head">
     <div class="title-block">
-      <h1><span class="dot"></span>Groceries</h1>
-      <div class="sub">Envelope · feeds 3 categories · <a href="budgets.html">← all budgets</a></div>
+      <h1><span class="dot"></span><span data-k="bs-title">Loading…</span></h1>
+      <div class="sub" data-k="bs-sub">Envelope · <a href="budgets.html">← all budgets</a></div>
     </div>
     <div class="actions">
       <button class="btn-ghost"><i class="fa-solid fa-arrow-down-up-across-line"></i> Set rollover</button>
@@ -182,32 +182,32 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
   <div class="row g-3 mb-3">
     <div class="col-md col-sm-6">
       <div class="card h-100"><div class="kpi-card">
-        <div class="kpi-eyebrow">Spent · May</div>
-        <div class="kpi-amount">€380<span class="text-muted" style="font-weight:400">.00</span></div>
-        <div class="kpi-meta">of €450 budgeted · 84.4%</div>
+        <div class="kpi-eyebrow" data-k="bs-spent-label">Spent · this period</div>
+        <div class="kpi-amount" data-k="bs-spent">€—</div>
+        <div class="kpi-meta" data-k="bs-spent-meta">—</div>
       </div></div>
     </div>
     <div class="col-md col-sm-6">
       <div class="card h-100"><div class="kpi-card">
         <div class="kpi-eyebrow">Remaining</div>
-        <div class="kpi-amount text-mint">€70<span class="text-muted" style="font-weight:400">.00</span></div>
-        <div class="kpi-meta">3 days left · ~€23/day to spend</div>
+        <div class="kpi-amount text-mint" data-k="bs-remaining">€—</div>
+        <div class="kpi-meta" data-k="bs-remaining-meta">—</div>
       </div></div>
     </div>
     <div class="col-md col-sm-6">
       <div class="card h-100"><div class="kpi-card">
         <div class="kpi-eyebrow">12-mo average</div>
-        <div class="kpi-amount">€405<span class="text-muted" style="font-weight:400">/mo</span></div>
-        <div class="kpi-meta">max €486 (Dec '25) · min €360 (Jul)</div>
+        <div class="kpi-amount" data-k="bs-avg">€—</div>
+        <div class="kpi-meta" data-k="bs-avg-meta">—</div>
       </div></div>
     </div>
     <div class="col-md col-sm-6">
       <div class="card h-100"><div class="kpi-card">
         <div class="kpi-eyebrow">Status</div>
-        <div class="kpi-amount text-mint" style="font-size:1.3rem; display:flex; align-items:center; gap:.5rem;">
-          <i class="fa-solid fa-check-circle"></i> On pace
+        <div class="kpi-amount text-mint" data-k="bs-status" style="font-size:1.3rem; display:flex; align-items:center; gap:.5rem;">
+          <i class="fa-solid fa-circle-notch fa-spin"></i> Loading…
         </div>
-        <div class="kpi-meta">€26 under the day-28 line</div>
+        <div class="kpi-meta" data-k="bs-status-meta">—</div>
       </div></div>
     </div>
   </div>
@@ -215,20 +215,20 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
   <!-- ── Big pace bar ─────────────────────────────────────────────── -->
   <div class="card mb-3">
     <div class="card-header">
-      <h3 class="card-title">Pacing · day 28 of 31</h3>
-      <span class="text-muted small">expected to be at 90% · currently 84%</span>
+      <h3 class="card-title" data-k="bs-pace-title">Pacing</h3>
+      <span class="text-muted small" data-k="bs-pace-sub">—</span>
     </div>
     <div class="big-pace-wrap">
-      <div class="big-pace-axis">
-        <span>€0</span><span>€112</span><span>€225</span><span>€338</span><span>€450</span>
+      <div class="big-pace-axis" data-k="bs-pace-axis">
+        <span>€0</span><span>€—</span><span>€—</span><span>€—</span><span>€—</span>
       </div>
       <div class="big-pace">
-        <div class="fill" style="width:84.4%"></div>
-        <div class="marker" style="left:90%"><span class="marker-label">day 28 · 90%</span></div>
+        <div class="fill" data-k="bs-pace-fill" style="width:0%"></div>
+        <div class="marker" data-k="bs-pace-marker" style="left:0%; display:none;"><span class="marker-label" data-k="bs-pace-marker-label">—</span></div>
       </div>
       <div class="big-pace-meta">
-        <span><span class="text-mint num">€380.00</span> spent · <span class="num">€70.00</span> remaining</span>
-        <span class="pill">on pace · ~€23/day to spend</span>
+        <span data-k="bs-pace-meta"><span class="text-mint num">€—</span> spent · <span class="num">€—</span> remaining</span>
+        <span class="pill" data-k="bs-pace-pill">—</span>
       </div>
     </div>
   </div>
@@ -244,8 +244,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
           <h3 class="card-title">Daily burn-down · May</h3>
           <span class="text-muted small">cumulative spend vs straight-line target</span>
         </div>
-        <div class="burn-wrap">
-          <svg class="burn-chart" viewBox="0 0 600 240" preserveAspectRatio="none">
+        <div class="burn-wrap" data-k="bs-burn-wrap"><svg class="burn-chart" data-k="bs-burn" viewBox="0 0 600 240">
             <defs>
               <linearGradient id="mintGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%"   stop-color="#3ecfb2" stop-opacity=".25"/>
@@ -332,53 +331,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
                 <th class="text-end" style="width:10%">MoM</th>
               </tr>
             </thead>
-            <tbody>
-              <tr onclick="location.href='category-show.html?cat=supermarket'">
-                <td><span class="swatch" style="background:var(--bud-supermarket)"></span><span class="name">Supermarket</span></td>
-                <td>
-                  <!-- 12 monthly points: 240,238,255,260,225,245,228,235,243,228,230,240 → max 260
-                       x = i/11*78 + 1, y = 22 - (v/260)*20  -->
-                  <svg class="spark" viewBox="0 0 80 24">
-                    <polyline stroke="var(--bud-supermarket)"
-                      points="1,3.5 8.1,3.7 15.2,2.4 22.3,2 29.4,4.7 36.5,3.2 43.6,4.5 50.7,3.9 57.8,3.3 64.9,4.5 72,4.3 79.1,3.5"/>
-                    <circle class="dot" fill="var(--pala-mint)" cx="79.1" cy="3.5" r="2"/>
-                  </svg>
-                </td>
-                <td class="num">€240.00</td>
-                <td class="num text-muted">€230.00</td>
-                <td class="num text-muted">€235.00</td>
-                <td class="text-end"><span class="trend-up">▲ 4.3%</span></td>
-              </tr>
-              <tr onclick="location.href='category-show.html?cat=fresh-market-butcher'">
-                <td><span class="swatch" style="background:var(--bud-fresh)"></span><span class="name">Fresh Market &amp; Butcher</span></td>
-                <td>
-                  <!-- 90,92,98,85,75,80,95,88,82,90,95,98 → max 98 -->
-                  <svg class="spark" viewBox="0 0 80 24">
-                    <polyline stroke="var(--bud-fresh)"
-                      points="1,3.6 8.1,3.2 15.2,2.0 22.3,4.7 29.4,6.7 36.5,5.7 43.6,2.6 50.7,4 57.8,5.3 64.9,3.6 72,2.6 79.1,2.0"/>
-                    <circle class="dot" fill="var(--pala-mint)" cx="79.1" cy="2.0" r="2"/>
-                  </svg>
-                </td>
-                <td class="num">€98.00</td>
-                <td class="num text-muted">€95.00</td>
-                <td class="num text-muted">€89.00</td>
-                <td class="text-end"><span class="trend-up">▲ 3.2%</span></td>
-              </tr>
-              <tr onclick="location.href='category-show.html?cat=bakeries'">
-                <td><span class="swatch" style="background:var(--bud-bakery)"></span><span class="name">Bakeries</span></td>
-                <td>
-                  <!-- 35,38,45,42,40,38,42,40,38,40,42,42 → max 45 -->
-                  <svg class="spark" viewBox="0 0 80 24">
-                    <polyline stroke="var(--bud-bakery)"
-                      points="1,6.6 8.1,5.5 15.2,2.0 22.3,3.3 29.4,4.2 36.5,5.3 43.6,3.5 50.7,4.4 57.8,5.5 64.9,4.4 72,3.5 79.1,3.5"/>
-                    <circle class="dot" fill="var(--pala-mint)" cx="79.1" cy="3.5" r="2"/>
-                  </svg>
-                </td>
-                <td class="num">€42.00</td>
-                <td class="num text-muted">€42.00</td>
-                <td class="num text-muted">€40.00</td>
-                <td class="text-end"><span class="trend-flat">— flat</span></td>
-              </tr>
+            <tbody data-k="bs-cats">
+              <tr><td colspan="6" class="text-muted p-3">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -391,19 +345,14 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
       <!-- Recent transactions -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Transactions in Groceries · May</h3>
-          <a href="transactions.html?budget_id=1" class="text-muted small">View all 23 →</a>
+          <h3 class="card-title" data-k="bs-tx-title">Recent transactions</h3>
+          <a href="transactions.html?budget_id=1" class="text-muted small" data-k="bs-tx-viewall">View all →</a>
         </div>
         <div class="card-body p-0">
           <table class="table table-sm table-hover mb-0">
             <thead><tr><th style="width:1.5rem"></th><th>Description</th><th>Date</th><th>Category</th><th>Account</th><th class="text-end">Amount</th></tr></thead>
             <tbody>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa</a></td><td class="num">28 May</td><td><a href="category-show.html?cat=supermarket">Supermarket</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€8.40</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Spar</a></td><td class="num">26 May</td><td><a href="category-show.html?cat=supermarket">Supermarket</a></td><td class="text-muted">Revolut</td><td class="text-end num text-danger">−€23.10</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Wochenmarkt</a></td><td class="num">24 May</td><td><a href="category-show.html?cat=fresh-market-butcher">Fresh Market &amp; Butcher</a></td><td class="text-muted">Cash</td><td class="text-end num text-danger">−€18.00</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Bäckerei Felzl</a></td><td class="num">22 May</td><td><a href="category-show.html?cat=bakeries">Bakeries</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€6.20</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa Plus</a></td><td class="num">19 May</td><td><a href="category-show.html?cat=supermarket">Supermarket</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€52.40</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Hofer</a></td><td class="num">17 May</td><td><a href="category-show.html?cat=supermarket">Supermarket</a></td><td class="text-muted">Revolut</td><td class="text-end num text-danger">−€34.80</td></tr>
+              <tr><td colspan="6" class="text-muted p-3">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -421,29 +370,16 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
           <span class="text-muted small">% of budget</span>
         </div>
         <div class="hist-big">
-          <div class="bars">
-            <!-- Jun..May, values % used; 100% mark = top 9.1% (since max 110%) -->
-            <div class="bar" style="height:87.3%" title="Jun '25 · 96%"><span class="pct">96</span></div>
-            <div class="bar" style="height:72.7%" title="Jul '25 · 80%"><span class="pct">80</span></div>
-            <div class="bar" style="height:80.0%" title="Aug '25 · 88%"><span class="pct">88</span></div>
-            <div class="bar" style="height:82.7%" title="Sep '25 · 91%"><span class="pct">91</span></div>
-            <div class="bar" style="height:85.5%" title="Oct '25 · 94%"><span class="pct">94</span></div>
-            <div class="bar" style="height:83.6%" title="Nov '25 · 92%"><span class="pct">92</span></div>
-            <div class="bar over" style="height:98.2%" title="Dec '25 · 108% — over"><span class="pct">108</span></div>
-            <div class="bar" style="height:74.5%" title="Jan '26 · 82%"><span class="pct">82</span></div>
-            <div class="bar" style="height:79.1%" title="Feb '26 · 87%"><span class="pct">87</span></div>
-            <div class="bar" style="height:81.8%" title="Mar '26 · 90%"><span class="pct">90</span></div>
-            <div class="bar" style="height:86.4%" title="Apr '26 · 95%"><span class="pct">95</span></div>
-            <div class="bar current" style="height:76.4%" title="May '26 · 84% (current, day 28)"><span class="pct">84</span></div>
+          <div class="bars" data-k="bs-history-bars">
+            <div class="bar" style="height:0%"><span class="pct">—</span></div>
           </div>
-          <div class="labels">
-            <span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span>
-            <span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span class="text-mint">May</span>
+          <div class="labels" data-k="bs-history-labels">
+            <span>—</span>
           </div>
-          <div class="hist-stats">
-            <span>avg <b>91%</b></span>
-            <span>max <b class="text-danger">108%</b> (Dec)</span>
-            <span>min <b>80%</b> (Jul)</span>
+          <div class="hist-stats" data-k="bs-history-stats">
+            <span>avg <b>—</b></span>
+            <span>max <b>—</b></span>
+            <span>min <b>—</b></span>
           </div>
         </div>
       </div>
@@ -455,25 +391,19 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
           <a href="#" class="text-muted small"><i class="fa-solid fa-pencil"></i> Edit</a>
         </div>
         <div class="setup-list">
-          <div class="row-item"><span class="lbl">Monthly amount</span><span class="val num">€450.00</span></div>
-          <div class="row-item"><span class="lbl">Period</span><span class="val">Monthly · resets 1st</span></div>
+          <div class="row-item"><span class="lbl">Monthly amount</span><span class="val num" data-k="bs-setup-amount">€—</span></div>
+          <div class="row-item"><span class="lbl">Period</span><span class="val" data-k="bs-setup-period">—</span></div>
           <div class="row-item"><span class="lbl">Rollover</span><span class="val text-info"><i class="fa-solid fa-arrows-rotate fa-xs"></i> Carry surplus · reset overspend</span></div>
           <div class="row-item">
             <span class="lbl">Categories</span>
-            <span class="val chips">
-              <a href="category-show.html?cat=supermarket" class="chip">Supermarket</a>
-              <a href="category-show.html?cat=fresh-market-butcher" class="chip">Fresh M&amp;B</a>
-              <a href="category-show.html?cat=bakeries" class="chip">Bakeries</a>
-            </span>
+            <span class="val chips" data-k="bs-setup-categories"><span class="text-muted small">—</span></span>
           </div>
           <div class="row-item">
             <span class="lbl">Accounts</span>
-            <span class="val chips">
-              <span class="chip">George</span><span class="chip">Revolut</span><span class="chip">Cash</span>
-            </span>
+            <span class="val chips" data-k="bs-setup-accounts"><span class="text-muted small">—</span></span>
           </div>
-          <div class="row-item"><span class="lbl">Linked rules</span><span class="val"><a href="rules.html?budget_id=1">5 rules →</a></span></div>
-          <div class="row-item"><span class="lbl">Created</span><span class="val text-muted">12 Jan 2022</span></div>
+          <div class="row-item"><span class="lbl">Linked rules</span><span class="val" data-k="bs-setup-rules"><a href="rules.html">Manage →</a></span></div>
+          <div class="row-item"><span class="lbl">Created</span><span class="val text-muted" data-k="bs-setup-created">—</span></div>
         </div>
       </div>
 
@@ -483,23 +413,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
           <h3 class="card-title">Recurring · expected</h3>
           <a href="recurring.html?budget_id=1" class="text-muted small">All →</a>
         </div>
-        <div style="padding:.3rem 0;">
-          <div class="recur-row">
-            <div class="ic"><i class="fa-solid fa-store"></i></div>
-            <div>
-              <div class="nm">Wochenmarkt</div>
-              <div class="meta">Weekly · Sat · next 31 May</div>
-            </div>
-            <div class="amt">≈ €30</div>
-          </div>
-          <div class="recur-row">
-            <div class="ic"><i class="fa-solid fa-bread-slice"></i></div>
-            <div>
-              <div class="nm">Bäckerei standing order</div>
-              <div class="meta">Weekly · Sun · next 1 Jun</div>
-            </div>
-            <div class="amt">≈ €8</div>
-          </div>
+        <div style="padding:.3rem 0;" data-k="bs-recurring">
+          <div class="text-muted small" style="padding:.6rem .8rem;">Loading…</div>
         </div>
       </div>
 
@@ -510,6 +425,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="pala-live.js"></script>
+<script src="pala-live2.js"></script>
 <script>
 /* Shared chrome — same NAV as account-show.html */
 (function () {

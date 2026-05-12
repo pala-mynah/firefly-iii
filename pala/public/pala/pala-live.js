@@ -1,12 +1,9 @@
-/* pala-live.js — live-data + interactions for every Pala page.
-   Activates per page via body[data-page] (+ optional data-sub).
 
-   Include once at the end of each page:
-     <script src="pala-live.js"></script>
-*/
 (function () {
   const tok  = () => localStorage.getItem("pala_pat") || "";
   const base = () => (localStorage.getItem("pala_url") || location.origin).replace(/\/$/, "") + "/api/v1";
+
+  let _budgetHistCache = null;
 
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const fmt = (n) => "€" + Number(n).toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -38,7 +35,6 @@
   const errorRow   = (cols, e) => `<tr><td colspan="${cols}" class="text-danger p-3">Failed: ${esc(e.message)}</td></tr>`;
   const emptyRow   = (cols, msg) => `<tr><td colspan="${cols}" class="text-muted p-3">${msg}</td></tr>`;
 
-  /* ─── Accounts list (?type=asset|expense|revenue|liabilities) ──────────── */
   async function pageAccounts() {
     if (qs("id")) return pageAccountShow();
     const type = qs("type") || "asset";
@@ -65,45 +61,6 @@
     } catch (e) { setTbody(errorRow(5, e)); }
   }
 
-  /* ─── Account detail (?id=N) ───────────────────────────────────────────── */
-  async function pageAccountShow() {
-    const id = qs("id");
-    if (!id) return;
-    try {
-      const acc = (await api(`/accounts/${id}`)).data;
-      const at = acc.attributes;
-      setTitle(at.name);
-      document.title = at.name + " — Firefly III · Pala";
-      const meta = document.querySelector(".card-body table tbody");
-      if (meta) meta.innerHTML = `
-        <tr><th>IBAN</th><td>${esc(at.iban || "—")}</td></tr>
-        <tr><th>Type</th><td>${esc(at.type)}</td></tr>
-        <tr><th>Currency</th><td>${esc(at.currency_code)}</td></tr>
-        <tr><th>Balance</th><td>${fmt(at.current_balance || 0)}</td></tr>
-        <tr><th>Opened</th><td>${dat(at.opening_balance_date)}</td></tr>`;
-      const tx = (await api(`/accounts/${id}/transactions?limit=50`)).data;
-      const txBody = document.querySelectorAll(".card .table tbody")[1];
-      if (!txBody) return;
-      if (!tx.length) { txBody.innerHTML = emptyRow(6, "No transactions."); return; }
-      txBody.innerHTML = tx.map((t) => {
-        const inner = t.attributes.transactions[0];
-        const amt = parseFloat(inner.amount);
-        const sign = inner.type === "deposit" ? "+" : "−";
-        const cls = inner.type === "deposit" ? "text-success" : inner.type === "transfer" ? "text-info" : "text-danger";
-        const icon = inner.type === "deposit" ? "fa-arrow-right text-success" : inner.type === "transfer" ? "fa-arrows-left-right text-info" : "fa-arrow-left text-danger";
-        return `<tr>
-          <td class="text-center"><i class="fa-solid ${icon}"></i></td>
-          <td>${esc(inner.description)}</td>
-          <td class="text-end ${cls} text-nowrap">${sign}${fmt(amt)}</td>
-          <td class="text-muted small">${dat(inner.date)}</td>
-          <td>${inner.category_id ? `<a href="transactions.html?cat_id=${inner.category_id}">${esc(inner.category_name)}</a>` : ""}</td>
-          <td class="text-muted small">${esc(inner.source_name || "")} → ${esc(inner.destination_name || "")}</td>
-        </tr>`;
-      }).join("");
-    } catch (e) { setTbody(errorRow(6, e)); }
-  }
-
-  /* ─── Transactions ─────────────────────────────────────────────────────── */
   async function pageTransactions() {
     const filter = qs("filter"), type = qs("type"), cat = qs("cat"), catId = qs("cat_id"), budget = qs("budget"), budgetId = qs("budget_id"), account = qs("account");
     const TYPE_MAP = { expense: "withdrawal", expenses: "withdrawal", income: "deposit", transfers: "transfer", all: "all" };
@@ -120,8 +77,6 @@
       if (cat && !catId) rows = rows.filter((t) => t.attributes.transactions[0].category_name === cat);
       if (budget && !budgetId) rows = rows.filter((t) => slug(t.attributes.transactions[0].budget_name || "") === budget);
       if (account) rows = rows.filter((t) => String(t.attributes.transactions[0].source_id) === account || String(t.attributes.transactions[0].destination_id) === account);
-
-      // Resolve cat_id / budget_id to a display name for the filter chip
       let catName = cat, budgetName = budget;
       if (catId && rows[0]) catName = rows[0].attributes.transactions[0].category_name || `#${catId}`;
       if (budgetId && rows[0]) budgetName = rows[0].attributes.transactions[0].budget_name || `#${budgetId}`;
@@ -132,8 +87,6 @@
       if (catName) titleParts.push("· " + catName);
       if (budgetName) titleParts.push("· " + budgetName);
       setTitle(titleParts.length ? titleParts.join(" ") : "Transactions");
-
-      // Visible filter chip so user knows narrowing is applied + can clear it
       const head = document.querySelector("main.pala-main .page-head");
       if (head && (type || filter || catName || budgetName || account)) {
         const chips = [];
@@ -150,7 +103,10 @@
       }
 
       if (!rows.length) return setTbody(emptyRow(5, "No transactions match."));
-      setTbody(rows.map((t) => {
+      const PAGE_SIZE = 25;
+      const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+      let curPage = 1;
+      const renderRow = (t) => {
         const tx = t.attributes.transactions[0];
         const amt = parseFloat(tx.amount);
         const sign = tx.type === "deposit" ? "+" : "−";
@@ -165,12 +121,73 @@
           <td class="text-end ${cls} text-nowrap">${sign}${fmt(amt)}</td>
           <td class="d-none d-lg-table-cell">${tx.budget_id ? `<a href="transactions.html?budget_id=${tx.budget_id}" class="badge bg-secondary text-decoration-none">${esc(tx.budget_name)}</a>` : ""}</td>
         </tr>`;
-      }).join(""));
-      wireCategorize();
+      };
+      const renderPage = (p) => {
+        curPage = Math.min(Math.max(1, p), totalPages);
+        const lo = (curPage - 1) * PAGE_SIZE;
+        const hi = Math.min(rows.length, lo + PAGE_SIZE);
+        setTbody(rows.slice(lo, hi).map(renderRow).join(""));
+        wireCategorize();
+        // pageinfo
+        const info = document.querySelector('[data-k="tx-pageinfo"]');
+        if (info) info.textContent = `${lo + 1}\u2013${hi} of ${rows.length}`;
+        // pagination links
+        const nav = document.querySelector('[data-k="tx-pagination"] ul');
+        if (nav) {
+          // build a compact pager: « 1 … (p-1) p (p+1) … N »
+          const want = new Set([1, totalPages, curPage, curPage - 1, curPage + 1]);
+          const pages = [...want].filter((n) => n >= 1 && n <= totalPages).sort((a, b) => a - b);
+          const parts = [];
+          parts.push(`<li class="page-item ${curPage === 1 ? "disabled" : ""}"><a class="page-link" href="#" data-pg="${curPage - 1}">&laquo;</a></li>`);
+          let prev = 0;
+          for (const n of pages) {
+            if (n - prev > 1) parts.push('<li class="page-item disabled"><span class="page-link">…</span></li>');
+            parts.push(`<li class="page-item ${n === curPage ? "active" : ""}"><a class="page-link" href="#" data-pg="${n}">${n}</a></li>`);
+            prev = n;
+          }
+          parts.push(`<li class="page-item ${curPage === totalPages ? "disabled" : ""}"><a class="page-link" href="#" data-pg="${curPage + 1}">&raquo;</a></li>`);
+          nav.innerHTML = parts.join("");
+          nav.querySelectorAll("a.page-link").forEach((a) => {
+            a.addEventListener("click", (ev) => {
+              ev.preventDefault();
+              const n = Number(a.dataset.pg);
+              if (!Number.isFinite(n) || n < 1 || n > totalPages || n === curPage) return;
+              renderPage(n);
+              // scroll the table back to top so the new page is visible from the start
+              const scrollBox = document.querySelector(".tx-scroll");
+              if (scrollBox) scrollBox.scrollTop = 0;
+            });
+          });
+        }
+      };
+      renderPage(1);
+      const TYPE_MAP2 = { expense: "withdrawal", expenses: "withdrawal", income: "deposit", transfers: "transfer" };
+      const rangeType = TYPE_MAP2[type] || (type === "all" ? "all" : null);
+      let count = rows.length, net = 0;
+      for (const t of rows) for (const tx of t.attributes.transactions) {
+        if (tx.type === "withdrawal") net -= Number(tx.amount);
+        else if (tx.type === "deposit") net += Number(tx.amount);
+      }
+      const setK = (k, v, cls) => {
+        const el = document.querySelector(`[data-k="${k}"]`);
+        if (!el) return;
+        el.textContent = v;
+        if (cls) el.className = el.className.replace(/text-(success|danger|muted)/g, "") + " " + cls;
+      };
+      const titleEl = document.querySelector('[data-k="tx-summary-title"]');
+      const TYPE_TITLES = { withdrawal: "Withdrawals", deposit: "Deposits", transfer: "Transfers" };
+      const monthLabel = new Date().toLocaleDateString("en", { month: "long", year: "numeric" });
+      if (titleEl) titleEl.textContent = `${TYPE_TITLES[rangeType] || "Transactions"}: ${monthLabel}`;
+      setK("tx-count", String(count));
+      const netCls = net > 0 ? "text-success" : net < 0 ? "text-danger" : "text-muted";
+      const netTxt = net === 0 ? "—" : (net > 0 ? "+" : "−") + "\u20ac" + Math.abs(net).toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      setK("tx-net", netTxt, netCls);
+      const { start: rs, end: re } = periodRange();
+      setK("tx-range", `${dat(rs)} → ${dat(re)}`);
+      liveTxSidebar(rangeType).catch((e) => console.warn("tx sidebar:", e));
     } catch (e) { setTbody(errorRow(5, e)); }
   }
 
-  /* ─── Categories list (uses numeric id for stable links) ───────────────── */
   async function pageCategories() {
     setTbody(loadingRow(3));
     try {
@@ -184,21 +201,6 @@
     } catch (e) { setTbody(errorRow(3, e)); }
   }
 
-  /* ─── Tags list ────────────────────────────────────────────────────────── */
-  async function pageTags() {
-    setTbody(loadingRow(3));
-    try {
-      const res = await api("/tags");
-      if (!res.data.length) return setTbody(emptyRow(3, "No tags yet."));
-      setTbody(res.data.map((t) => `<tr>
-        <td><div class="btn-group btn-group-sm"><a href="#" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pencil fa-fw"></i></a></div></td>
-        <td><a href="#">${esc(t.attributes.tag)}</a></td>
-        <td class="text-muted small">${dat(t.attributes.date)}</td>
-      </tr>`).join(""));
-    } catch (e) { setTbody(errorRow(3, e)); }
-  }
-
-  /* ─── Bills ────────────────────────────────────────────────────────────── */
   async function pageBills() {
     setTbody(loadingRow(6));
     try {
@@ -219,7 +221,6 @@
     } catch (e) { setTbody(errorRow(6, e)); }
   }
 
-  /* ─── Piggy banks ──────────────────────────────────────────────────────── */
   async function pagePiggy() {
     setTbody(loadingRow(5));
     try {
@@ -241,7 +242,6 @@
     } catch (e) { setTbody(errorRow(5, e)); }
   }
 
-  /* ─── Recurring transactions ───────────────────────────────────────────── */
   async function pageRecurring() {
     setTbody(loadingRow(5));
     try {
@@ -261,7 +261,6 @@
     } catch (e) { setTbody(errorRow(5, e)); }
   }
 
-  /* ─── Rules (list + ?prefill= form) ────────────────────────────────────── */
   async function pageRules() {
     const p = qs("prefill");
     if (p) return rulesPrefill(p);
@@ -323,7 +322,6 @@
     };
   }
 
-  /* ─── Categorize modal ─────────────────────────────────────────────────── */
   function wireCategorize() {
     document.querySelectorAll(".categorize-btn").forEach((b) => {
       if (b.dataset.bound) return;
@@ -367,7 +365,6 @@
     });
   }
 
-  /* ─── Dashboard: live cat-chips per envelope + attention wiring ────────── */
   async function pageDashboard() {
     const tryEnhance = async (attempt = 0) => {
       if (attempt > 20) return;
@@ -382,7 +379,7 @@
           const cats = row.querySelector(".pace-cats");
           if (!cats) continue;
           const txs = await api(`/budgets/${b.id}/transactions?start=${start}&end=${end}&limit=500`);
-          const totals = {}; // key: cat_id|UNCAT  → {name, amt}
+          const totals = {};
           for (const t of txs.data) {
             const inner = t.attributes.transactions[0];
             const key = inner.category_id || "UNCAT";
@@ -404,8 +401,6 @@
       const title = row.querySelector(".attention-title")?.textContent || "";
       if (/categor|tag|uncateg/i.test(title)) row.setAttribute("href", "transactions.html?filter=uncategorised");
     });
-
-    // Live donut legend: replace stale hard-coded category rows with real top categories
     try {
       const legend = document.querySelector(".donut-legend");
       if (legend) {
@@ -449,7 +444,6 @@
     } catch (e) { console.warn("donut legend:", e); }
   }
 
-  /* ─── Budgets list: live KPIs + simplified envelope cards ──────────────── */
   const BUDGET_COLOR_BY_SLUG = {
     "groceries":     "var(--bud-groceries)",
     "going-out":     "var(--bud-going-out)",
@@ -487,8 +481,6 @@
     const daysInMonth = monthEnd.getDate();
     const daysLeft = Math.max(0, daysInMonth - dayOfMonth);
     const monthLabel = monthStart.toLocaleDateString("en", { month: "short", year: "numeric" });
-
-    // Update page-head subtitle + body data-period (navbar reads from this)
     document.body.setAttribute("data-period",
       `${monthStart.getDate()} ${monthStart.toLocaleDateString("en", { month: "short" })} \u2013 ${daysInMonth} ${monthEnd.toLocaleDateString("en", { month: "short" })} ${y}`);
     const periodEl = document.querySelector(".pala-navbar .period-badge span");
@@ -505,8 +497,6 @@
       liveHistoricChart().catch(() => {});
       return;
     }
-
-    // Fetch 12-month spent series in parallel (one call per past month, current included)
     const HIST_MONTHS = 12;
     const monthRanges = [];
     for (let k = HIST_MONTHS - 1; k >= 0; k--) {
@@ -518,7 +508,8 @@
         isCurrent: k === 0,
       });
     }
-    let historyByBudget = new Map(); // id → [{label, pct, spent, isCurrent, isOver}]
+    let historyByBudget = new Map();
+    let perMonthBudgetSeries = [];
     try {
       const monthResponses = await Promise.all(
         monthRanges.map((r) =>
@@ -527,19 +518,20 @@
       );
       monthResponses.forEach((data, mi) => {
         const range = monthRanges[mi];
+        const monthEntry = { ym: range.start.slice(0, 7), label: range.label, isCurrent: range.isCurrent, totals: {} };
         data.forEach((b) => {
           const s = Math.abs(Number(b.attributes?.spent?.[0]?.sum || 0));
+          monthEntry.totals[b.id] = s;
           if (!historyByBudget.has(b.id)) historyByBudget.set(b.id, []);
           historyByBudget.get(b.id).push({
             label: range.label, spent: s, isCurrent: range.isCurrent,
           });
         });
+        perMonthBudgetSeries.push(monthEntry);
       });
     } catch (e) {
       console.warn("pageBudgets: per-month history failed (mini-hist will be empty)", e);
     }
-
-    // Sum limits per budget id (a budget can have multiple limit rows in a period)
     const limitByBudget = new Map();
     for (const l of limits) {
       const a = l.attributes || {};
@@ -547,8 +539,6 @@
       if (!bid) continue;
       limitByBudget.set(bid, (limitByBudget.get(bid) || 0) + Number(a.amount || 0));
     }
-
-    // Build records, keep only active budgets
     const records = budgets
       .filter((b) => b.attributes && b.attributes.active !== false)
       .map((b, i) => {
@@ -557,7 +547,7 @@
         const limit = limitByBudget.get(String(b.id)) || 0;
         const spent = Math.abs(Number(a.spent?.[0]?.sum || 0));
         const pctRaw = limit > 0 ? (spent / limit) * 100 : (spent > 0 ? 100 : 0);
-        const pct = Math.min(pctRaw, 110); // clamp visual fill
+        const pct = Math.min(pctRaw, 110);
         const left = limit - spent;
         let status = "on";
         if (pctRaw > 100) status = "over";
@@ -568,10 +558,36 @@
           limit, spent, left, pct, pctRaw, status,
         };
       })
-      .filter((r) => r.limit > 0 || r.spent > 0) // hide truly empty budgets
-      .sort((a, b) => b.limit - a.limit);        // biggest budgets first
+      .filter((r) => r.limit > 0 || r.spent > 0)
+      .sort((a, b) => b.limit - a.limit);
 
-    // Find the cards grid (the row containing .bud-link cards)
+    // Parallel: fetch current-month transactions per budget so each card can show
+    // top categories feeding it (cat-stack-block on the static markup).
+    const catsByBudget = new Map();
+    try {
+      const txResponses = await Promise.all(
+        records.map((r) =>
+          api(`/budgets/${r.id}/transactions?start=${startStr}&end=${endStr}&limit=500`)
+            .then((res) => res.data || [])
+            .catch(() => [])
+        )
+      );
+      records.forEach((r, idx) => {
+        const totals = {};
+        for (const t of txResponses[idx]) {
+          const inner = t.attributes?.transactions?.[0]; if (!inner) continue;
+          if (inner.type && inner.type !== "withdrawal") continue;
+          const key = inner.category_name || "Uncategorised";
+          const id  = inner.category_id || "";
+          if (!totals[key]) totals[key] = { id, name: key, amt: 0 };
+          totals[key].amt += Math.abs(Number(inner.amount || 0));
+        }
+        const sorted = Object.values(totals).sort((a, b) => b.amt - a.amt).slice(0, 3);
+        catsByBudget.set(r.id, sorted);
+      });
+    } catch (e) {
+      console.warn("pageBudgets: per-budget tx for cat-stack failed", e);
+    }
     const anchorCard = document.querySelector(".bud-link");
     const grid = anchorCard?.closest(".row");
     if (grid) {
@@ -588,8 +604,6 @@
         const pillCls = r.status === "over" ? "over" : (r.status === "watch" ? "warn" : "ok");
         const pillText = r.status === "over" ? "over" : (r.status === "watch" ? "watch" : "on pace");
         const expectedPctTxt = Math.round(expectedPacePct);
-
-        // Build mini-history bars from per-budget series (denominator = current limit)
         const series = historyByBudget.get(r.id) || [];
         const denom = r.limit > 0 ? r.limit : Math.max(1, ...series.map(s => s.spent));
         const histSpents = series.map(s => s.spent);
@@ -613,6 +627,30 @@
             <div class="mini-hist-legend"><span>${escapeHtml(firstLabel)}</span><span>avg ${Math.round(histAvgPct)}% \u00b7 max ${Math.round(histMaxPct)}%</span><span>${escapeHtml(lastLabel)}</span></div>
           </div>` : "";
 
+        const cats = catsByBudget.get(r.id) || [];
+        const catMax = cats.length ? Math.max(1, ...cats.map(c => c.amt)) : 1;
+        const catShade = (i) => {
+          // primary then two muted tints of the budget color
+          if (i === 0) return r.color;
+          const tints = ["rgba(255,255,255,.45)", "rgba(255,255,255,.28)"];
+          return tints[i - 1] || tints[1];
+        };
+        const catRowsHtml = cats.map((c, i) => {
+          const w = Math.round((c.amt / catMax) * 100);
+          const href = c.id ? `category-show.html?id=${c.id}` : `transactions.html?budget=${r.slug}`;
+          return `<a href="${href}" class="cat-row" onclick="event.stopPropagation()">
+              <span class="dot" style="background:${catShade(i)}"></span>
+              <span class="name">${escapeHtml(c.name)}</span>
+              <span class="bar"><span class="fill" style="width:${w}%;background:${catShade(i)}"></span></span>
+              <span class="amt">${fmtEur(c.amt)}</span>
+            </a>`;
+        }).join("");
+        const catBlockHtml = cats.length ? `
+          <div class="cat-stack-block">
+            <div class="cat-stack-label">Top categories this month</div>
+            <div class="cat-list">${catRowsHtml}</div>
+          </div>` : "";
+
         const col = document.createElement("div");
         col.className = "col-lg-6 col-xl-4";
         col.innerHTML = `
@@ -633,6 +671,7 @@
                 <span>Day ${dayOfMonth}/${daysInMonth} \u00b7 expected ${expectedPctTxt}%</span>
                 <span class="bud-pill ${pillCls}">${pillText}</span>
               </div>
+              ${catBlockHtml}
               ${histHtml}
             </div>
           </a>
@@ -640,8 +679,6 @@
         grid.appendChild(col);
       });
     }
-
-    // ─── KPI strip ───
     const totBudgeted = records.reduce((a, r) => a + r.limit, 0);
     const totSpent    = records.reduce((a, r) => a + r.spent, 0);
     const totAvail    = totBudgeted - totSpent;
@@ -656,7 +693,6 @@
     setText("#budTitleSub", `${envCount} envelope${envCount === 1 ? "" : "s"} \u00b7 ${fmtEurInt(totBudgeted)}/mo`);
     setText('[data-k="budgeted-eyebrow"]',
       monthStart.toLocaleDateString("en", { month: "short" }) + " budgeted");
-    // re-inject the arrow icon (textContent wiped it)
     const eyebrowEl = document.querySelector('[data-k="budgeted-eyebrow"]');
     if (eyebrowEl) eyebrowEl.innerHTML = `${monthStart.toLocaleDateString("en", { month: "short" })} budgeted <i class="fa-solid fa-arrow-right kpi-arrow"></i>`;
     setHtml('[data-k="budgeted-amount"]', `${fmtEurInt(totBudgeted)}<span class="text-muted" style="font-weight:400">.00</span>`);
@@ -678,13 +714,13 @@
     setText('[data-k="status-meta"]', daysLeft > 0
       ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in period`
       : "last day of period");
-
-    // Re-apply focus styling now that cards exist
     if (typeof window.applyBudgetFocus === "function") {
       try { window.applyBudgetFocus(); } catch (e) { console.warn(e); }
     }
-
-    // Live historic chart (always — supports tab clicks regardless of focus)
+    _budgetHistCache = {
+      records: records.map(r => ({ id: r.id, name: r.name, color: r.color, limit: r.limit })),
+      perMonth: perMonthBudgetSeries,
+    };
     liveHistoricChart().catch((e) => console.warn("liveHistoricChart failed:", e));
   }
 
@@ -694,24 +730,19 @@
     }[c]));
   }
 
-  /* ─── Historic chart: live data for Total + Day-N modes ───────────── */
   async function liveHistoricChart() {
     const wrap = document.getElementById("histWrap");
     if (!wrap) return;
     const monthsEls = wrap.querySelectorAll(".history-month");
     if (!monthsEls.length) return;
-    // Hide mocked stacks immediately — stay empty until live data lands
     monthsEls.forEach((el) => {
       const stack = el.querySelector(".history-stack");
       if (stack) stack.style.height = "0%";
     });
     const today = new Date();
     const dom = today.getDate();
-    // Update Day-N tab label to today's day-of-month
     const dnTab = document.querySelector('#histTabs button[data-mode="dayn"]');
     if (dnTab) dnTab.textContent = `Day-${dom}`;
-
-    // Build 12 month windows ending with the current month
     const monthDefs = [];
     for (let i = 11; i >= 0; i--) {
       const s = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -729,8 +760,6 @@
     }
     const startAll = monthDefs[0].start;
     const endAll = monthDefs[monthDefs.length - 1].end;
-
-    // Budgeted totals across full range
     let budgetedByMonth = {};
     try {
       const lim = await api(`/budget-limits?start=${startAll}&end=${endAll}`);
@@ -741,8 +770,6 @@
         budgetedByMonth[ym] = (budgetedByMonth[ym] || 0) + Number(a.amount || 0);
       }
     } catch (_) { /* swallow */ }
-
-    // Day-N spend per month, parallel
     const dn = await Promise.all(
       monthDefs.map(async (m) => {
         try {
@@ -753,8 +780,6 @@
         } catch (_) { return { spend: 0, txCount: 0 }; }
       })
     );
-
-    // Wire the last N month-elements (HTML has 12 hardcoded)
     const elems = Array.from(monthsEls).slice(-monthDefs.length);
     const eu = (n) => "\u20ac" + Math.round(n).toLocaleString("de-AT");
     elems.forEach((el, i) => {
@@ -787,17 +812,89 @@
       const header = wrap.parentElement.querySelector(".card-header .text-muted.small");
 
       if (mode === "pct" || mode === "eur") {
-        // Live wiring for stacked envelope modes not yet implemented — leave bars empty.
-        elems.forEach((el) => {
-          el.classList.remove("over", "under");
-          const stack = el.querySelector(".history-stack");
-          if (stack) stack.style.height = "0%";
-          const eP = el.querySelector(".euro"); if (eP) eP.textContent = "";
+        const cache = _budgetHistCache;
+        const monthByYm = cache ? Object.fromEntries(cache.perMonth.map(m => [m.ym, m])) : {};
+        const records = cache?.records || [];
+        const colorOf = Object.fromEntries(records.map(r => [r.id, r.color]));
+        const nameOf  = Object.fromEntries(records.map(r => [r.id, r.name]));
+
+        const perElem = elems.map((el, i) => {
+          const ym = monthDefs[i].ym;
+          const totals = monthByYm[ym]?.totals || {};
+          const totalSpent = Object.values(totals).reduce((a, b) => a + b, 0);
+          const totalBudgeted = budgetedByMonth[ym] || 0;
+          return { el, ym, totals, totalSpent, totalBudgeted };
+        });
+        const capEur = (() => {
+          const m = Math.max(...perElem.map(p => p.totalSpent), 0);
+          return Math.max(50, Math.ceil((m * 1.1) / 50) * 50);
+        })();
+
+        let maxPctSeen = 0;
+        perElem.forEach((p) => {
+          p.el.classList.remove("over", "under");
+          const stack = p.el.querySelector(".history-stack");
+          const eP = p.el.querySelector(".euro");
+          const pctEl = p.el.querySelector(".pct");
+          if (!stack) return;
+          stack.classList.add("live-segs");
+
+          if (p.el.dataset.hasData !== "1" || (mode === "pct" && p.totalBudgeted <= 0) || p.totalSpent <= 0) {
+            stack.style.height = "0%";
+            stack.innerHTML = "";
+            if (eP) eP.textContent = "";
+            if (pctEl) pctEl.textContent = "";
+            return;
+          }
+
+          let stackPct;
+          let segHeights;
+          if (mode === "pct") {
+            const usedPct = (p.totalSpent / p.totalBudgeted) * 100;
+            maxPctSeen = Math.max(maxPctSeen, usedPct);
+            const visPct = Math.min(usedPct, 110);
+            stackPct = visPct / 110 * 100;
+            if (usedPct > 100) p.el.classList.add("over");
+            segHeights = records.map(r => ({
+              id: r.id, color: r.color, name: r.name,
+              h: (p.totals[r.id] || 0) / p.totalSpent * stackPct,
+              euros: p.totals[r.id] || 0,
+              pct: p.totalBudgeted > 0 ? (p.totals[r.id] || 0) / p.totalBudgeted * 100 : 0,
+            }));
+            if (eP) eP.textContent = eu(p.totalSpent);
+            if (pctEl) pctEl.textContent = Math.round(usedPct) + "%";
+            p.el.setAttribute("title",
+              `${monthDefs[perElem.indexOf(p)].label} \u00b7 ${Math.round(usedPct)}% used \u00b7 ${eu(p.totalSpent)} / ${eu(p.totalBudgeted)}`);
+          } else {
+            stackPct = p.totalSpent / capEur * 100;
+            segHeights = records.map(r => ({
+              id: r.id, color: r.color, name: r.name,
+              h: (p.totals[r.id] || 0) / p.totalSpent * stackPct,
+              euros: p.totals[r.id] || 0,
+            }));
+            if (eP) eP.textContent = eu(p.totalSpent);
+            if (pctEl) pctEl.textContent = "";
+            p.el.setAttribute("title",
+              `${monthDefs[perElem.indexOf(p)].label} \u00b7 spent ${eu(p.totalSpent)}`);
+          }
+          stack.style.height = stackPct + "%";
+          stack.innerHTML = segHeights
+            .filter(s => s.h > 0)
+            .map(s => `<div class="history-seg" style="height:${s.h}%; background:${s.color}" title="${esc(s.name)} \u00b7 ${eu(s.euros)}${s.pct != null ? ` (${Math.round(s.pct)}%)` : ""}"></div>`)
+            .join("");
         });
         wrap.querySelector(".history-avgline")?.remove();
-        if (header) header.textContent = mode === "pct"
-          ? "% used \u00b7 per-envelope view \u2014 coming soon"
-          : "\u20ac amount per envelope \u2014 coming soon";
+        if (header) {
+          if (!records.length) {
+            header.textContent = mode === "pct"
+              ? "% used \u00b7 per-envelope view \u2014 no budget data yet"
+              : "\u20ac per envelope \u2014 no budget data yet";
+          } else {
+            header.textContent = mode === "pct"
+              ? `% of monthly budget used \u00b7 stacked by envelope \u00b7 max ${Math.round(maxPctSeen)}%`
+              : `\u20ac spent per envelope \u00b7 cap ${eu(capEur)}`;
+          }
+        }
         return;
       }
 
@@ -854,118 +951,391 @@
     repaint();
   }
 
-  /* ─── Budget detail (?id=N) ───────────────────────────────────────────── */
-  async function pageBudgetShow() {
-    const id = qs("id");
-    if (!id) return;
-    try {
-      const b = (await api(`/budgets/${id}`)).data;
-      const name = b.attributes.name;
-      const h1 = document.querySelector(".page-head h1");
-      if (h1) h1.innerHTML = `<span class="dot"></span>${esc(name)}`;
-      document.title = `${name} — Firefly III · Pala`;
-      const crumbs = document.querySelector("[data-crumbs]");
-      if (crumbs) crumbs.dataset.crumbs = `Home/Budgets/${name}`;
-
-      // Rewrite "View all N →" + rules link to real id
-      document.querySelectorAll('a[href*="budget_id=1"]').forEach((a) =>
-        a.setAttribute("href", a.getAttribute("href").replace(/budget_id=\d+/, "budget_id=" + id)));
-
-      // Live tx table = the last .card .table tbody on the page
-      const { start, end } = periodRange();
-      const tx = (await api(`/budgets/${id}/transactions?start=${start}&end=${end}&limit=200`)).data;
-      const tbodies = document.querySelectorAll(".card .table tbody");
-      const tb = tbodies[tbodies.length - 1];
-      if (tb) {
-        if (!tx.length) tb.innerHTML = emptyRow(6, "No transactions this month.");
-        else tb.innerHTML = tx.slice(0, 12).map((t) => {
-          const tr = t.attributes.transactions[0];
-          const amt = Number(tr.amount);
-          const sign = tr.type === "withdrawal" ? "−" : tr.type === "deposit" ? "+" : "";
-          const cls = tr.type === "withdrawal" ? "text-danger" : tr.type === "deposit" ? "text-mint" : "text-muted";
-          const ico = tr.type === "withdrawal" ? "fa-arrow-left text-danger" : "fa-arrow-right text-mint";
-          return `<tr>
-            <td class="text-center"><i class="fa-solid ${ico}"></i></td>
-            <td>${esc(tr.description)}</td>
-            <td class="num">${dat(tr.date)}</td>
-            <td>${tr.category_name ? esc(tr.category_name) : '<span class="text-muted">—</span>'}</td>
-            <td class="text-muted">${esc(tr.source_name || tr.destination_name || "")}</td>
-            <td class="text-end num ${cls}">${sign}€${amt.toFixed(2)}</td>
-          </tr>`;
-        }).join("");
-      }
-      const viewAll = document.querySelector('a[href*="transactions.html?budget_id"]');
-      if (viewAll) viewAll.textContent = `View all ${tx.length} →`;
-    } catch (e) {
-      const tbodies = document.querySelectorAll(".card .table tbody");
-      const tb = tbodies[tbodies.length - 1];
-      if (tb) tb.innerHTML = errorRow(6, e);
+  async function liveTxSidebar(rangeType /* 'withdrawal'|'deposit'|'transfer'|'all' */) {
+    const today = new Date();
+    const months = [];
+    for (let k = 0; k < 3; k++) {
+      const s = new Date(today.getFullYear(), today.getMonth() - k, 1);
+      const e = new Date(today.getFullYear(), today.getMonth() - k + 1, 0);
+      months.push({
+        start: s.toISOString().slice(0, 10),
+        end: e.toISOString().slice(0, 10),
+        label: s.toLocaleDateString("en", { month: "long", year: "numeric" }),
+      });
     }
+    const wrap = document.querySelector('[data-k="tx-monthlist"] .tx-monthlist-body');
+    if (!wrap) return;
+    try {
+      const responses = await Promise.all(months.map((m) => {
+        const qp = `start=${m.start}&end=${m.end}&limit=500` + (rangeType && rangeType !== "all" ? `&type=${rangeType}` : "");
+        return api(`/transactions?${qp}`).then((r) => r.data || []).catch(() => []);
+      }));
+      wrap.innerHTML = months.map((m, i) => {
+        const rows = responses[i];
+        let count = 0, sum = 0;
+        for (const t of rows) for (const tx of t.attributes.transactions) {
+          count++;
+          if (tx.type === "withdrawal") sum -= Number(tx.amount);
+          else if (tx.type === "deposit") sum += Number(tx.amount);
+        }
+        const sumCls = sum > 0 ? "text-success" : sum < 0 ? "text-danger" : "text-muted";
+        const sumTxt = (sum >= 0 ? "+" : "−") + "\u20ac" + Math.abs(Math.round(sum)).toLocaleString("de-AT");
+        const href = `transactions.html?start=${m.start}&end=${m.end}` + (rangeType && rangeType !== "all" ? `&type=${rangeType}` : "");
+        return `<div class="card mb-2">
+          <div class="card-header py-2"><h6 class="card-title mb-0"><a href="${href}">${esc(m.label)}</a></h6></div>
+          <div class="card-body p-0"><table class="table table-sm mb-0"><tbody>
+            <tr><td class="text-muted small">Count</td><td class="text-end small">${count}</td></tr>
+            <tr><td class="text-muted small">Net</td><td class="text-end small ${sumCls}">${count ? sumTxt : "—"}</td></tr>
+          </tbody></table></div>
+        </div>`;
+      }).join("");
+    } catch (e) { wrap.innerHTML = `<div class="text-danger small">Failed: ${esc(e.message)}</div>`; }
   }
 
-  /* ─── Category detail (?id=N) ─────────────────────────────────────────── */
-  async function pageCategoryShow() {
-    const id = qs("id");
-    if (!id) return;
+  async function pageReports() {
+    const accSel  = document.getElementById("rep-accounts");
+    const startEl = document.getElementById("rep-start");
+    const endEl   = document.getElementById("rep-end");
+    const gen     = document.getElementById("rep-generate");
+    const presets = document.getElementById("rep-presets");
+    const saved   = document.getElementById("rep-saved");
+    const saveBtn = document.getElementById("rep-save");
+    const results = document.getElementById("rep-results");
+    if (!accSel) return;
+    const { start, end } = periodRange();
+    startEl.value = start; endEl.value = end;
     try {
-      const c = (await api(`/categories/${id}`)).data;
-      const name = c.attributes.name;
-      const h1 = document.querySelector(".page-head h1");
-      if (h1) h1.innerHTML = `<span class="dot"></span>${esc(name)}`;
-      document.title = `${name} — Firefly III · Pala`;
-      const crumbs = document.querySelector("[data-crumbs]");
-      if (crumbs) crumbs.dataset.crumbs = `Home/Categories/${name}`;
-
-      // Live tx table = last tbody on the page
-      const { start, end } = periodRange();
-      const tx = (await api(`/categories/${id}/transactions?start=${start}&end=${end}&limit=200`)).data;
-      const tbodies = document.querySelectorAll(".card .table tbody");
-      const tb = tbodies[tbodies.length - 1];
-      if (tb) {
-        if (!tx.length) tb.innerHTML = emptyRow(6, "No transactions this month.");
-        else tb.innerHTML = tx.slice(0, 12).map((t) => {
-          const tr = t.attributes.transactions[0];
-          const amt = Number(tr.amount);
-          const sign = tr.type === "withdrawal" ? "−" : tr.type === "deposit" ? "+" : "";
-          const cls = tr.type === "withdrawal" ? "text-danger" : tr.type === "deposit" ? "text-mint" : "text-muted";
-          const ico = tr.type === "withdrawal" ? "fa-arrow-left text-danger" : "fa-arrow-right text-mint";
-          const merchant = tr.type === "withdrawal" ? (tr.destination_name || "") : (tr.source_name || "");
-          return `<tr>
-            <td class="text-center"><i class="fa-solid ${ico}"></i></td>
-            <td>${esc(tr.description)}</td>
-            <td class="num">${dat(tr.date)}</td>
-            <td>${esc(merchant)}</td>
-            <td class="text-muted">${esc(tr.type === "withdrawal" ? (tr.source_name || "") : (tr.destination_name || ""))}</td>
-            <td class="text-end num ${cls}">${sign}€${amt.toFixed(2)}</td>
-          </tr>`;
-        }).join("");
-      }
-      document.querySelectorAll('a[href*="cat_id=3"]').forEach((a) =>
-        a.setAttribute("href", a.getAttribute("href").replace(/cat_id=\d+/, "cat_id=" + id)));
-      const viewAll = document.querySelector('a[href*="transactions.html?cat_id"]');
-      if (viewAll && /View all/.test(viewAll.textContent)) viewAll.textContent = `View all ${tx.length} →`;
-    } catch (e) {
-      const tbodies = document.querySelectorAll(".card .table tbody");
-      const tb = tbodies[tbodies.length - 1];
-      if (tb) tb.innerHTML = errorRow(6, e);
+      const accts = (await api("/accounts?type=asset")).data || [];
+      accSel.innerHTML = accts.map((a) => `<option value="${a.id}" selected>${esc(a.attributes.name)}</option>`).join("") || `<option disabled>No asset accounts</option>`;
+    } catch (e) { accSel.innerHTML = `<option disabled>Failed: ${esc(e.message)}</option>`; }
+    const thisYear = new Date().getFullYear();
+    const years = [thisYear, thisYear - 1, thisYear - 2];
+    const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    presets.innerHTML = years.map((y) => {
+      const yLink = `<a href="#" class="fw-bold text-decoration-none" style="color:var(--pala-mint)" data-rng="${y}-01-01..${y}-12-31">${y}</a>`;
+      const quarters = [1,2,3,4].map((q) => {
+        const sm = (q - 1) * 3, em = sm + 2;
+        const sd = `${y}-${String(sm+1).padStart(2,"0")}-01`;
+        const ed = `${y}-${String(em+1).padStart(2,"0")}-${new Date(y, em+1, 0).getDate()}`;
+        return `<a href="#" class="text-muted text-decoration-none" data-rng="${sd}..${ed}">Q${q}</a>`;
+      }).join("");
+      const ms = MONTH_LABELS.map((lab, i) => {
+        const sd = `${y}-${String(i+1).padStart(2,"0")}-01`;
+        const ed = `${y}-${String(i+1).padStart(2,"0")}-${new Date(y, i+1, 0).getDate()}`;
+        return `<a href="#" class="text-muted text-decoration-none" data-rng="${sd}..${ed}">${lab}</a>`;
+      }).join("");
+      return `<div class="list-group-item py-2">
+        <div class="d-flex flex-wrap gap-2">${yLink}${quarters}</div>
+        <div class="d-flex flex-wrap gap-2 mt-1">${ms}</div>
+      </div>`;
+    }).join("");
+    presets.addEventListener("click", (e) => {
+      const a = e.target.closest("a[data-rng]"); if (!a) return;
+      e.preventDefault();
+      const [s, ee] = a.dataset.rng.split("..");
+      startEl.value = s; endEl.value = ee;
+    });
+    const SAVED_KEY = "pala_reports_saved";
+    function loadSaved() {
+      try { return JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"); } catch { return []; }
     }
+    function renderSaved() {
+      const list = loadSaved();
+      saved.innerHTML = list.length
+        ? list.map((r, i) => `<a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start" data-saved="${i}">
+            <span><span class="d-block">${esc(r.label)}</span><small class="text-muted">${esc(r.start)} → ${esc(r.end)}</small></span>
+            <button class="btn btn-sm text-muted" data-rm="${i}" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+          </a>`).join("")
+        : `<div class="list-group-item py-2 text-muted">No saved reports yet.</div>`;
+    }
+    renderSaved();
+    saved.addEventListener("click", (e) => {
+      const rm = e.target.closest("[data-rm]");
+      if (rm) {
+        e.preventDefault(); e.stopPropagation();
+        const list = loadSaved();
+        list.splice(Number(rm.dataset.rm), 1);
+        localStorage.setItem(SAVED_KEY, JSON.stringify(list));
+        renderSaved();
+        return;
+      }
+      const item = e.target.closest("[data-saved]");
+      if (item) {
+        e.preventDefault();
+        const r = loadSaved()[Number(item.dataset.saved)];
+        if (r) { startEl.value = r.start; endEl.value = r.end; gen.click(); }
+      }
+    });
+    saveBtn.onclick = () => {
+      const list = loadSaved();
+      const s = startEl.value, ee = endEl.value;
+      const label = prompt("Name this report:", `${s} → ${ee}`);
+      if (!label) return;
+      list.unshift({ label, start: s, end: ee });
+      localStorage.setItem(SAVED_KEY, JSON.stringify(list.slice(0, 20)));
+      renderSaved();
+    };
+    gen.onclick = async () => {
+      const s = startEl.value, ee = endEl.value;
+      results.innerHTML = `<div class="card mt-3"><div class="card-body text-muted">Generating report…</div></div>`;
+      try {
+        const txAll = (await api(`/transactions?start=${s}&end=${ee}&limit=1000`)).data || [];
+        const acctFilter = new Set([...accSel.selectedOptions].map((o) => o.value));
+        let income = 0, expense = 0, transferIn = 0, transferOut = 0, count = 0;
+        const catTotals = {};
+        const acctSpend = {};
+        for (const t of txAll) for (const tx of t.attributes.transactions) {
+          if (acctFilter.size) {
+            const sid = String(tx.source_id || ""), did = String(tx.destination_id || "");
+            if (!acctFilter.has(sid) && !acctFilter.has(did)) continue;
+          }
+          count++;
+          const amt = Number(tx.amount);
+          if (tx.type === "withdrawal") {
+            expense += amt;
+            const ck = tx.category_name || "Uncategorised";
+            catTotals[ck] = (catTotals[ck] || 0) + amt;
+            const ak = tx.source_name || "—";
+            acctSpend[ak] = (acctSpend[ak] || 0) + amt;
+          } else if (tx.type === "deposit") {
+            income += amt;
+          } else if (tx.type === "transfer") {
+            if (acctFilter.has(String(tx.destination_id))) transferIn += amt;
+            if (acctFilter.has(String(tx.source_id))) transferOut += amt;
+          }
+        }
+        const net = income - expense;
+        const cats = Object.entries(catTotals).sort((a,b) => b[1]-a[1]).slice(0, 10);
+        const accts = Object.entries(acctSpend).sort((a,b) => b[1]-a[1]).slice(0, 10);
+        const totalCat = cats.reduce((a, [,v]) => a+v, 0) || 1;
+        const totalAcc = accts.reduce((a, [,v]) => a+v, 0) || 1;
+        results.innerHTML = `
+          <div class="row g-3 mt-1">
+            <div class="col-xl-3"><div class="card h-100"><div class="card-body">
+              <div class="text-muted small text-uppercase" style="letter-spacing:.05em">Net for period</div>
+              <div class="fs-3" style="font-family:'Crimson Pro',serif;color:${net>=0?'var(--pala-mint)':'var(--pala-danger)'}">${net>=0?'+':'−'}\u20ac${Math.abs(net).toLocaleString("de-AT",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+              <div class="text-muted small mt-2">${count} txn${count===1?'':'s'} \u00b7 ${esc(s)} \u2192 ${esc(ee)}</div>
+            </div></div></div>
+            <div class="col-xl-3"><div class="card h-100"><div class="card-body">
+              <div class="text-muted small text-uppercase" style="letter-spacing:.05em">Income</div>
+              <div class="fs-3" style="font-family:'Crimson Pro',serif;color:var(--pala-success)">${fmt(income)}</div>
+              ${transferIn?`<div class="text-muted small mt-2">+ ${fmt(transferIn)} transfers in</div>`:''}
+            </div></div></div>
+            <div class="col-xl-3"><div class="card h-100"><div class="card-body">
+              <div class="text-muted small text-uppercase" style="letter-spacing:.05em">Expense</div>
+              <div class="fs-3" style="font-family:'Crimson Pro',serif;color:var(--pala-danger)">${fmt(expense)}</div>
+              ${transferOut?`<div class="text-muted small mt-2">+ ${fmt(transferOut)} transfers out</div>`:''}
+            </div></div></div>
+            <div class="col-xl-3"><div class="card h-100"><div class="card-body">
+              <div class="text-muted small text-uppercase" style="letter-spacing:.05em">Average / day</div>
+              <div class="fs-3" style="font-family:'Crimson Pro',serif">${fmt(expense / Math.max(1, daysBetween(s, ee)))}</div>
+              <div class="text-muted small mt-2">${daysBetween(s, ee)} days</div>
+            </div></div></div>
+          </div>
+          <div class="row g-3 mt-0">
+            <div class="col-xl-6"><div class="card"><div class="card-header"><h6 class="card-title">Top categories</h6></div><div class="card-body p-0"><table class="table table-sm mb-0"><tbody>
+              ${cats.length ? cats.map(([n,v]) => `<tr><td><a href="transactions.html?cat=${encodeURIComponent(n)}&start=${s}&end=${ee}">${esc(n)}</a><div class="progress mt-1" style="height:4px"><div class="progress-bar" style="width:${(v/totalCat*100).toFixed(1)}%"></div></div></td><td class="text-end text-danger num">${fmt(v)}</td></tr>`).join("") : `<tr><td class="text-muted p-3">No expenses in range.</td></tr>`}
+            </tbody></table></div></div></div>
+            <div class="col-xl-6"><div class="card"><div class="card-header"><h6 class="card-title">Top sources</h6></div><div class="card-body p-0"><table class="table table-sm mb-0"><tbody>
+              ${accts.length ? accts.map(([n,v]) => `<tr><td>${esc(n)}<div class="progress mt-1" style="height:4px"><div class="progress-bar" style="width:${(v/totalAcc*100).toFixed(1)}%;background:var(--pala-info)"></div></div></td><td class="text-end text-danger num">${fmt(v)}</td></tr>`).join("") : `<tr><td class="text-muted p-3">—</td></tr>`}
+            </tbody></table></div></div></div>
+          </div>`;
+      } catch (e) {
+        results.innerHTML = `<div class="card mt-3"><div class="card-body text-danger">Failed: ${esc(e.message)}</div></div>`;
+      }
+    };
+    gen.click();
+  }
+  function daysBetween(a, b) {
+    return Math.max(1, Math.round((new Date(b) - new Date(a)) / 86400000) + 1);
   }
 
-  /* ─── Boot ─────────────────────────────────────────────────────────────── */
+  async function pageSearch() {
+    const qEl = document.getElementById("srch-q");
+    const go = document.getElementById("srch-go");
+    const ruleBtn = document.getElementById("srch-rule");
+    const parsedEl = document.getElementById("srch-parsed");
+    const titleEl = document.getElementById("srch-title");
+    const rows = document.getElementById("srch-rows");
+    if (!qEl) return;
+    const last = sessionStorage.getItem("pala_srch_q") || qs("q") || "";
+    if (last) qEl.value = last;
+
+    function parseQuery(q) {
+      const tokens = (q || "").trim().split(/\s+/).filter(Boolean);
+      const filters = {}; const text = [];
+      for (const t of tokens) {
+        const m = t.match(/^(category|cat|tag|after|before|amount_more|amount_less|type|source|destination):(.+)$/i);
+        if (m) filters[m[1].toLowerCase()] = m[2];
+        else text.push(t);
+      }
+      return { text: text.join(" "), filters };
+    }
+
+    async function run() {
+      const q = qEl.value.trim();
+      sessionStorage.setItem("pala_srch_q", q);
+      const { text, filters } = parseQuery(q);
+      parsedEl.innerHTML = "";
+      if (text)     parsedEl.insertAdjacentHTML("beforeend", `<li>Text: <strong class="text-mint">${esc(text)}</strong></li>`);
+      for (const k of Object.keys(filters)) parsedEl.insertAdjacentHTML("beforeend", `<li>Filter: ${esc(k)} = <strong>${esc(filters[k])}</strong></li>`);
+      if (!q) { rows.innerHTML = `<tr><td colspan="7" class="text-muted p-3">Enter a query and press Search.</td></tr>`; titleEl.textContent = "Results"; return; }
+      rows.innerHTML = `<tr><td colspan="7" class="text-muted p-3">Searching…</td></tr>`;
+      try {
+        let data;
+        try {
+          data = (await api(`/search/transactions?query=${encodeURIComponent(q)}&limit=200`)).data || [];
+        } catch {
+          let path = "/transactions?limit=500";
+          if (filters.after)  path += `&start=${filters.after}`;
+          if (filters.before) path += `&end=${filters.before}`;
+          if (filters.type)   path += `&type=${filters.type}`;
+          const fb = (await api(path)).data || [];
+          const tl = text.toLowerCase();
+          data = fb.filter((t) => {
+            const tx = t.attributes.transactions[0];
+            if (tl && !((tx.description||"").toLowerCase().includes(tl) || (tx.category_name||"").toLowerCase().includes(tl) || (tx.source_name||"").toLowerCase().includes(tl) || (tx.destination_name||"").toLowerCase().includes(tl))) return false;
+            if (filters.category && (tx.category_name||"").toLowerCase() !== filters.category.toLowerCase() && !(tx.category_name||"").toLowerCase().includes(filters.category.toLowerCase())) return false;
+            if (filters.amount_more && Number(tx.amount) < Number(filters.amount_more)) return false;
+            if (filters.amount_less && Number(tx.amount) > Number(filters.amount_less)) return false;
+            return true;
+          });
+        }
+        titleEl.innerHTML = `Results <span class="text-muted small fw-normal">— ${data.length} transaction${data.length===1?'':'s'}</span>`;
+        if (!data.length) { rows.innerHTML = `<tr><td colspan="7" class="text-muted p-3">No matches.</td></tr>`; return; }
+        rows.innerHTML = data.slice(0, 200).map((t) => {
+          const tx = t.attributes.transactions[0];
+          const amt = Number(tx.amount);
+          const sign = tx.type === "deposit" ? "+" : "−";
+          const cls = tx.type === "deposit" ? "text-success" : tx.type === "transfer" ? "text-info" : "text-danger";
+          const ico = tx.type === "deposit" ? "fa-arrow-right text-success" : tx.type === "transfer" ? "fa-arrows-left-right text-info" : "fa-arrow-left text-danger";
+          return `<tr>
+            <td class="text-center"><i class="fa-solid ${ico}"></i></td>
+            <td>${esc(tx.description)}</td>
+            <td>${esc(tx.source_name || "")}</td>
+            <td>${esc(tx.destination_name || "")}</td>
+            <td class="text-end ${cls} text-nowrap">${sign}${fmt(amt)}</td>
+            <td class="text-nowrap text-muted small">${dat(tx.date)}</td>
+            <td>${tx.category_id ? `<a href="transactions.html?cat_id=${tx.category_id}">${esc(tx.category_name)}</a>` : `<span class="text-muted">—</span>`}</td>
+          </tr>`;
+        }).join("");
+      } catch (e) {
+        rows.innerHTML = `<tr><td colspan="7" class="text-danger p-3">Failed: ${esc(e.message)}</td></tr>`;
+      }
+    }
+    go.onclick = (e) => { e.preventDefault(); run(); };
+    qEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); run(); } });
+    ruleBtn.onclick = (e) => {
+      e.preventDefault();
+      const { text, filters } = parseQuery(qEl.value);
+      const prefill = {
+        description: text || qEl.value,
+        category_name: filters.category || filters.cat || "",
+      };
+      location.href = "rules.html?prefill=" + encodeURIComponent(JSON.stringify(prefill));
+    };
+    if (qEl.value) run();
+  }
+
+  async function pagePreferences() {
+    const status = document.getElementById("pref-status");
+    const setStatus = (t, ok) => { if (!status) return; status.textContent = t; status.style.color = ok ? "var(--pala-mint)" : "var(--pala-danger)"; };
+    let prefs = {};
+    try {
+      const res = await api("/preferences");
+      for (const p of (res.data || [])) prefs[p.attributes.name] = p.attributes.data;
+    } catch (e) {
+      setStatus("Couldn't load preferences: " + e.message, false);
+    }
+    document.querySelectorAll("[data-pref]").forEach((el) => {
+      const k = el.dataset.pref;
+      const v = prefs[k];
+      if (v === undefined || v === null) return;
+      if (el.type === "checkbox") el.checked = !!v;
+      else if (el.type === "radio") el.checked = String(el.value) === String(v);
+      else if (el.tagName === "SELECT" && el.multiple) {
+        const set = new Set(Array.isArray(v) ? v.map(String) : [String(v)]);
+        [...el.options].forEach((o) => { o.selected = set.has(o.value); });
+      } else el.value = v;
+    });
+
+    const save = document.getElementById("pref-save");
+    if (!save) return;
+    save.onclick = async () => {
+      setStatus("Saving…", true);
+      const updates = {};
+      document.querySelectorAll("[data-pref]").forEach((el) => {
+        const k = el.dataset.pref;
+        let v;
+        if (el.type === "checkbox") v = el.checked;
+        else if (el.type === "radio") { if (!el.checked) return; v = el.value; }
+        else if (el.tagName === "SELECT" && el.multiple) v = [...el.selectedOptions].map((o) => o.value);
+        else v = el.value;
+        updates[k] = v;
+      });
+      try {
+        await Promise.all(Object.entries(updates).map(([name, data]) =>
+          api("/preferences/" + encodeURIComponent(name), {
+            method: "PUT", body: JSON.stringify({ data }),
+          }).catch((e) => { throw new Error(`${name}: ${e.message}`); })
+        ));
+        setStatus("Saved " + Object.keys(updates).length + " preference" + (Object.keys(updates).length===1?"":"s"), true);
+      } catch (e) {
+        setStatus("Save failed: " + e.message, false);
+      }
+    };
+  }
+
+  async function pageProfile() {
+    const tokEl = document.getElementById("pf-token");
+    const urlEl = document.getElementById("pf-url");
+    const saveBtn = document.getElementById("pf-save");
+    const statusEl = document.getElementById("pf-token-status");
+    const uidEl = document.getElementById("pf-uid");
+    const emailEl = document.getElementById("pf-email");
+    const roleEl = document.getElementById("pf-role");
+
+    if (tokEl) tokEl.value = localStorage.getItem("pala_pat") || "";
+    if (urlEl) urlEl.value = localStorage.getItem("pala_url") || location.origin;
+
+    try {
+      const r = await api("/about/user");
+      const a = r.data.attributes;
+      if (uidEl)   uidEl.textContent   = r.data.id;
+      if (emailEl) emailEl.textContent = a.email || "—";
+      if (roleEl && a.role) roleEl.innerHTML = `\u00b7 role <span>${esc(a.role)}</span>`;
+    } catch (e) {
+      if (uidEl) uidEl.textContent = "—";
+      if (emailEl) emailEl.textContent = "(API unreachable)";
+    }
+
+    if (saveBtn) saveBtn.onclick = () => {
+      localStorage.setItem("pala_pat", tokEl.value.trim());
+      localStorage.setItem("pala_url", urlEl.value.trim().replace(/\/$/, ""));
+      if (statusEl) { statusEl.textContent = "Saved \u2713"; statusEl.style.color = "var(--pala-mint)"; }
+      setTimeout(() => { if (statusEl) statusEl.textContent = ""; }, 2000);
+    };
+  }
+
   function boot() {
     const page = document.body.dataset.page;
     const sub  = document.body.dataset.sub;
     if (page === "accounts")                          return pageAccounts();
+    if (page === "account-show") return (window.__palaExtra && window.__palaExtra.pageAccountShow ? window.__palaExtra.pageAccountShow() : null);
     if (page === "transactions")                      return pageTransactions();
     if (page === "budgets")                           return pageBudgets();
-    if (page === "budget-show")                       return pageBudgetShow();
-    if (page === "category-show")                     return pageCategoryShow();
+    if (page === "budget-show") return (window.__palaExtra && window.__palaExtra.pageBudgetShow ? window.__palaExtra.pageBudgetShow() : null);
+    if (page === "category-show") return (window.__palaExtra && window.__palaExtra.pageCategoryShow ? window.__palaExtra.pageCategoryShow() : null);
     if (page === "classification" && sub === "categories") return pageCategories();
-    if (page === "classification" && sub === "tags")       return pageTags();
+    if (page === "classification" && sub === "tags") return (window.__palaExtra && window.__palaExtra.pageTags ? window.__palaExtra.pageTags() : null);
     if (page === "bills")                             return pageBills();
     if (page === "piggy")                             return pagePiggy();
     if (page === "automation" && sub === "rules")     return pageRules();
     if (page === "automation" && sub === "recurring") return pageRecurring();
+    if (page === "reports")                           return pageReports();
+    if (page === "search")                            return pageSearch();
+    if (page === "preferences")                       return pagePreferences();
+    if (page === "profile")                           return pageProfile();
     if (page === "dashboard" || page === "index")     return pageDashboard();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

@@ -115,35 +115,26 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
     <div class="card-header"><h3 class="card-title">Search</h3></div>
     <div class="card-body">
       <div class="d-flex gap-2 flex-wrap">
-        <input type="text" class="form-control" style="max-width:36rem" value="category:food after:2026-01-01" placeholder="Search…">
-        <button class="btn btn-primary"><i class="fa-solid fa-magnifying-glass fa-fw"></i> Search</button>
-        <a href="rules.html" class="btn btn-outline-secondary">Create rule from query</a>
+        <input type="text" class="form-control" id="srch-q" style="max-width:36rem" placeholder="e.g. billa, category:Food after:2026-01-01, amount_more:50">
+        <button class="btn btn-primary" id="srch-go"><i class="fa-solid fa-magnifying-glass fa-fw"></i> Search</button>
+        <a href="#" class="btn btn-outline-secondary" id="srch-rule">Create rule from query</a>
       </div>
-      <ul class="mt-3 mb-0 small text-muted">
-        <li>Searching for: <strong class="text-mint">food</strong></li>
-        <li>Filter: category is "Food &amp; Groceries"</li>
-        <li>Filter: date after 2026-01-01</li>
-      </ul>
+      <ul class="mt-3 mb-0 small text-muted" id="srch-parsed"></ul>
     </div>
   </div>
   <div class="card">
-    <div class="card-header"><h3 class="card-title">Results <span class="text-muted small fw-normal">— 23 transactions</span></h3></div>
+    <div class="card-header"><h3 class="card-title" id="srch-title">Results</h3></div>
     <div class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <thead><tr><th style="width:1.5rem"></th><th>Description</th><th>Source</th><th>Destination</th><th class="text-end">Amount</th><th>Date</th><th>Category</th></tr></thead>
-        <tbody>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa Supermarkt</a></td><td><a href="account-show.html">George</a></td><td><a href="#">Billa</a></td><td class="text-end text-danger text-nowrap">−€42.30</td><td class="text-nowrap">2026-05-28</td><td>Food &amp; Groceries</td></tr>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa Plus Mariahilfer</a></td><td><a href="account-show.html">George</a></td><td><a href="#">Billa</a></td><td class="text-end text-danger text-nowrap">−€67.45</td><td class="text-nowrap">2026-05-22</td><td>Food &amp; Groceries</td></tr>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa Mariahilferstrasse</a></td><td><a href="account-show.html">George</a></td><td><a href="#">Billa</a></td><td class="text-end text-danger text-nowrap">−€38.90</td><td class="text-nowrap">2026-05-15</td><td>Food &amp; Groceries</td></tr>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Hofer Wien 8</a></td><td><a href="account-show.html">George</a></td><td><a href="#">Hofer</a></td><td class="text-end text-danger text-nowrap">−€31.05</td><td class="text-nowrap">2026-05-19</td><td>Food &amp; Groceries</td></tr>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Naschmarkt</a></td><td><a href="account-show.html">George</a></td><td><a href="#">Naschmarkt cash</a></td><td class="text-end text-danger text-nowrap">−€18.50</td><td class="text-nowrap">2026-05-08</td><td>Food &amp; Groceries</td></tr>
-        </tbody>
+        <tbody id="srch-rows"><tr><td colspan="7" class="text-muted p-3">Enter a query and press Search.</td></tr></tbody>
       </table>
     </div>
   </div>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-live.js"></script>
 <script>
 /* ── Firefly III · Pala — shared chrome (sidebar + navbar) ──────────────
    Each page sets:

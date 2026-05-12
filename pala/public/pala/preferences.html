@@ -121,8 +121,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
     <div class="tab-pane fade show active" id="pp-general">
       <div class="row g-3">
         <div class="col-xl-5">
-          <div class="card mb-3"><div class="card-header"><h6 class="card-title">Language</h6></div><div class="card-body"><select class="form-select"><option selected>English (US)</option><option>Deutsch</option><option>Français</option><option>Español</option></select></div></div>
-          <div class="card mb-3"><div class="card-header"><h6 class="card-title">Fiscal year</h6></div><div class="card-body"><div class="form-check mb-2"><input class="form-check-input" type="checkbox"><label class="form-check-label">Custom fiscal year</label></div><input type="date" class="form-control" value="2026-01-01"></div></div>
+          <div class="card mb-3"><div class="card-header"><h6 class="card-title">Language</h6></div><div class="card-body"><select class="form-select" data-pref="language"><option value="en_US">English (US)</option><option value="de_DE">Deutsch</option><option value="fr_FR">Français</option><option value="es_ES">Español</option></select></div></div>
+          <div class="card mb-3"><div class="card-header"><h6 class="card-title">Fiscal year</h6></div><div class="card-body"><div class="form-check mb-2"><input class="form-check-input" type="checkbox"><label class="form-check-label">Custom fiscal year</label></div><input type="date" class="form-control" data-pref="fiscalYearStart" value="2026-01-01"></div></div>
           <div class="card"><div class="card-body"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" checked><label class="form-check-label">Convert to primary currency</label></div><div class="form-check"><input class="form-check-input" type="checkbox"><label class="form-check-label">Hide amounts (anonymous mode)</label></div></div></div>
         </div>
         <div class="col-xl-5">
@@ -146,11 +146,11 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
       <div class="row g-3">
         <div class="col-xl-4">
           <div class="card mb-3"><div class="card-header"><h6 class="card-title">View range</h6></div><div class="card-body">
-            <div class="form-check"><input class="form-check-input" type="radio" name="vr"><label class="form-check-label">1 day</label></div>
-            <div class="form-check"><input class="form-check-input" type="radio" name="vr"><label class="form-check-label">1 week</label></div>
-            <div class="form-check"><input class="form-check-input" type="radio" name="vr" checked><label class="form-check-label">1 month</label></div>
-            <div class="form-check"><input class="form-check-input" type="radio" name="vr"><label class="form-check-label">3 months</label></div>
-            <div class="form-check"><input class="form-check-input" type="radio" name="vr"><label class="form-check-label">1 year</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="vr" data-pref="viewRange" value="1D"><label class="form-check-label">1 day</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="vr" data-pref="viewRange" value="1W"><label class="form-check-label">1 week</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="vr" data-pref="viewRange" value="1M"><label class="form-check-label">1 month</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="vr" data-pref="viewRange" value="3M"><label class="form-check-label">3 months</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="vr" data-pref="viewRange" value="1Y"><label class="form-check-label">1 year</label></div>
           </div></div>
         </div>
         <div class="col-xl-4">
@@ -161,7 +161,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
           </div></div>
         </div>
         <div class="col-xl-4">
-          <div class="card"><div class="card-header"><h6 class="card-title">List page size</h6></div><div class="card-body"><input type="number" class="form-control" value="50"></div></div>
+          <div class="card"><div class="card-header"><h6 class="card-title">List page size</h6></div><div class="card-body"><input type="number" class="form-control" data-pref="listPageSize" value="50"></div></div>
         </div>
       </div>
     </div>
@@ -175,10 +175,11 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
       </div></div>
     </div>
   </div>
-  <div class="mt-3"><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk fa-fw"></i> Save preferences</button></div>
+  <div class="mt-3"><button class="btn btn-primary" id="pref-save"><i class="fa-solid fa-floppy-disk fa-fw"></i> Save preferences</button> <span id="pref-status" class="ms-2 small text-muted"></span></div>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-live.js"></script>
 <script>
 /* ── Firefly III · Pala — shared chrome (sidebar + navbar) ──────────────
    Each page sets:

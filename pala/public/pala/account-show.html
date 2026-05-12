@@ -108,30 +108,32 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
 
 </style>
 </head>
-<body data-page="accounts" data-sub="asset" data-crumbs="Home/Accounts/George (Erste Bank)" data-period="1 May – 31 May 2026">
+<body data-page="account-show" data-crumbs="Home/Accounts/George (Erste Bank)" data-period="1 May – 31 May 2026">
 
 <main class="pala-main">
   <div class="row g-3 mb-3">
     <div class="col-lg-6">
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h3 class="card-title">George (Erste Bank)</h3>
+          <h3 class="card-title" data-k="ac-title">Loading…</h3>
           <div class="btn-group btn-group-sm"><a href="#" class="btn btn-outline-secondary"><i class="fa-solid fa-pencil fa-fw"></i> Edit</a><a href="#" class="btn btn-outline-secondary"><i class="fa-solid fa-scale-balanced fa-fw"></i> Reconcile</a></div>
         </div>
         <div class="card-body p-0"><table class="table table-sm mb-0"><tbody>
-          <tr><th>IBAN</th><td>AT80 2011 1842 2351 8400</td></tr>
-          <tr><th>Currency</th><td>Euro (EUR)</td></tr>
-          <tr><th>Balance</th><td class="text-success">€1,423.50</td></tr>
-          <tr><th>Period</th><td class="text-muted">1 May – 31 May 2026</td></tr>
-          <tr><th>Opened</th><td class="text-muted">12 Mar 2019</td></tr>
+          <tr><th>IBAN</th><td data-k="ac-iban">—</td></tr>
+          <tr><th>Type</th><td data-k="ac-type">—</td></tr>
+          <tr><th>Currency</th><td data-k="ac-currency">—</td></tr>
+          <tr><th>Balance</th><td data-k="ac-balance">—</td></tr>
+          <tr><th>Opened</th><td class="text-muted" data-k="ac-opened">—</td></tr>
         </tbody></table></div>
       </div>
     </div>
     <div class="col-lg-6">
       <div class="card h-100">
         <div class="card-header"><h3 class="card-title">Balance history</h3></div>
-        <div class="card-body d-flex align-items-center justify-content-center text-muted" style="height:240px;">
-          <span><i class="fa-solid fa-chart-line fa-2x mb-2 d-block text-center"></i>Chart renders here</span>
+        <div class="card-body" style="height:240px; padding:.8rem;" data-k="ac-chart">
+          <div class="text-muted d-flex align-items-center justify-content-center" style="height:100%;">
+            <span><i class="fa-solid fa-chart-line fa-2x mb-2 d-block text-center"></i>Loading…</span>
+          </div>
         </div>
       </div>
     </div>
@@ -141,12 +143,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
     <div class="card-body p-0">
       <table class="table table-sm table-hover mb-0">
         <thead><tr><th style="width:1.5rem"></th><th>Description</th><th class="text-end">Amount</th><th>Date</th><th>Category</th><th>From/To</th></tr></thead>
-        <tbody>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa Supermarkt</a></td><td class="text-end text-danger text-nowrap">−€42.30</td><td class="text-nowrap">2026-05-28</td><td>Food</td><td class="text-muted"><a href="#">Billa</a></td></tr>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">U-Bahn Monatskarte</a></td><td class="text-end text-danger text-nowrap">−€51.00</td><td class="text-nowrap">2026-05-27</td><td>Transport</td><td class="text-muted"><a href="#">Wiener Linien</a></td></tr>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Netflix</a></td><td class="text-end text-danger text-nowrap">−€17.99</td><td class="text-nowrap">2026-05-25</td><td>Subscriptions</td><td class="text-muted"><a href="#">Netflix</a></td></tr>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Apotheke Wien Mitte</a></td><td class="text-end text-danger text-nowrap">−€12.80</td><td class="text-nowrap">2026-05-24</td><td>Health</td><td class="text-muted"><a href="#">Apotheke</a></td></tr>
-          <tr><td class="text-center"><i class="fa-solid fa-arrow-right text-success"></i></td><td><a href="#">Gehalt Mai</a></td><td class="text-end text-success text-nowrap">+€2,800.00</td><td class="text-nowrap">2026-05-01</td><td></td><td class="text-muted"><a href="#">Employer</a></td></tr>
+        <tbody data-k="ac-tx-body">
+          <tr><td colspan="6" class="text-muted p-3">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -156,6 +154,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="pala-live.js"></script>
+<script src="pala-live2.js"></script>
 <script>
 /* ── Firefly III · Pala — shared chrome (sidebar + navbar) ──────────────
    Each page sets:

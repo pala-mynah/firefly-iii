@@ -62,9 +62,12 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 .history-avgline { position:absolute; left:0; right:0; border-top:1px dashed var(--pala-mint); pointer-events:none; opacity:0; transition:opacity .15s; }
 .history-avgline span { position:absolute; right:0; top:-.8rem; font-size:.62rem; color:var(--pala-mint); background:var(--pala-navy-card); padding:0 .3rem; }
 
-/* Mode: % used / € per-envelope — live wiring TBD, hide mocked segments so we don’t flash crumbs */
-.history-wrap.mode-pct .history-seg,
-.history-wrap.mode-eur .history-seg { display:none; }
+/* Mode: % used / € per-envelope — segments are wired live (pala-live.js).
+   Static mocked segments inside the HTML get hidden in any mode where live data
+   rebuilds the stack (added .live-segs class on the stack when rebuilt).        */
+.history-wrap .history-stack:not(.live-segs) .history-seg { display:none; }
+.history-wrap.mode-pct .history-stack.live-segs .history-seg,
+.history-wrap.mode-eur .history-stack.live-segs .history-seg { display:block; }
 
 /* Mode: Total budgeted — flatten segments into one mint bar */
 .history-wrap.mode-total .history-seg { display:none; }

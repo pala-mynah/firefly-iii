@@ -138,8 +138,8 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
   <!-- Page head -->
   <div class="page-head">
     <div class="title-block">
-      <h1><span class="dot"></span>Supermarket</h1>
-      <div class="sub">Category · feeds <a href="budget-show.html?budget=groceries"><b style="color:var(--pala-mint)">Groceries</b></a> envelope · 11 transactions this month · <a href="categories.html">← all categories</a></div>
+      <h1><span class="dot"></span><span data-k="cs-title">Loading…</span></h1>
+      <div class="sub" data-k="cs-sub">Category · <a href="categories.html">← all categories</a></div>
     </div>
     <div class="actions">
       <button class="btn-ghost"><i class="fa-solid fa-code-branch"></i> Merge</button>
@@ -153,30 +153,30 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
   <div class="row g-3 mb-3">
     <div class="col-md col-sm-6">
       <div class="card h-100"><div class="kpi-card">
-        <div class="kpi-eyebrow">Spent · May</div>
-        <div class="kpi-amount">€240<span class="text-muted" style="font-weight:400">.00</span></div>
-        <div class="kpi-meta">53% of Groceries envelope</div>
+        <div class="kpi-eyebrow">Spent · this period</div>
+        <div class="kpi-amount" data-k="cs-spent">€—</div>
+        <div class="kpi-meta" data-k="cs-spent-meta">—</div>
       </div></div>
     </div>
     <div class="col-md col-sm-6">
       <div class="card h-100"><div class="kpi-card">
         <div class="kpi-eyebrow">Last month</div>
-        <div class="kpi-amount">€230<span class="text-muted" style="font-weight:400">.00</span></div>
-        <div class="kpi-delta up"><i class="fa-solid fa-arrow-up fa-xs"></i> +€10 · +4.3% MoM</div>
+        <div class="kpi-amount" data-k="cs-last">€—</div>
+        <div class="kpi-delta" data-k="cs-last-delta">—</div>
       </div></div>
     </div>
     <div class="col-md col-sm-6">
       <div class="card h-100"><div class="kpi-card">
         <div class="kpi-eyebrow">12-mo average</div>
-        <div class="kpi-amount">€235<span class="text-muted" style="font-weight:400">/mo</span></div>
-        <div class="kpi-meta">max €260 (Sep) · min €225 (Oct)</div>
+        <div class="kpi-amount" data-k="cs-avg">€—</div>
+        <div class="kpi-meta" data-k="cs-avg-meta">—</div>
       </div></div>
     </div>
     <div class="col-md col-sm-6">
       <div class="card h-100"><div class="kpi-card">
-        <div class="kpi-eyebrow">YTD · 2026</div>
-        <div class="kpi-amount">€1,166<span class="text-muted" style="font-weight:400">.00</span></div>
-        <div class="kpi-meta">5 months · avg €233/mo</div>
+        <div class="kpi-eyebrow" data-k="cs-ytd-label">YTD</div>
+        <div class="kpi-amount" data-k="cs-ytd">€—</div>
+        <div class="kpi-meta" data-k="cs-ytd-meta">—</div>
       </div></div>
     </div>
   </div>
@@ -193,31 +193,12 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
           <span class="text-muted small">hover any month for €</span>
         </div>
         <div class="month-bars-wrap">
-          <div class="month-bars">
-            <!-- 12 months: 240,238,255,260,225,245,228,235,243,228,230,240 → max 260
-                 height = v/260 * 100 -->
-            <div class="mb-bar" style="height:92.3%" title="Jun '25 · €240"><span class="v">€240</span></div>
-            <div class="mb-bar" style="height:91.5%" title="Jul '25 · €238"><span class="v">€238</span></div>
-            <div class="mb-bar" style="height:98.1%" title="Aug '25 · €255"><span class="v">€255</span></div>
-            <div class="mb-bar" style="height:100%"  title="Sep '25 · €260"><span class="v">€260</span></div>
-            <div class="mb-bar" style="height:86.5%" title="Oct '25 · €225"><span class="v">€225</span></div>
-            <div class="mb-bar" style="height:94.2%" title="Nov '25 · €245"><span class="v">€245</span></div>
-            <div class="mb-bar" style="height:87.7%" title="Dec '25 · €228"><span class="v">€228</span></div>
-            <div class="mb-bar" style="height:90.4%" title="Jan '26 · €235"><span class="v">€235</span></div>
-            <div class="mb-bar" style="height:93.5%" title="Feb '26 · €243"><span class="v">€243</span></div>
-            <div class="mb-bar" style="height:87.7%" title="Mar '26 · €228"><span class="v">€228</span></div>
-            <div class="mb-bar" style="height:88.5%" title="Apr '26 · €230"><span class="v">€230</span></div>
-            <div class="mb-bar current" style="height:92.3%" title="May '26 · €240 (current, day 28)"><span class="v">€240</span></div>
+          <div class="month-bars" data-k="cs-months-bars">
+            <div class="mb-bar" style="height:0%"><span class="v">—</span></div>
           </div>
-          <div class="month-labels">
-            <span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span>
-            <span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span class="text-mint">May</span>
-          </div>
-          <div class="mb-stats">
-            <span>total <b>€2,827</b></span>
-            <span>avg <b>€235</b>/mo</span>
-            <span>max <b>€260</b> (Sep)</span>
-            <span>min <b>€225</b> (Oct)</span>
+          <div class="month-labels" data-k="cs-months-labels"><span>—</span></div>
+          <div class="mb-stats" data-k="cs-months-stats">
+            <span>total <b>—</b></span><span>avg <b>—</b></span><span>max <b>—</b></span><span>min <b>—</b></span>
           </div>
         </div>
       </div>
@@ -228,57 +209,23 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
           <h3 class="card-title">Top merchants · this month</h3>
           <span class="text-muted small">where the money actually went</span>
         </div>
-        <div class="merch-list">
-          <a href="transactions.html?cat_id=3&account=billa" class="merch-row">
-            <span class="rank">1</span>
-            <span class="nm">Billa</span>
-            <span class="bar"><span class="fill" style="width:45%"></span></span>
-            <span class="amt">€108.00</span>
-            <span class="pct">45%</span>
-          </a>
-          <a href="transactions.html?cat_id=3&account=spar" class="merch-row">
-            <span class="rank">2</span>
-            <span class="nm">Spar</span>
-            <span class="bar"><span class="fill" style="width:30%; opacity:.85;"></span></span>
-            <span class="amt">€72.00</span>
-            <span class="pct">30%</span>
-          </a>
-          <a href="transactions.html?cat_id=3&account=hofer" class="merch-row">
-            <span class="rank">3</span>
-            <span class="nm">Hofer</span>
-            <span class="bar"><span class="fill" style="width:18%; opacity:.7;"></span></span>
-            <span class="amt">€43.00</span>
-            <span class="pct">18%</span>
-          </a>
-          <a href="transactions.html?cat_id=3&account=lidl" class="merch-row">
-            <span class="rank">4</span>
-            <span class="nm">Lidl</span>
-            <span class="bar"><span class="fill" style="width:7%; opacity:.55;"></span></span>
-            <span class="amt">€17.00</span>
-            <span class="pct">7%</span>
-          </a>
+        <div class="merch-list" data-k="cs-merchants">
+          <div class="text-muted p-3">Loading…</div>
         </div>
-        <div class="card-footer text-muted small">
-          <i class="fa-solid fa-circle-info"></i> 4 distinct merchants this month · 1 new (Lidl, first seen 17 May)
-        </div>
+        <div class="card-footer text-muted small" data-k="cs-merchants-footer">—</div>
       </div>
 
       <!-- Transactions -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Transactions · this month</h3>
-          <a href="transactions.html?cat_id=3" class="text-muted small">View all 11 →</a>
+          <h3 class="card-title" data-k="cs-tx-title">Recent transactions</h3>
+          <a href="transactions.html" class="text-muted small" data-k="cs-tx-viewall">View all →</a>
         </div>
         <div class="card-body p-0">
           <table class="table table-sm table-hover mb-0">
             <thead><tr><th style="width:1.5rem"></th><th>Description</th><th>Date</th><th>Merchant</th><th>Account</th><th class="text-end">Amount</th></tr></thead>
-            <tbody>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa</a></td><td class="num">28 May</td><td><a href="#">Billa</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€8.40</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Spar</a></td><td class="num">26 May</td><td><a href="#">Spar</a></td><td class="text-muted">Revolut</td><td class="text-end num text-danger">−€23.10</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Billa Plus · weekly shop</a></td><td class="num">19 May</td><td><a href="#">Billa</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€52.40</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Hofer</a></td><td class="num">17 May</td><td><a href="#">Hofer</a></td><td class="text-muted">Revolut</td><td class="text-end num text-danger">−€34.80</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Lidl</a></td><td class="num">17 May</td><td><a href="#">Lidl</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€17.00</td></tr>
-              <tr><td class="text-center"><i class="fa-solid fa-arrow-left text-danger"></i></td><td><a href="#">Spar Express</a></td><td class="num">14 May</td><td><a href="#">Spar</a></td><td class="text-muted">George</td><td class="text-end num text-danger">−€11.40</td></tr>
+            <tbody data-k="cs-tx-body">
+              <tr><td colspan="6" class="text-muted p-3">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -295,26 +242,11 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
           <h3 class="card-title">Stats · this month</h3>
         </div>
         <div class="stats-list">
-          <div class="row-item">
-            <span class="lbl">Transactions</span>
-            <span class="val huge">11</span>
-          </div>
-          <div class="row-item">
-            <span class="lbl">Avg per tx</span>
-            <span class="val">€21.82</span>
-          </div>
-          <div class="row-item">
-            <span class="lbl">Biggest</span>
-            <span class="val">€52.40 <small>Billa · 19 May</small></span>
-          </div>
-          <div class="row-item">
-            <span class="lbl">Avg gap</span>
-            <span class="val">2.5 days</span>
-          </div>
-          <div class="row-item">
-            <span class="lbl">First seen</span>
-            <span class="val text-muted" style="font-family:inherit; font-size:.78rem;">12 Jun 2022 · 4 yrs</span>
-          </div>
+          <div class="row-item"><span class="lbl">Transactions</span><span class="val huge" data-k="cs-stats-count">—</span></div>
+          <div class="row-item"><span class="lbl">Avg per tx</span><span class="val" data-k="cs-stats-avg">—</span></div>
+          <div class="row-item"><span class="lbl">Biggest</span><span class="val" data-k="cs-stats-biggest">—</span></div>
+          <div class="row-item"><span class="lbl">Avg gap</span><span class="val" data-k="cs-stats-gap">—</span></div>
+          <div class="row-item"><span class="lbl">First seen</span><span class="val text-muted" data-k="cs-stats-first" style="font-family:inherit; font-size:.78rem;">—</span></div>
         </div>
       </div>
 
@@ -325,17 +257,13 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
           <span class="text-muted small">May</span>
         </div>
         <div class="split-wrap">
-          <div class="split-bar">
-            <div class="seg seg-oneoff" style="width:65%">65%</div>
-            <div class="seg seg-recur dark" style="width:35%">35%</div>
+          <div class="split-bar" data-k="cs-split-bar">
+            <div class="seg seg-oneoff" style="width:100%">—</div>
           </div>
-          <div class="split-legend">
-            <span class="item"><span class="sw" style="background:var(--cat-color)"></span>One-off <b class="ms-1">€156</b></span>
-            <span class="item"><span class="sw" style="background:var(--pala-info)"></span>Recurring <b class="ms-1">€84</b></span>
+          <div class="split-legend" data-k="cs-split-legend">
+            <span class="item">Loading…</span>
           </div>
-          <div class="text-muted small" style="margin-top:.7rem; padding-top:.6rem; border-top:1px dashed rgba(255,255,255,.07);">
-            Wochenmarkt standing order (≈€21/wk) is the only recurring source.
-          </div>
+          <div class="text-muted small" data-k="cs-split-note" style="margin-top:.7rem; padding-top:.6rem; border-top:1px dashed rgba(255,255,255,.07);">—</div>
         </div>
       </div>
 
@@ -348,25 +276,19 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
         <div class="stats-list">
           <div class="row-item">
             <span class="lbl">Parent budget</span>
-            <span class="val"><a href="budget-show.html?budget=groceries"><b style="color:var(--pala-mint)">Groceries</b></a></span>
+            <span class="val" data-k="cs-linked-budget"><span class="text-muted">—</span></span>
           </div>
           <div class="row-item">
             <span class="lbl">Active rules</span>
-            <span class="val"><a href="rules.html?cat_id=3">3 rules →</a></span>
+            <span class="val" data-k="cs-linked-rules"><a href="rules.html">Manage →</a></span>
           </div>
           <div class="row-item">
             <span class="lbl">Common tags</span>
-            <span class="val">
-              <a href="tags.html?tag=weekly-shop" class="chip">#weekly-shop</a>
-              <a href="tags.html?tag=fresh" class="chip">#fresh</a>
-            </span>
+            <span class="val" data-k="cs-linked-tags"><span class="text-muted">—</span></span>
           </div>
           <div class="row-item">
             <span class="lbl">Accounts used</span>
-            <span class="val">
-              <a href="account-show.html?acct=george" class="chip">George</a>
-              <a href="account-show.html?acct=revolut" class="chip">Revolut</a>
-            </span>
+            <span class="val" data-k="cs-linked-accounts"><span class="text-muted">—</span></span>
           </div>
         </div>
       </div>
@@ -378,6 +300,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="pala-live.js"></script>
+<script src="pala-live2.js"></script>
 <script>
 /* Shared chrome — identical NAV across pages */
 (function () {
