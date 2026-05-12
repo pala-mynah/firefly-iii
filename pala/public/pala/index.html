@@ -117,11 +117,9 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
 .hero-delta { display:inline-flex; align-items:center; gap:.35rem; font-size:.85rem; color:var(--pala-mint); }
 .hero-delta.neg { color:var(--pala-danger); }
 
-/* Period toggle */
-.period-pills { display:inline-flex; background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:999px; padding:2px; }
-.period-pills button { background:transparent; border:0; color:var(--pala-muted); font-size:.78rem; padding:.25rem .8rem; border-radius:999px; cursor:pointer; font-family: inherit; }
-.period-pills button.active { background:var(--pala-navy-card); color:var(--pala-mint); }
-.period-pills button:hover:not(.active) { color:var(--pala-text); }
+/* Period toggle (legacy local pills — hidden, global ?period= selector
+   in the top-bar owns the dashboard's date range now) */
+.period-pills { display:none !important; }
 
 /* Stat tiles */
 .stat-card { padding:1rem 1.1rem; }
@@ -618,64 +616,16 @@ a.pace-row:hover .name, a.piggy-row:hover .name, a.donut-legend-row:hover .donut
     <div class="col-xl-8">
       <div class="card h-100">
         <a href="categories.html" class="card-header card-header-link d-flex justify-content-between align-items-center" title="Open all categories">
-          <h3 class="card-title">Spend by category · May</h3>
+          <h3 class="card-title" data-pala="donut-title">Spend by category</h3>
           <span class="card-header-cta">All categories <i class="fa-solid fa-arrow-right"></i></span>
         </a>
         <div class="card-body">
-          <div class="donut-wrap">
-            <svg class="donut-svg" viewBox="0 0 140 140" width="180" height="180" role="img" aria-label="Spend by category donut">
-              <!-- Track circle -->
+          <div class="donut-wrap" id="pala-donut-wrap">
+            <svg class="donut-svg" id="pala-donut-svg" viewBox="0 0 140 140" width="180" height="180" role="img" aria-label="Spend by category donut">
               <circle cx="70" cy="70" r="56" fill="none" stroke="var(--pala-navy)" stroke-width="22"/>
-              <!-- Segments. circumference at r=56 ≈ 351.86. Rotate -90° so start is at 12 o'clock.
-                   Groceries €240 (19.35%), Restaurants & Cafes €145 (11.69%), Fresh Market & Butcher €98 (7.90%),
-                   Health €93 (7.50%), Other €460.97 (37.16%), Uncategorised €203.53 (16.41%) -->
-              <g transform="rotate(-90 70 70)" fill="none" stroke-width="22">
-                <circle cx="70" cy="70" r="56" stroke="#3ecfb2" stroke-dasharray="68.10 351.86" stroke-dashoffset="0"/>
-                <circle cx="70" cy="70" r="56" stroke="#5bafd6" stroke-dasharray="41.13 351.86" stroke-dashoffset="-68.10"/>
-                <circle cx="70" cy="70" r="56" stroke="#f0a84a" stroke-dasharray="27.79 351.86" stroke-dashoffset="-109.23"/>
-                <circle cx="70" cy="70" r="56" stroke="#a48cd2" stroke-dasharray="26.39 351.86" stroke-dashoffset="-137.02"/>
-                <circle cx="70" cy="70" r="56" stroke="#e05c6a" stroke-dasharray="130.75 351.86" stroke-dashoffset="-163.41"/>
-                <circle cx="70" cy="70" r="56" stroke="#7a9bbf" stroke-dasharray="57.74 351.86" stroke-dashoffset="-294.16"/>
-              </g>
-              </svg>
-            <div class="donut-legend">
-              <a href="categories.html?cat=groceries" class="donut-legend-row">
-                <span class="donut-legend-swatch" style="background:#3ecfb2"></span>
-                <span class="donut-legend-name">Groceries</span>
-                <span class="donut-legend-amt">€240.00</span>
-                <span class="donut-legend-delta up">+8%</span>
-              </a>
-              <a href="categories.html?cat=restaurants-cafes" class="donut-legend-row">
-                <span class="donut-legend-swatch" style="background:#5bafd6"></span>
-                <span class="donut-legend-name">Restaurants &amp; Cafes</span>
-                <span class="donut-legend-amt">€145.00</span>
-                <span class="donut-legend-delta up">+24%</span>
-              </a>
-              <a href="categories.html?cat=fresh-market-butcher" class="donut-legend-row">
-                <span class="donut-legend-swatch" style="background:#f0a84a"></span>
-                <span class="donut-legend-name">Fresh Market &amp; Butcher</span>
-                <span class="donut-legend-amt">€98.00</span>
-                <span class="donut-legend-delta up">+5%</span>
-              </a>
-              <a href="categories.html?cat=health" class="donut-legend-row">
-                <span class="donut-legend-swatch" style="background:#a48cd2"></span>
-                <span class="donut-legend-name">Health</span>
-                <span class="donut-legend-amt">€93.00</span>
-                <span class="donut-legend-delta down">−6%</span>
-              </a>
-              <a href="categories.html?cat=all" class="donut-legend-row">
-                <span class="donut-legend-swatch" style="background:#e05c6a"></span>
-                <span class="donut-legend-name">11 other categories</span>
-                <span class="donut-legend-amt">€460.97</span>
-                <span class="donut-legend-delta">—</span>
-              </a>
-              <a href="transactions.html?filter=uncategorised" class="donut-legend-row">
-                <span class="donut-legend-swatch" style="background:#7a9bbf"></span>
-                <span class="donut-legend-name">Uncategorised <a href="transactions.html?filter=uncategorised" class="flag info" title="4 transactions need a category"><i class="fa-solid fa-tag"></i> 4 to tag</a></span>
-                <span class="donut-legend-amt">€203.53</span>
-                <span class="donut-legend-delta">—</span>
-              </a>
-            </div>
+              <g transform="rotate(-90 70 70)" fill="none" stroke-width="22" id="pala-donut-segs"></g>
+            </svg>
+            <div class="donut-legend" id="pala-donut-legend"></div>
           </div>
         </div>
       </div>
@@ -685,42 +635,9 @@ a.pace-row:hover .name, a.piggy-row:hover .name, a.donut-legend-row:hover .donut
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h3 class="card-title">Needs attention</h3>
-          <span class="text-muted small">4 items</span>
+          <span class="text-muted small" data-pala="attention-count">—</span>
         </div>
-        <div class="card-body p-0">
-          <a href="transactions.html?filter=uncategorised" class="attention-row">
-            <div class="attention-icon warn"><i class="fa-solid fa-question"></i></div>
-            <div class="attention-body">
-              <div class="attention-title">4 transactions need a category</div>
-              <div class="attention-meta">€118.40 · oldest from May 12</div>
-            </div>
-            <i class="fa-solid fa-chevron-right"></i>
-          </a>
-          <a href="bills.html" class="attention-row">
-            <div class="attention-icon danger"><i class="fa-solid fa-clock"></i></div>
-            <div class="attention-body">
-              <div class="attention-title">A1 Mobile is due today</div>
-              <div class="attention-meta">~€29.99 · bill not yet matched</div>
-            </div>
-            <i class="fa-solid fa-chevron-right"></i>
-          </a>
-          <a href="rules.html" class="attention-row">
-            <div class="attention-icon info"><i class="fa-solid fa-shuffle"></i></div>
-            <div class="attention-body">
-              <div class="attention-title">Rule "Auto-tag SEPA" hasn't fired in 47 days</div>
-              <div class="attention-meta">Possibly stale · review trigger</div>
-            </div>
-            <i class="fa-solid fa-chevron-right"></i>
-          </a>
-          <a href="account-show.html" class="attention-row">
-            <div class="attention-icon mint"><i class="fa-solid fa-scale-balanced"></i></div>
-            <div class="attention-body">
-              <div class="attention-title">Erste Giro is €2.40 off reconciled balance</div>
-              <div class="attention-meta">Last reconciled May 16</div>
-            </div>
-            <i class="fa-solid fa-chevron-right"></i>
-          </a>
-        </div>
+        <div class="card-body p-0" id="pala-attention"></div>
       </div>
     </div>
   </div>
@@ -733,80 +650,7 @@ a.pace-row:hover .name, a.piggy-row:hover .name, a.donut-legend-row:hover .donut
           <h3 class="card-title">Recent transactions</h3>
           <span class="card-header-cta">See all <i class="fa-solid fa-arrow-right"></i></span>
         </a>
-        <div class="card-body p-0">
-          <a href="account-show.html?account=erste-sparziel" class="tx-row">
-            <i class="fa-solid fa-piggy-bank text-info tx-dir"></i>
-            <div>
-              <div class="tx-name">Sparauftrag → Holiday 2026 <span class="flag mint" title="Real money moved between bank accounts at Erste · reconciled May 30"><i class="fa-solid fa-building-columns"></i> Bank-executed</span></div>
-              <div class="tx-meta">Transfer · Erste Giro → Erste Sparziel · Piggy: Holiday 2026</div>
-            </div>
-            <span class="tx-amt text-info">€50.00</span>
-            <span class="tx-date">May 30</span>
-          </a>
-          <a href="account-show.html" class="tx-row">
-            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
-            <div>
-              <div class="tx-name">PAYPAL *DIGISTORE24 <span class="flag warn" title="Click to assign a category"><i class="fa-solid fa-tag"></i> Needs category</span></div>
-              <div class="tx-meta">Uncategorised · Erste Giro</div>
-            </div>
-            <span class="tx-amt text-danger">−€39.00</span>
-            <span class="tx-date">May 28</span>
-          </a>
-          <a href="account-show.html" class="tx-row">
-            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
-            <div>
-              <div class="tx-name">Billa Supermarkt</div>
-              <div class="tx-meta">Groceries · Erste Giro</div>
-            </div>
-            <span class="tx-amt text-danger">−€42.30</span>
-            <span class="tx-date">May 28</span>
-          </a>
-          <a href="account-show.html" class="tx-row">
-            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
-            <div>
-              <div class="tx-name">U-Bahn Monatskarte</div>
-              <div class="tx-meta">Public Transport · Erste Giro</div>
-            </div>
-            <span class="tx-amt text-danger">−€51.00</span>
-            <span class="tx-date">May 27</span>
-          </a>
-          <a href="account-show.html" class="tx-row">
-            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
-            <div>
-              <div class="tx-name">Netflix</div>
-              <div class="tx-meta">Subs — Lifestyle · Visa</div>
-            </div>
-            <span class="tx-amt text-danger">−€17.99</span>
-            <span class="tx-date">May 25</span>
-          </a>
-          <a href="account-show.html" class="tx-row">
-            <i class="fa-solid fa-arrow-left text-danger tx-dir"></i>
-            <div>
-              <div class="tx-name">Apotheke Wien Mitte</div>
-              <div class="tx-meta">Health · Erste Giro</div>
-            </div>
-            <span class="tx-amt text-danger">−€12.80</span>
-            <span class="tx-date">May 24</span>
-          </a>
-          <a href="account-show.html" class="tx-row">
-            <i class="fa-solid fa-arrows-rotate text-info tx-dir"></i>
-            <div>
-              <div class="tx-name">Erste Giro → Holiday 2026 <span class="flag mint" title="Real money moved between bank accounts at Erste"><i class="fa-solid fa-building-columns"></i> Bank-executed</span></div>
-              <div class="tx-meta">Transfer · Piggy bank top-up</div>
-            </div>
-            <span class="tx-amt text-info">€80.00</span>
-            <span class="tx-date">May 15</span>
-          </a>
-          <a href="account-show.html" class="tx-row">
-            <i class="fa-solid fa-arrow-right text-success tx-dir"></i>
-            <div>
-              <div class="tx-name">Gehalt Mai</div>
-              <div class="tx-meta">Salary · ACME GmbH → Erste Giro</div>
-            </div>
-            <span class="tx-amt text-success">+€2,800.00</span>
-            <span class="tx-date">May 1</span>
-          </a>
-        </div>
+        <div class="card-body p-0" id="pala-recent-tx"></div>
       </div>
     </div>
 
@@ -816,35 +660,10 @@ a.pace-row:hover .name, a.piggy-row:hover .name, a.donut-legend-row:hover .donut
           <h3 class="card-title">Subscriptions due</h3>
           <span class="card-header-cta">All <i class="fa-solid fa-arrow-right"></i></span>
         </a>
-        <div class="card-body p-0">
-          <a href="bills.html?bill=a1-mobile" class="sub-row">
-            <span class="sub-dot due-now"></span>
-            <span class="sub-name">A1 Mobile</span>
-            <span class="sub-when">today</span>
-            <span class="sub-amt">~€29.99</span>
-          </a>
-          <a href="bills.html?bill=netflix" class="sub-row">
-            <span class="sub-dot due-soon"></span>
-            <span class="sub-name">Netflix</span>
-            <span class="sub-when">in 3 days</span>
-            <span class="sub-amt">~€17.99</span>
-          </a>
-          <a href="bills.html?bill=spotify" class="sub-row">
-            <span class="sub-dot due-soon"></span>
-            <span class="sub-name">Spotify</span>
-            <span class="sub-when">in 5 days</span>
-            <span class="sub-amt">~€11.99</span>
-          </a>
-          <a href="bills.html?bill=icloud-plus" class="sub-row">
-            <span class="sub-dot"></span>
-            <span class="sub-name">iCloud+</span>
-            <span class="sub-when">in 17 days</span>
-            <span class="sub-amt">~€2.99</span>
-          </a>
-        </div>
-        <div class="card-footer d-flex justify-content-between text-muted small">
-          <span>Next 30 days · 4 bills</span>
-          <span class="text-text">~€62.96</span>
+        <div class="card-body p-0" id="pala-subs"></div>
+        <div class="card-footer d-flex justify-content-between text-muted small" data-pala="subs-footer">
+          <span>—</span>
+          <span class="text-text">—</span>
         </div>
       </div>
 
@@ -853,18 +672,8 @@ a.pace-row:hover .name, a.piggy-row:hover .name, a.donut-legend-row:hover .donut
           <h3 class="card-title">Piggy banks</h3>
           <span class="card-header-cta">All <i class="fa-solid fa-arrow-right"></i></span>
         </a>
-        <div class="card-body">
-          <a href="piggy.html?piggy=emergency-fund" class="piggy-row">
-            <div class="piggy-head"><span class="name">Emergency fund</span><span class="vals">€1,200 / €2,000</span></div>
-            <div class="pace-track"><div class="pace-fill" style="width:60%"></div></div>
-            <div class="piggy-meta"><span>60% funded</span><span>~€100/mo to hit Dec 2026</span></div>
-          </a>
-          <a href="piggy.html?piggy=holiday-2026" class="piggy-row">
-            <div class="piggy-head"><span class="name">Holiday 2026</span><span class="vals">€234 / €500</span></div>
-            <div class="pace-track"><div class="pace-fill under" style="width:46.8%"></div></div>
-            <div class="piggy-meta"><span>47% funded</span><span>auto-saving €80/mo</span></div>
-          </a>
-        </div>
+        <div class="card-body" id="pala-piggy"></div>
+      </div>
       </div>
     </div>
   </div>
@@ -1070,10 +879,25 @@ document.addEventListener('click', (e) => {
     return r.json();
   }
 
-  function monthBounds(d = new Date()) {
-    const y = d.getFullYear(), m = d.getMonth();
-    const start = new Date(y, m, 1);
-    const end   = new Date(y, m + 1, 0);
+  // Mirror periodRange() from pala-live.js so dashboard fetches honor the
+  // global ?period= selector (YYYY / YYYY-Qn / YYYY-MM). When absent,
+  // defaults to current calendar month — same as before.
+  function monthBounds() {
+    const now = new Date();
+    const raw = new URLSearchParams(location.search).get('period') || '';
+    let y, m0, m1;
+    let mat;
+    if ((mat = raw.match(/^(\d{4})$/))) {
+      y = +mat[1]; m0 = 0; m1 = 12;
+    } else if ((mat = raw.match(/^(\d{4})-Q([1-4])$/i))) {
+      y = +mat[1]; m0 = (+mat[2] - 1) * 3; m1 = m0 + 3;
+    } else if ((mat = raw.match(/^(\d{4})-(\d{2})$/))) {
+      y = +mat[1]; m0 = +mat[2] - 1; m1 = m0 + 1;
+    } else {
+      y = now.getFullYear(); m0 = now.getMonth(); m1 = m0 + 1;
+    }
+    const start = new Date(y, m0, 1);
+    const end   = new Date(y, m1, 0);
     const iso = x => x.toISOString().slice(0, 10);
     return { start: iso(start), end: iso(end) };
   }
@@ -1151,11 +975,20 @@ document.addEventListener('click', (e) => {
       console.warn('budget hero failed', e);
     }
 
-    // update period badge in the navbar
-    const body = document.body;
-    body.setAttribute('data-period', periodLabel(start, end));
-    const periodEl = document.querySelector('[data-crumbs-period]') || document.querySelector('.period-badge');
-    if (periodEl) periodEl.textContent = periodLabel(start, end);
+    // ── donut · spend by category ─────────────────────────────────
+    try { await hydrateDonut(start, end); } catch (e) { console.warn('donut failed', e); }
+    // ── recent transactions ───────────────────────────────────────
+    try { await hydrateRecent(start, end); } catch (e) { console.warn('recent tx failed', e); }
+    // ── subscriptions due ─────────────────────────────────────────
+    try { await hydrateSubs(start, end); } catch (e) { console.warn('subs failed', e); }
+    // ── piggy banks ───────────────────────────────────────────────
+    try { await hydratePiggy(); } catch (e) { console.warn('piggy failed', e); }
+    // ── needs attention ───────────────────────────────────────────
+    try { await hydrateAttention(start, end); } catch (e) { console.warn('attention failed', e); }
+
+    // Note: the navbar period badge is owned by wirePeriodChrome (pala-live.js)
+    // and reflects the GLOBAL ?period= selector — we intentionally don't update
+    // it from the dashboard's local pills any more.
 
     status.textContent = '✓ live';
     setTimeout(() => { status.textContent = 'live · ' + (new Date()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }, 1200);
@@ -1233,6 +1066,277 @@ document.addEventListener('click', (e) => {
       `${budgets.data.length} envelopes · €${totalSpent.toFixed(2)} of €${totalBudgeted.toFixed(2)} spent`);
     setText('[data-pala="budget-hero-pace"]',
       `Day ${dayOfMonth} of ${daysInMonth} · expected <span class="text-mint" style="font-variant-numeric:tabular-nums">${Math.round(pacePct)}%</span>`);
+  }
+
+  // ─── Donut · spend by category ───────────────────────────────
+  async function hydrateDonut(start, end) {
+    const PALETTE = ['#3ecfb2','#5bafd6','#f0a84a','#a48cd2','#e05c6a','#7a9bbf','#d97a8a','#8cc9a0'];
+    let cats = [];
+    try {
+      const r = await api(`/insight/expense/category?start=${start}&end=${end}`);
+      cats = (r || []).map(x => ({
+        id: x.id, name: x.name || 'Uncategorised',
+        amt: Math.abs(parseFloat(x.difference_float || x.difference || 0)),
+      })).filter(x => x.amt > 0).sort((a,b) => b.amt - a.amt);
+    } catch (e) { console.warn('insight/expense/category failed, falling back', e); }
+
+    if (!cats.length) { try {
+      const r = await api(`/categories?start=${start}&end=${end}`);
+      const arr = (r.data || []).map(d => {
+        const a = d.attributes || {};
+        let amt = 0;
+        if (Array.isArray(a.spent)) for (const s of a.spent) amt += Math.abs(parseFloat(s.sum) || 0);
+        return { id: d.id, name: a.name, amt };
+      }).filter(x => x.amt > 0).sort((a,b) => b.amt - a.amt);
+      cats = arr;
+    } catch (e) { console.warn('categories fallback failed', e); } }
+
+    const monthName = (new Date(end)).toLocaleString('en-US', { month: 'long' });
+    setText('[data-pala="donut-title"]', `Spend by category · ${monthName}`);
+
+    const segsEl = document.getElementById('pala-donut-segs');
+    const legEl  = document.getElementById('pala-donut-legend');
+    if (!segsEl || !legEl) return;
+    segsEl.innerHTML = ''; legEl.innerHTML = '';
+
+    if (!cats.length) { legEl.innerHTML = '<div class="text-muted small p-3">No category spend this period.</div>'; return; }
+
+    const total = cats.reduce((s,c) => s + c.amt, 0);
+    const top = cats.slice(0, 5);
+    const rest = cats.slice(5);
+    const restAmt = rest.reduce((s,c) => s + c.amt, 0);
+    const display = top.slice();
+    if (restAmt > 0) display.push({ id: 'all', name: `${rest.length} other categor${rest.length === 1 ? 'y' : 'ies'}`, amt: restAmt, isOther: true });
+
+    const C = 2 * Math.PI * 56;
+    let offset = 0;
+    display.forEach((c, i) => {
+      const frac = c.amt / total;
+      const dash = (frac * C).toFixed(2);
+      const color = PALETTE[i % PALETTE.length];
+      segsEl.insertAdjacentHTML('beforeend',
+        `<circle cx="70" cy="70" r="56" stroke="${color}" stroke-dasharray="${dash} ${C.toFixed(2)}" stroke-dashoffset="-${offset.toFixed(2)}"/>`);
+      const href = c.isOther ? 'categories.html' : (c.id ? `category-show.html?cat=${encodeURIComponent(c.id)}` : 'transactions.html?filter=uncategorised');
+      const pct = (frac * 100).toFixed(0);
+      legEl.insertAdjacentHTML('beforeend',
+        `<a href="${href}" class="donut-legend-row">
+          <span class="donut-legend-swatch" style="background:${color}"></span>
+          <span class="donut-legend-name">${escapeHtml(c.name)}</span>
+          <span class="donut-legend-amt">${fmtEURc(c.amt)}</span>
+          <span class="donut-legend-delta">${pct}%</span>
+        </a>`);
+      offset += frac * C;
+    });
+  }
+
+  // ─── Recent transactions ─────────────────────────────────────
+  async function hydrateRecent(start, end) {
+    const el = document.getElementById('pala-recent-tx');
+    if (!el) return;
+    const r = await api(`/transactions?start=${start}&end=${end}&limit=8&page=1`);
+    const rows = (r.data || []).slice(0, 8);
+    // Preserve selected period on outbound links
+    const rawPeriod = new URLSearchParams(location.search).get('period') || '';
+    const periodQS = rawPeriod ? `period=${encodeURIComponent(rawPeriod)}` : '';
+    // Update the "See all" header link to carry the period through
+    // Scope to the same card that owns #pala-recent-tx so we don't touch other "See all" links
+    const recentCard = el.closest('.card');
+    const seeAll = recentCard ? recentCard.querySelector('a.card-header-link[href^="transactions.html"]') : null;
+    if (seeAll && periodQS) seeAll.setAttribute('href', `transactions.html?${periodQS}`);
+    if (!rows.length) { el.innerHTML = '<div class="text-muted small p-3">No transactions in this period.</div>'; return; }
+    el.innerHTML = rows.map(t => {
+      const tx = (t.attributes && t.attributes.transactions && t.attributes.transactions[0]) || {};
+      const type = (tx.type || '').toLowerCase();
+      const amt = parseFloat(tx.amount || 0);
+      const dateStr = tx.date ? new Date(tx.date).toLocaleString('en-US', { month: 'short', day: 'numeric' }) : '';
+      let icon, cls, amtPrefix;
+      if (type === 'deposit') { icon = 'fa-arrow-right'; cls = 'text-success'; amtPrefix = '+'; }
+      else if (type === 'transfer') { icon = 'fa-arrows-rotate'; cls = 'text-info'; amtPrefix = ''; }
+      else { icon = 'fa-arrow-left'; cls = 'text-danger'; amtPrefix = '−'; }
+      const cat = tx.category_name || (type === 'transfer' ? 'Transfer' : (type === 'deposit' ? 'Income' : 'Uncategorised'));
+      const acct = tx.source_name && tx.destination_name ? `${tx.source_name} → ${tx.destination_name}` : (tx.source_name || tx.destination_name || '');
+      // Per-row link: Firefly's native transaction show page (full detail, splits, attachments, edit)
+      return `<a href="/transactions/show/${t.id}" class="tx-row" data-tx-id="${t.id}">
+        <i class="fa-solid ${icon} ${cls} tx-dir"></i>
+        <div>
+          <div class="tx-name">${escapeHtml(tx.description || '—')}</div>
+          <div class="tx-meta">${escapeHtml(cat)} · ${escapeHtml(acct)}</div>
+        </div>
+        <span class="tx-amt ${cls}">${amtPrefix}€${amt.toFixed(2)}</span>
+        <span class="tx-date">${escapeHtml(dateStr)}</span>
+      </a>`;
+    }).join('');
+  }
+
+  // ─── Subscriptions due ───────────────────────────────────────
+  // Compute next-due date locally — Firefly only populates `next_expected_match`
+  // and `pay_dates` from a cron job that may not run in dev. Walk forward from
+  // the bill's `date` field by `repeat_freq` increments.
+  function billNextDue(a) {
+    if (Array.isArray(a.pay_dates) && a.pay_dates[0]) return new Date(a.pay_dates[0]);
+    if (a.next_expected_match) return new Date(a.next_expected_match);
+    if (!a.date) return null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d = new Date(a.date); d.setHours(0,0,0,0);
+    const step = {
+      daily:     (x) => x.setDate(x.getDate() + 1),
+      weekly:    (x) => x.setDate(x.getDate() + 7),
+      monthly:   (x) => x.setMonth(x.getMonth() + 1),
+      quarterly: (x) => x.setMonth(x.getMonth() + 3),
+      'half-year': (x) => x.setMonth(x.getMonth() + 6),
+      yearly:    (x) => x.setFullYear(x.getFullYear() + 1),
+    }[a.repeat_freq];
+    if (!step) return null;
+    // Advance until we're at-or-after today. If date is already future, return as-is.
+    // Cap iterations defensively.
+    let i = 0;
+    while (d < today && i++ < 200) step(d);
+    // d is now ≥ today (or didn't advance because already future). But the
+    // "most recent" period that's overdue is d - 1 step. We want to surface
+    // overdue bills, so walk back one step IF that puts us within ~7 days past.
+    const prev = new Date(d);
+    const stepBack = {
+      daily:     (x) => x.setDate(x.getDate() - 1),
+      weekly:    (x) => x.setDate(x.getDate() - 7),
+      monthly:   (x) => x.setMonth(x.getMonth() - 1),
+      quarterly: (x) => x.setMonth(x.getMonth() - 3),
+      'half-year': (x) => x.setMonth(x.getMonth() - 6),
+      yearly:    (x) => x.setFullYear(x.getFullYear() - 1),
+    }[a.repeat_freq];
+    if (stepBack) stepBack(prev);
+    const prevDiff = (today - prev) / 86400000;
+    return (prevDiff > 0 && prevDiff <= 7) ? prev : d;
+  }
+
+  async function hydrateSubs() {
+    const el = document.getElementById('pala-subs');
+    if (!el) return;
+    const r = await api('/bills');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const horizon = new Date(today); horizon.setDate(horizon.getDate() + 30);
+    const items = [];
+    for (const b of (r.data || [])) {
+      const a = b.attributes || {};
+      if (a.active === false) continue;
+      const d = billNextDue(a);
+      if (!d) continue;
+      if (d > horizon) continue;
+      const amt = (parseFloat(a.amount_min || 0) + parseFloat(a.amount_max || 0)) / 2;
+      items.push({ id: b.id, name: a.name, due: d, amt });
+    }
+    items.sort((x,y) => x.due - y.due);
+    const top = items.slice(0, 4);
+    if (!top.length) { el.innerHTML = '<div class="text-muted small p-3">No subscriptions due in the next 30 days.</div>'; setText('[data-pala="subs-footer"]', '<span>Next 30 days · 0 bills</span><span class="text-text">—</span>'); return; }
+    el.innerHTML = top.map(it => {
+      const diff = Math.round((it.due - today) / 86400000);
+      let dotCls = '', when;
+      if (diff <= 0) { dotCls = 'due-now'; when = diff === 0 ? 'today' : `${-diff}d overdue`; }
+      else if (diff <= 7) { dotCls = 'due-soon'; when = `in ${diff} day${diff === 1 ? '' : 's'}`; }
+      else { when = `in ${diff} days`; }
+      return `<a href="bills.html?bill=${encodeURIComponent(it.id)}" class="sub-row">
+        <span class="sub-dot ${dotCls}"></span>
+        <span class="sub-name">${escapeHtml(it.name)}</span>
+        <span class="sub-when">${escapeHtml(when)}</span>
+        <span class="sub-amt">~€${it.amt.toFixed(2)}</span>
+      </a>`;
+    }).join('');
+    const totalAmt = items.reduce((s,i) => s + i.amt, 0);
+    setText('[data-pala="subs-footer"]', `<span>Next 30 days · ${items.length} bill${items.length === 1 ? '' : 's'}</span><span class="text-text">~€${totalAmt.toFixed(2)}</span>`);
+  }
+
+  // ─── Piggy banks ─────────────────────────────────────────────
+  async function hydratePiggy() {
+    const el = document.getElementById('pala-piggy');
+    if (!el) return;
+    const r = await api('/piggy-banks');
+    const items = (r.data || []).map(p => {
+      const a = p.attributes || {};
+      const cur = parseFloat(a.current_amount || 0);
+      const tgt = parseFloat(a.target_amount || 0);
+      return { id: p.id, name: a.name, cur, tgt, pct: tgt > 0 ? (cur / tgt) * 100 : 0, target_date: a.target_date };
+    }).sort((a,b) => b.tgt - a.tgt).slice(0, 3);
+    if (!items.length) { el.innerHTML = '<div class="text-muted small">No piggy banks set up.</div>'; return; }
+    el.innerHTML = items.map(p => {
+      const fillClass = p.pct >= 100 ? '' : (p.pct < 50 ? 'under' : '');
+      let metaRight = '';
+      if (p.target_date) {
+        const days = Math.max(1, Math.round((new Date(p.target_date) - new Date()) / 86400000));
+        const months = Math.max(1, Math.round(days / 30));
+        const need = Math.max(0, p.tgt - p.cur);
+        metaRight = months > 0 ? `~€${(need / months).toFixed(0)}/mo to hit ${new Date(p.target_date).toLocaleString('en-US', { month: 'short', year: 'numeric' })}` : '';
+      }
+      return `<a href="piggy.html?piggy=${encodeURIComponent(p.id)}" class="piggy-row">
+        <div class="piggy-head"><span class="name">${escapeHtml(p.name)}</span><span class="vals">${fmtEURc(p.cur)} / ${fmtEURc(p.tgt)}</span></div>
+        <div class="pace-track"><div class="pace-fill ${fillClass}" style="width:${Math.min(100, p.pct).toFixed(1)}%"></div></div>
+        <div class="piggy-meta"><span>${Math.round(p.pct)}% funded</span><span>${escapeHtml(metaRight)}</span></div>
+      </a>`;
+    }).join('');
+  }
+
+  // ─── Needs attention ─────────────────────────────────────────
+  async function hydrateAttention(start, end) {
+    const el = document.getElementById('pala-attention');
+    if (!el) return;
+    const items = [];
+
+    // 1. uncategorised transactions in the period (withdrawals only)
+    try {
+      const r = await api(`/transactions?start=${start}&end=${end}&type=withdrawal&limit=50&page=1`);
+      const uncat = (r.data || []).filter(t => {
+        const tx = (t.attributes && t.attributes.transactions && t.attributes.transactions[0]) || {};
+        return !tx.category_name && !tx.category_id;
+      });
+      if (uncat.length) {
+        const sum = uncat.reduce((s,t) => s + Math.abs(parseFloat(t.attributes.transactions[0].amount || 0)), 0);
+        const dates = uncat.map(t => new Date(t.attributes.transactions[0].date)).sort((a,b) => a - b);
+        const oldest = dates[0] && dates[0].toLocaleString('en-US', { month: 'short', day: 'numeric' });
+        items.push({
+          href: 'transactions.html?filter=uncategorised',
+          iconClass: 'warn', icon: 'fa-question',
+          title: `${uncat.length} transaction${uncat.length === 1 ? '' : 's'} need a category`,
+          meta: `€${sum.toFixed(2)} · oldest from ${oldest}`,
+        });
+      }
+    } catch (e) {}
+
+    // 2. bills due today or overdue
+    try {
+      const r = await api('/bills');
+      const today = new Date(); today.setHours(0,0,0,0);
+      const due = [];
+      for (const b of (r.data || [])) {
+        const a = b.attributes || {};
+        if (a.active === false) continue;
+        const d = billNextDue(a);
+        if (!d) continue;
+        const diff = (d - today) / 86400000;
+        if (diff <= 0) due.push({ id: b.id, name: a.name, days: -diff, amt: (parseFloat(a.amount_min || 0) + parseFloat(a.amount_max || 0)) / 2 });
+      }
+      if (due.length) {
+        const top = due.sort((a,b) => b.days - a.days)[0];
+        items.push({
+          href: `bills.html?bill=${encodeURIComponent(top.id)}`,
+          iconClass: 'danger', icon: 'fa-clock',
+          title: top.days === 0 ? `${top.name} is due today` : `${top.name} is ${top.days}d overdue`,
+          meta: `~€${top.amt.toFixed(2)} · bill not yet matched`,
+        });
+      }
+    } catch (e) {}
+
+    setText('[data-pala="attention-count"]', items.length ? `${items.length} item${items.length === 1 ? '' : 's'}` : 'all clear');
+    if (!items.length) {
+      el.innerHTML = '<div class="text-muted small p-3">Nothing needs attention right now. 🎉</div>';
+      return;
+    }
+    el.innerHTML = items.map(i => `
+      <a href="${i.href}" class="attention-row">
+        <div class="attention-icon ${i.iconClass}"><i class="fa-solid ${i.icon}"></i></div>
+        <div class="attention-body">
+          <div class="attention-title">${escapeHtml(i.title)}</div>
+          <div class="attention-meta">${escapeHtml(i.meta)}</div>
+        </div>
+        <i class="fa-solid fa-chevron-right"></i>
+      </a>`).join('');
   }
 
   function escapeHtml(s) {

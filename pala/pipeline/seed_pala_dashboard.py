@@ -69,7 +69,7 @@ MOCK_ACCOUNTS = [
         "type": "asset",
         "account_role": "savingAsset",
         "currency_code": CURRENCY,
-        "opening_balance": "1000.00",
+        "opening_balance": "3000.00",
         "opening_balance_date": "2024-01-01",
         "notes": "Mock account seeded by Pala dashboard.",
     },
@@ -117,6 +117,52 @@ ENVELOPES: list[Envelope] = [
 ]
 
 OUTSIDE_BUDGET_CATEGORIES = ["Cash Withdrawals"]  # deliberate; not under any budget
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# bills (recurring subscriptions) and piggy-banks (savings goals)
+# ────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class Bill:
+    name: str
+    amount: float
+    repeat: str               # 'monthly' | 'quarterly' | 'yearly'
+    days_ago_last_paid: int   # so Firefly computes next_expected_match correctly
+    notes: str = "Seeded by Pala dashboard."
+
+# Tuned so next_expected_match lands across the 30-day widget window with a
+# realistic spread: a couple overdue-ish, a couple within 7 days, the rest neutral.
+BILLS: list[Bill] = [
+    Bill("Magenta Internet",   39.90, "monthly",  32),  # ~2 days overdue
+    Bill("Spotify",             10.99, "monthly",  28),  # due in ~2 days
+    Bill("Patreon Pledges",      5.00, "monthly",  25),  # due in ~5 days
+    Bill("Netflix",             17.99, "monthly",  18),  # due in ~12 days
+    Bill("A1 Telekom Mobile",   34.90, "monthly",   8),  # due in ~22 days
+    Bill("ÖBB Klimaticket",   1095.00, "yearly",  340),  # due in ~25 days (annual)
+]
+
+@dataclass
+class Piggy:
+    name: str
+    target: float
+    current: float
+    target_date: str | None   # ISO date or None
+    notes: str = "Seeded by Pala dashboard."
+
+PIGGIES: list[Piggy] = [
+    Piggy("Iceland trip 2026",  1500.0,  420.0, target_date="2026-08-15"),
+    Piggy("Emergency fund",     3000.0, 1100.0, target_date="2030-01-01"),  # placeholder — widget treats far-future as "no target"
+    Piggy("New laptop",         1800.0,  650.0, target_date="2026-12-01"),
+]
+
+# Uncategorised withdrawals — populate the "Needs attention" dashboard widget.
+UNCATEGORISED_MOCKS = [
+    ("Unknown merchant",       18.40),
+    ("Reimburse: lunch",       12.00),
+    ("Misc · receipt missing",  6.50),
+    ("VENDOR #4592",           24.80),
+]
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -259,7 +305,7 @@ def create_categories() -> dict[str, str]:
 # ────────────────────────────────────────────────────────────────────────────
 
 def store_withdrawal(when: date, amount: float, description: str,
-                     budget_id: str | None, category_id: str) -> None:
+                     budget_id: str | None, category_id: str | None) -> None:
     tx = {
         "type": "withdrawal",
         "date": when.isoformat(),
@@ -268,9 +314,10 @@ def store_withdrawal(when: date, amount: float, description: str,
         "source_id": ASSET_ACCOUNT_ID,
         "destination_name": description.split()[0],  # auto-creates expense account
         "currency_code": CURRENCY,
-        "category_id": category_id,
         "tags": [MOCK_TAG],
     }
+    if category_id:
+        tx["category_id"] = category_id
     if budget_id:
         tx["budget_id"] = budget_id
     api("POST", "/transactions", json={"transactions": [tx], "apply_rules": False})
@@ -361,7 +408,91 @@ def generate_mocks(budget_ids: dict[str, str], category_ids: dict[str, str],
         store_transfer(last, round(RNG.uniform(8, 24), 2), "Round-up to Sparziel")
         tx_count += 1
 
+    # Uncategorised mocks — only in the current month so they surface in the
+    # dashboard "Needs attention" widget, which scopes to the selected period.
+    cur_first, cur_last = months[-1]
+    hi = min(cur_last.day, today.day)
+    lo = max(1, hi - 14)
+    for desc, amt in UNCATEGORISED_MOCKS:
+        day = RNG.randint(lo, hi)
+        when = date(cur_first.year, cur_first.month, day)
+        store_withdrawal(when, amt, desc, budget_id=None, category_id=None)
+        tx_count += 1
+
     print(f"  ✓ {tx_count} mock transactions created")
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# bills + piggy-banks
+# ────────────────────────────────────────────────────────────────────────────
+
+def wipe_bills() -> None:
+    print("→ wiping bills…")
+    for b in paged("/bills"):
+        api("DELETE", f"/bills/{b['id']}")
+    print("  ✓ bills deleted")
+
+
+def wipe_piggies() -> None:
+    print("→ wiping piggy-banks…")
+    for p in paged("/piggy-banks"):
+        api("DELETE", f"/piggy-banks/{p['id']}")
+    print("  ✓ piggy-banks deleted")
+
+
+def create_bills() -> None:
+    today = date.today()
+    print(f"→ creating {len(BILLS)} bills…")
+    for b in BILLS:
+        last_paid = today - timedelta(days=b.days_ago_last_paid)
+        api("POST", "/bills", json={
+            "name": b.name,
+            "amount_min": f"{b.amount * 0.98:.2f}",
+            "amount_max": f"{b.amount * 1.02:.2f}",
+            "date": last_paid.isoformat(),
+            "repeat_freq": b.repeat,
+            "skip": 0,
+            "active": True,
+            "currency_code": CURRENCY,
+            "notes": b.notes,
+        })
+        print(f"  ✓ {b.name:<22} €{b.amount:>6.2f} {b.repeat:<9} last paid {b.days_ago_last_paid}d ago")
+
+
+def create_piggies() -> None:
+    print(f"→ creating {len(PIGGIES)} piggy-banks on savings account {SAVINGS_ACCOUNT_ID}…")
+    today = date.today()
+    for i, p in enumerate(PIGGIES, start=1):
+        payload = {
+            "name": p.name,
+            "accounts": [{"account_id": SAVINGS_ACCOUNT_ID, "current_amount": f"{p.current:.2f}"}],
+            "target_amount": f"{p.target:.2f}",
+            "start_date": today.isoformat(),
+            "transaction_currency_code": CURRENCY,
+            "order": i,
+            "notes": p.notes,
+        }
+        if p.target_date:
+            payload["target_date"] = p.target_date
+        api("POST", "/piggy-banks", json=payload)
+        pct = 100.0 * p.current / p.target if p.target else 0
+        print(f"  ✓ {p.name:<22} €{p.current:>7.2f}/€{p.target:>7.2f} ({pct:>4.0f}%)")
+
+
+def upsert_bills() -> None:
+    existing = existing_index("/bills")
+    if existing:
+        print(f"✓ found {len(existing)} existing bills, skipping creation")
+        return
+    create_bills()
+
+
+def upsert_piggies() -> None:
+    existing = existing_index("/piggy-banks")
+    if existing:
+        print(f"✓ found {len(existing)} existing piggy-banks, skipping creation")
+        return
+    create_piggies()
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -405,9 +536,13 @@ def main() -> None:
 
     if args.mode == "meta":
         if args.wipe:
+            wipe_bills()
+            wipe_piggies()
             wipe_metadata()
         budget_ids = upsert_envelopes(history_months=args.history)
         upsert_categories()
+        upsert_bills()
+        upsert_piggies()
         _ = budget_ids  # silence linter
 
     elif args.mode == "mock":
@@ -422,10 +557,16 @@ def main() -> None:
         generate_mocks(budget_ids, category_ids, months_back=args.months)
 
     elif args.mode == "reset":
+        wipe_bills()
+        wipe_piggies()
         wipe_metadata()
         wipe_transactions()
         wipe_accounts()
         create_accounts()
+        # Create bills + piggies BEFORE the expensive tx generation loop so schema
+        # errors fail in seconds instead of after ~200 transaction POSTs.
+        create_bills()
+        create_piggies()
         budget_ids = create_envelopes(history_months=args.history)
         category_ids = create_categories()
         generate_mocks(budget_ids, category_ids, months_back=args.months)

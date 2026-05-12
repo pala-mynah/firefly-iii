@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transaction — Firefly III · Pala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root {
+  --pala-navy:#0f1b2d; --pala-navy-mid:#172236; --pala-navy-card:#1e2d45; --pala-navy-border:#253550;
+  --pala-mint:#3ecfb2; --pala-mint-dim:#2aa89a; --pala-text:#d6e4f0; --pala-muted:#7a9bbf;
+  --pala-danger:#e05c6a; --pala-success:#4caf82; --pala-warning:#f0a84a; --pala-info:#5bafd6;
+  --sidebar-w:250px;
+}
+body { background:var(--pala-navy); color:var(--pala-text); font-family:'Inter',sans-serif; font-size:.9rem; }
+h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600; }
+.pala-sidebar { position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w); background:var(--pala-navy-mid); border-right:1px solid var(--pala-navy-border); overflow-y:auto; z-index:1000; }
+.pala-sidebar .brand { padding:1rem 1.25rem; font-family:'Crimson Pro',serif; font-size:1.25rem; color:var(--pala-mint); border-bottom:1px solid var(--pala-navy-border); }
+.pala-sidebar .nav-header { padding:.75rem 1.25rem .25rem; font-size:.63rem; letter-spacing:.1em; color:var(--pala-muted); text-transform:uppercase; }
+.pala-sidebar .nav-link { color:var(--pala-text); padding:.45rem 1.25rem; display:flex; align-items:center; gap:.6rem; }
+.pala-sidebar .nav-link:hover,.pala-sidebar .nav-link.active { background:rgba(62,207,178,.1); color:var(--pala-mint); }
+.pala-sidebar .nav-link i,.pala-sidebar .nav-link em { width:1.1rem; text-align:center; }
+.pala-sidebar .nav-sub .nav-link { padding:.3rem 1.25rem .3rem 2.8rem; font-size:.84rem; }
+.pala-navbar { position:fixed; top:0; left:var(--sidebar-w); right:0; height:3.5rem; background:var(--pala-navy-mid); border-bottom:1px solid var(--pala-navy-border); display:flex; align-items:center; padding:0 1.5rem; gap:1rem; z-index:900; }
+.pala-navbar .breadcrumb { margin:0; font-size:.84rem; }
+.pala-navbar .breadcrumb-item,.pala-navbar .breadcrumb-item a { color:var(--pala-muted); }
+.pala-navbar .breadcrumb-item.active { color:var(--pala-text); }
+.pala-navbar .period-badge { margin-left:auto; background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.25rem .75rem; font-size:.8rem; color:var(--pala-muted); display:flex; align-items:center; gap:.4rem; }
+.pala-navbar .period-badge a { color:var(--pala-muted); text-decoration:none; }
+.pala-navbar .period-badge a:hover { color:var(--pala-mint); }
+.pala-main { margin-left:var(--sidebar-w); margin-top:3.5rem; padding:1.5rem; }
+.card { background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); border-radius:8px; }
+.card-header { background:transparent; border-bottom:1px solid var(--pala-navy-border); padding:.7rem 1.1rem; }
+.card-title { color:var(--pala-text); margin:0; font-size:1.05rem; }
+.card-footer { background:transparent; border-top:1px solid var(--pala-navy-border); padding:.6rem 1.1rem; }
+.table { color:var(--pala-text); --bs-table-bg:transparent; }
+.table > :not(caption) > * > * { border-color:var(--pala-navy-border); padding:.42rem .75rem; }
+.table thead th { color:var(--pala-muted); font-weight:500; font-size:.76rem; text-transform:uppercase; letter-spacing:.04em; }
+.table-hover > tbody > tr:hover > * { background:rgba(255,255,255,.04); }
+.btn-primary { background:var(--pala-mint); border-color:var(--pala-mint); color:#0f1b2d; font-weight:500; }
+.btn-primary:hover { background:var(--pala-mint-dim); border-color:var(--pala-mint-dim); color:#0f1b2d; }
+.btn-outline-secondary { border-color:var(--pala-navy-border); color:var(--pala-muted); }
+.btn-outline-secondary:hover { background:var(--pala-navy-border); color:var(--pala-text); }
+.btn-outline-danger { border-color:var(--pala-danger); color:var(--pala-danger); }
+.btn-outline-danger:hover { background:var(--pala-danger); color:#fff; }
+.text-danger  { color:var(--pala-danger)  !important; }
+.text-success { color:var(--pala-success) !important; }
+.text-warning { color:var(--pala-warning) !important; }
+.text-info    { color:var(--pala-info)    !important; }
+.text-muted   { color:var(--pala-muted)   !important; }
+.badge.bg-success { background:var(--pala-success)!important; }
+.badge.bg-warning { background:var(--pala-warning)!important; color:#0f1b2d!important; }
+.badge.bg-info    { background:var(--pala-info)!important; color:#0f1b2d!important; }
+.badge.bg-danger  { background:var(--pala-danger)!important; }
+.badge.bg-secondary { background:var(--pala-navy-border)!important; color:var(--pala-text)!important; }
+
+/* tx-show specific */
+.tx-hero { padding:1.5rem 1.4rem; border-bottom:1px solid var(--pala-navy-border); }
+.tx-hero .tx-desc { font-family:'Crimson Pro',serif; font-size:1.6rem; line-height:1.2; margin:0 0 .35rem; color:var(--pala-text); }
+.tx-hero .tx-meta-row { display:flex; gap:.65rem; align-items:center; flex-wrap:wrap; color:var(--pala-muted); font-size:.85rem; }
+.tx-hero .tx-amount { font-family:'Crimson Pro',serif; font-size:2.6rem; line-height:1; font-variant-numeric:tabular-nums; margin-top:.5rem; }
+.tx-hero .tx-amount.text-success { color:var(--pala-success)!important; }
+.tx-hero .tx-amount.text-danger  { color:var(--pala-danger)!important; }
+.tx-hero .tx-amount.text-info    { color:var(--pala-info)!important; }
+.tx-hero .tx-foreign { color:var(--pala-muted); font-size:.95rem; margin-top:.15rem; }
+.tx-type-chip { display:inline-flex; align-items:center; gap:.35rem; padding:.18rem .55rem; border-radius:999px; font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; }
+.tx-type-chip.deposit    { background:rgba(76,175,130,.15);  color:var(--pala-success); border:1px solid rgba(76,175,130,.4); }
+.tx-type-chip.withdrawal { background:rgba(224,92,106,.15);  color:var(--pala-danger);  border:1px solid rgba(224,92,106,.4); }
+.tx-type-chip.transfer   { background:rgba(91,175,214,.15);  color:var(--pala-info);    border:1px solid rgba(91,175,214,.4); }
+.kv-table th { color:var(--pala-muted); font-weight:500; width:36%; vertical-align:top; padding-top:.55rem; }
+.kv-table td { vertical-align:top; padding-top:.55rem; }
+.kv-table .kv-link { color:var(--pala-mint); text-decoration:none; }
+.kv-table .kv-link:hover { text-decoration:underline; }
+.acct-pill { display:inline-flex; align-items:center; gap:.4rem; padding:.18rem .55rem; border-radius:6px; background:var(--pala-navy); border:1px solid var(--pala-navy-border); color:var(--pala-text); text-decoration:none; font-size:.83rem; }
+.acct-pill:hover { border-color:var(--pala-mint); color:var(--pala-mint); }
+.acct-flow { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.acct-flow .fa-arrow-right { color:var(--pala-muted); }
+.tag-pill { display:inline-block; padding:.15rem .5rem; border-radius:999px; background:var(--pala-navy); border:1px solid var(--pala-navy-border); color:var(--pala-muted); font-size:.78rem; margin-right:.25rem; text-decoration:none; }
+.tag-pill:hover { color:var(--pala-mint); border-color:var(--pala-mint); }
+.note-box { background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.65rem .85rem; color:var(--pala-text); font-size:.86rem; white-space:pre-wrap; }
+.split-row { padding:.7rem 1.1rem; border-bottom:1px solid var(--pala-navy-border); }
+.split-row:last-child { border-bottom:0; }
+.split-row .split-num { color:var(--pala-muted); font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; }
+</style>
+</head>
+<body data-page="transactions" data-sub="all" data-crumbs="Home/Transactions/Detail">
+
+<main class="pala-main">
+  <div class="card mb-3">
+    <div class="tx-hero">
+      <div class="tx-meta-row" style="margin-bottom:.4rem;">
+        <span class="tx-type-chip" data-k="tx-type-chip"><span data-k="tx-type-label">…</span></span>
+        <span data-k="tx-date">—</span>
+        <span data-k="tx-id-line" class="text-muted small">—</span>
+      </div>
+      <h1 class="tx-desc" data-k="tx-desc">Loading…</h1>
+      <div class="tx-amount" data-k="tx-amount">—</div>
+      <div class="tx-foreign" data-k="tx-foreign" hidden>—</div>
+    </div>
+    <div class="card-body p-0">
+      <div style="padding:1rem 1.1rem;">
+        <div class="acct-flow" data-k="tx-flow">
+          <span class="text-muted">Loading accounts…</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer d-flex gap-2 flex-wrap">
+      <a href="#" class="btn btn-sm btn-primary" data-k="tx-edit-btn"><i class="fa-solid fa-pencil fa-fw"></i> Edit in Firefly</a>
+      <a href="#" class="btn btn-sm btn-outline-secondary" data-k="tx-clone-btn"><i class="fa-solid fa-clone fa-fw"></i> Clone</a>
+      <button class="btn btn-sm btn-outline-danger" data-k="tx-delete-btn"><i class="fa-solid fa-trash fa-fw"></i> Delete</button>
+      <a href="#" class="btn btn-sm btn-outline-secondary ms-auto" data-k="tx-back-btn"><i class="fa-solid fa-arrow-left fa-fw"></i> Back to transactions</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title">Classification</h3></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0 kv-table">
+            <tbody>
+              <tr><th>Category</th><td data-k="tx-category">—</td></tr>
+              <tr><th>Budget</th><td data-k="tx-budget">—</td></tr>
+              <tr><th>Bill</th><td data-k="tx-bill">—</td></tr>
+              <tr><th>Tags</th><td data-k="tx-tags">—</td></tr>
+              <tr><th>Currency</th><td data-k="tx-currency">—</td></tr>
+              <tr data-k="tx-foreign-row" hidden><th>Foreign amount</th><td data-k="tx-foreign-amt">—</td></tr>
+              <tr><th>Book / Process date</th><td data-k="tx-process">—</td></tr>
+              <tr><th>Notes</th><td data-k="tx-notes"><span class="text-muted">—</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card mb-3" data-k="tx-splits-card" hidden>
+        <div class="card-header"><h3 class="card-title">Splits <span class="text-muted small" data-k="tx-splits-count"></span></h3></div>
+        <div class="card-body p-0" data-k="tx-splits-body"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Audit</h3></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0 kv-table">
+            <tbody>
+              <tr><th>Created</th><td class="text-muted" data-k="tx-created">—</td></tr>
+              <tr><th>Updated</th><td class="text-muted" data-k="tx-updated">—</td></tr>
+              <tr><th>Internal reference</th><td class="text-muted" data-k="tx-internal-ref">—</td></tr>
+              <tr><th>External id</th><td class="text-muted" data-k="tx-external-id">—</td></tr>
+              <tr><th>External URL</th><td data-k="tx-external-url"><span class="text-muted">—</span></td></tr>
+              <tr><th>Reconciled</th><td data-k="tx-reconciled">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title">Related</h3></div>
+        <div class="card-body p-0">
+          <div style="padding:.85rem 1.1rem; border-bottom:1px solid var(--pala-navy-border);">
+            <div class="text-muted small mb-2" data-k="tx-similar-label">More from this counterparty</div>
+            <div data-k="tx-similar"><span class="text-muted small">—</span></div>
+          </div>
+          <div style="padding:.85rem 1.1rem;">
+            <div class="text-muted small mb-2" data-k="tx-cat-recent-label">More in this category</div>
+            <div data-k="tx-cat-recent"><span class="text-muted small">—</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Links</h3></div>
+        <div class="card-body p-0" data-k="tx-links">
+          <div class="text-muted small p-3">No linked transactions.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-live.js"></script>
+<script src="pala-live2.js"></script>
+<script>
+/* Reuses the same chrome injector as the other pages. */
+(function () {
+  const NAV = [
+    { header: "Financial Control" },
+    { key: "dashboard",  icon: "fa-solid fa-gauge-high",        label: "Dashboard",     href: "index.html" },
+    { key: "budgets",    icon: "fa-solid fa-chart-pie",         label: "Budgets",       href: "budgets.html" },
+    { key: "bills",      icon: "fa-regular fa-calendar",        label: "Subscriptions", href: "bills.html" },
+    { key: "piggy",      icon: "fa-solid fa-piggy-bank",        label: "Piggy Banks",   href: "piggy.html" },
+    { header: "Accounting" },
+    { key: "transactions", icon: "fa-solid fa-arrow-right-arrow-left", label: "Transactions", href: "transactions.html",
+      sub: [
+        { key: "expenses",  icon: "fa-solid fa-arrow-left text-danger",       label: "Expenses",  href: "transactions.html?type=expenses" },
+        { key: "income",    icon: "fa-solid fa-arrow-right text-success",     label: "Income",    href: "transactions.html?type=income" },
+        { key: "transfers", icon: "fa-solid fa-arrows-rotate text-info",      label: "Transfers", href: "transactions.html?type=transfers" },
+        { key: "all",       icon: "fa-solid fa-arrows-turn-to-dots",          label: "All",       href: "transactions.html?type=all" },
+      ] },
+    { key: "automation", icon: "fa-solid fa-microchip", label: "Automation", expanded: true,
+      sub: [
+        { key: "rules",     icon: "fa-solid fa-shuffle",  label: "Rules",     href: "rules.html" },
+        { key: "recurring", icon: "fa-solid fa-repeat",   label: "Recurring", href: "recurring.html" },
+      ] },
+    { header: "Others" },
+    { key: "accounts", icon: "fa-regular fa-credit-card", label: "Accounts", href: "accounts.html",
+      sub: [
+        { key: "asset",       icon: "fa-solid fa-money-bills",           label: "Asset",       href: "accounts.html?type=asset" },
+        { key: "expense",     icon: "fa-solid fa-cart-shopping",         label: "Expense",     href: "accounts.html?type=expense" },
+        { key: "revenue",     icon: "fa-solid fa-money-bill-trend-up",   label: "Revenue",     href: "accounts.html?type=revenue" },
+        { key: "liabilities", icon: "fa-solid fa-landmark",              label: "Liabilities", href: "accounts.html?type=liabilities" },
+      ] },
+    { key: "classification", icon: "fa-solid fa-tags", label: "Classification", expanded: true,
+      sub: [
+        { key: "categories", icon: "fa-regular fa-bookmark", label: "Categories", href: "categories.html" },
+        { key: "tags",       icon: "fa-solid fa-tag",        label: "Tags",       href: "tags.html" },
+      ] },
+    { key: "reports", icon: "fa-solid fa-chart-column",         label: "Reports", href: "reports.html" },
+    { key: "search",  icon: "fa-solid fa-magnifying-glass",     label: "Search",  href: "search.html" },
+    { key: "export",  icon: "fa-solid fa-upload",               label: "Export",  href: "#" },
+    { divider: true },
+    { key: "profile",     icon: "fa-solid fa-user-gear",  label: "Profile",     href: "profile.html" },
+    { key: "preferences", icon: "fa-solid fa-sliders",    label: "Preferences", href: "preferences.html" },
+    { key: "logout",      icon: "fa-solid fa-arrow-right-from-bracket", label: "Logout", href: "#" },
+  ];
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  function renderSidebar(activePage, activeSub) {
+    const parts = ['<div class="brand"><i class="fa-solid fa-fire-flame-curved me-2"></i>Firefly III</div>'];
+    for (const item of NAV) {
+      if (item.header)  { parts.push(`<div class="nav-header">${esc(item.header)}</div>`); continue; }
+      if (item.divider) { parts.push('<hr style="border-color:var(--pala-navy-border);margin:0.6rem 0">'); continue; }
+      const isActive = item.key === activePage;
+      const cls = "nav-link" + (isActive ? " active" : "");
+      const chev = item.sub ? '<i class="fa-solid fa-chevron-down ms-auto fa-xs"></i>' : "";
+      parts.push(`<a href="${item.href||"#"}" class="${cls}"><i class="${item.icon}"></i> ${esc(item.label)}${chev}</a>`);
+      if (item.sub) {
+        const showSub = isActive || item.expanded;
+        if (showSub) {
+          parts.push('<div class="nav-sub">');
+          for (const s of item.sub) {
+            const sActive = (isActive && s.key === activeSub) ? " active" : "";
+            parts.push(`<a href="${s.href}" class="nav-link${sActive}"><i class="${s.icon}"></i> ${esc(s.label)}</a>`);
+          }
+          parts.push('</div>');
+        }
+      }
+    }
+    return `<aside class="pala-sidebar">${parts.join("")}</aside>`;
+  }
+  function renderNavbar(crumbs, period) {
+    const segs = (crumbs||"").split("/").filter(Boolean);
+    const last = segs.pop();
+    const ol = segs.map(s => `<li class="breadcrumb-item"><a href="#">${esc(s)}</a></li>`).join("");
+    const active = last ? `<li class="breadcrumb-item active">${esc(last)}</li>` : "";
+    const periodHtml = period ? `<div class="period-badge"><a href="#"><i class="fa-solid fa-chevron-left fa-xs"></i></a><span>${esc(period)}</span><a href="#"><i class="fa-solid fa-chevron-right fa-xs"></i></a></div>` : "";
+    return `<nav class="pala-navbar"><ol class="breadcrumb">${ol}${active}</ol>${periodHtml}</nav>`;
+  }
+  function inject() {
+    const b = document.body;
+    b.insertAdjacentHTML("afterbegin", renderSidebar(b.dataset.page||"", b.dataset.sub||""));
+    const main = document.querySelector("main.pala-main");
+    if (main) main.insertAdjacentHTML("beforebegin", renderNavbar(b.dataset.crumbs||"", b.dataset.period||""));
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inject);
+  else inject();
+})();
+</script>
+</body>
+</html>

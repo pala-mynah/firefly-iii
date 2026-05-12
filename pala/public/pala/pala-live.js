@@ -20,13 +20,251 @@
     return r.status === 204 ? null : r.json();
   }
 
+  // Period selector. Encoded in URL as ?period=<token>:
+  //   YYYY        → full calendar year     (kind='year')
+  //   YYYY-Qn     → calendar quarter n=1..4 (kind='quarter')
+  //   YYYY-MM     → calendar month         (kind='month')
+  //   (absent)    → current calendar month
+  // Returns ISO start/end + Date objects + an "anchor" (cursor date for
+  // "today within this period" math: today if period contains today, else end-of-period).
   const periodRange = () => {
-    const t = new Date();
+    const now = new Date();
+    const raw = qs("period") || "";
+    let kind = "month", y, m, q;
+    let mat;
+    if ((mat = raw.match(/^(\d{4})$/))) {
+      kind = "year"; y = +mat[1];
+    } else if ((mat = raw.match(/^(\d{4})-Q([1-4])$/i))) {
+      kind = "quarter"; y = +mat[1]; q = +mat[2];
+    } else if ((mat = raw.match(/^(\d{4})-(\d{2})$/))) {
+      kind = "month"; y = +mat[1]; m = +mat[2] - 1;
+    } else {
+      kind = "month"; y = now.getFullYear(); m = now.getMonth();
+    }
+    let startDate, endDate, token, label;
+    if (kind === "year") {
+      startDate = new Date(y, 0, 1);
+      endDate   = new Date(y, 12, 0);
+      token     = `${y}`;
+      label     = `${y}`;
+    } else if (kind === "quarter") {
+      const qm = (q - 1) * 3;
+      startDate = new Date(y, qm, 1);
+      endDate   = new Date(y, qm + 3, 0);
+      token     = `${y}-Q${q}`;
+      label     = `Q${q} ${y}`;
+    } else {
+      startDate = new Date(y, m, 1);
+      endDate   = new Date(y, m + 1, 0);
+      token     = `${y}-${String(m + 1).padStart(2, "0")}`;
+      label     = `${startDate.getDate()} ${startDate.toLocaleDateString("en", { month: "short" })} \u2013 ${endDate.getDate()} ${endDate.toLocaleDateString("en", { month: "short" })} ${y}`;
+    }
+    let anchor = now;
+    if (now > endDate)        anchor = endDate;
+    else if (now < startDate) anchor = startDate;
     return {
-      start: new Date(t.getFullYear(), t.getMonth(), 1).toISOString().slice(0, 10),
-      end:   new Date(t.getFullYear(), t.getMonth() + 1, 0).toISOString().slice(0, 10),
+      start: startDate.toISOString().slice(0, 10),
+      end:   endDate.toISOString().slice(0, 10),
+      startDate, endDate, anchor,
+      kind, y, m, q, token, label,
+      isCurrent: now >= startDate && now <= endDate,
+      // helpers for shifting siblings
+      ym: kind === "month" ? token : null,
     };
   };
+
+  // Wires the .period-badge in the global navbar: renders the right label,
+  // chevron prev/next (same-kind sibling), and a click-to-open dropdown
+  // with months/quarters/years. Runs once on boot. Defers a tick so the
+  // chrome IIFE (which is registered as a DOMContentLoaded listener after
+  // pala-live.js) has time to insert the navbar.
+  function wirePeriodChrome() {
+    const badge = document.querySelector(".pala-navbar .period-badge");
+    if (!badge) return;
+    if (badge.dataset.palaWired === "1") return;
+    badge.dataset.palaWired = "1";
+
+    const P = periodRange();
+    const now = new Date();
+    document.body.setAttribute("data-period", P.label);
+    const span = badge.querySelector("span");
+    if (span) span.textContent = P.label;
+
+    // Navigate to a new period token (or clear).
+    const goTo = (token) => {
+      const url = new URL(location.href);
+      if (token) url.searchParams.set("period", token);
+      else       url.searchParams.delete("period");
+      location.href = url.toString();
+    };
+
+    // Shift one sibling in the current period kind (month/quarter/year).
+    const shift = (delta) => {
+      let next;
+      if (P.kind === "year") {
+        const ny = P.y + delta;
+        if (ny > now.getFullYear()) return;
+        next = `${ny}`;
+      } else if (P.kind === "quarter") {
+        let nq = P.q + delta, ny = P.y;
+        while (nq > 4) { nq -= 4; ny += 1; }
+        while (nq < 1) { nq += 4; ny -= 1; }
+        // cap: don't allow quarters that start after current month
+        const startMonth = (nq - 1) * 3;
+        const startDate = new Date(ny, startMonth, 1);
+        if (startDate > now) return;
+        next = `${ny}-Q${nq}`;
+      } else {
+        const d = new Date(P.y, (P.m ?? 0) + delta, 1);
+        if (d > now) return;
+        next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      }
+      goTo(next);
+    };
+
+    const arrows = badge.querySelectorAll("a");
+    const prevA = arrows[0], nextA = arrows[1];
+    if (prevA) prevA.addEventListener("click", (e) => { e.preventDefault(); shift(-1); });
+    if (nextA) {
+      nextA.addEventListener("click", (e) => { e.preventDefault(); shift(+1); });
+      const atNow = P.isCurrent;
+      if (atNow) { nextA.style.opacity = "0.35"; nextA.style.cursor = "not-allowed"; nextA.title = "Already at current"; }
+    }
+
+    // ── Dropdown menu ────────────────────────────────────────────────
+    // Always anchor the dropdown's content on the SELECTED year (P.y) so
+    // when the user picks 2024 they then see Q1-Q4 of 2024 etc.
+    if (!document.getElementById("pala-period-dropdown-style")) {
+      const st = document.createElement("style");
+      st.id = "pala-period-dropdown-style";
+      st.textContent = `
+        .pala-navbar .period-badge { position:relative; }
+        .pala-period-dd { position:absolute; top:calc(100% + 6px); right:0; z-index:1100;
+          min-width:260px; background:var(--pala-navy-card); border:1px solid var(--pala-navy-border);
+          border-radius:8px; padding:.4rem 0; box-shadow:0 8px 24px rgba(0,0,0,.35);
+          font-size:.82rem; color:var(--pala-text); }
+        .pala-period-dd[hidden] { display:none; }
+        .pala-period-dd .ppd-section { padding:.25rem 0; }
+        .pala-period-dd .ppd-section + .ppd-section { border-top:1px solid var(--pala-navy-border); }
+        .pala-period-dd .ppd-title { padding:.35rem .8rem .15rem; font-size:.7rem;
+          letter-spacing:.06em; text-transform:uppercase; color:var(--pala-muted); }
+        .pala-period-dd .ppd-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+        .pala-period-dd a { display:flex; justify-content:space-between; align-items:center;
+          padding:.35rem .8rem; color:var(--pala-text); text-decoration:none; cursor:pointer; }
+        .pala-period-dd a:hover:not(.ppd-disabled) { background:rgba(62,207,178,.10); color:var(--pala-mint); }
+        .pala-period-dd a.ppd-active { color:var(--pala-mint); }
+        .pala-period-dd a.ppd-active::before { content:"\u2713"; margin-right:.45rem; }
+        .pala-period-dd a.ppd-disabled { opacity:.35; pointer-events:none; }
+        .pala-period-dd .ppd-meta { color:var(--pala-muted); font-size:.72rem; }
+        .pala-navbar .period-badge span { cursor:pointer; }
+        .pala-navbar .period-badge span::after { content:"\u25BE"; margin-left:.4rem; font-size:.7rem; color:var(--pala-muted); }
+      `;
+      document.head.appendChild(st);
+    }
+
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const dd = document.createElement("div");
+    dd.className = "pala-period-dd";
+    dd.hidden = true;
+
+    // Pick a context year. If the selected period is on a different year,
+    // anchor the dropdown to that year; else use current.
+    const ctxY = P.y;
+    const isFutureMonth = (yy, mm) => yy > now.getFullYear() || (yy === now.getFullYear() && mm > now.getMonth());
+    const isFutureQuarter = (yy, qq) => isFutureMonth(yy, (qq - 1) * 3);
+    const isFutureYear = (yy) => yy > now.getFullYear();
+
+    // 1) Three most recent months relative to context year. If ctxY is the
+    //    current year, last 3 are (now, now-1, now-2). If ctxY is past,
+    //    last 3 are Oct, Nov, Dec of that year (the year's 3 newest months).
+    let monthAnchor;
+    if (ctxY === now.getFullYear()) {
+      monthAnchor = { y: now.getFullYear(), m: now.getMonth() };
+    } else if (ctxY < now.getFullYear()) {
+      monthAnchor = { y: ctxY, m: 11 };
+    } else {
+      monthAnchor = { y: now.getFullYear(), m: now.getMonth() };
+    }
+    const recentMonths = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(monthAnchor.y, monthAnchor.m - i, 1);
+      recentMonths.push({ y: d.getFullYear(), m: d.getMonth() });
+    }
+
+    const mkAnchor = (token, label, opts = {}) => {
+      const cls = [];
+      if (opts.active)  cls.push("ppd-active");
+      if (opts.disabled) cls.push("ppd-disabled");
+      const meta = opts.meta ? `<span class="ppd-meta">${esc(opts.meta)}</span>` : "";
+      return `<a data-token="${esc(token)}" class="${cls.join(" ")}">${esc(label)}${meta}</a>`;
+    };
+
+    const monthsHtml = recentMonths.map(({ y: yy, m: mm }) => {
+      const tok = `${yy}-${String(mm + 1).padStart(2, "0")}`;
+      const isNow = yy === now.getFullYear() && mm === now.getMonth();
+      const isSel = P.kind === "month" && P.y === yy && P.m === mm;
+      return mkAnchor(tok, `${MONTHS[mm]} ${yy}`, { active: isSel, meta: isNow ? "This month" : "" });
+    }).join("");
+
+    const quartersHtml = [1, 2, 3, 4].map((qq) => {
+      const tok = `${ctxY}-Q${qq}`;
+      const isSel  = P.kind === "quarter" && P.y === ctxY && P.q === qq;
+      const fut    = isFutureQuarter(ctxY, qq);
+      const qStart = MONTHS[(qq - 1) * 3];
+      const qEnd   = MONTHS[(qq - 1) * 3 + 2];
+      return mkAnchor(tok, `Q${qq} ${ctxY}`, { active: isSel, disabled: fut, meta: `${qStart}\u2013${qEnd}` });
+    }).join("");
+
+    const yearsList = [];
+    for (let yy = now.getFullYear(); yy >= now.getFullYear() - 5; yy--) yearsList.push(yy);
+    const yearsHtml = yearsList.map((yy) => {
+      const isSel = P.kind === "year" && P.y === yy;
+      const isNow = yy === now.getFullYear();
+      return mkAnchor(`${yy}`, `${yy}`, { active: isSel, meta: isNow ? "This year" : "" });
+    }).join("");
+
+    dd.innerHTML = `
+      <div class="ppd-section">
+        <div class="ppd-title">Months</div>
+        ${monthsHtml}
+      </div>
+      <div class="ppd-section">
+        <div class="ppd-title">Quarters \u00b7 ${ctxY}</div>
+        <div class="ppd-grid">${quartersHtml}</div>
+      </div>
+      <div class="ppd-section">
+        <div class="ppd-title">Years</div>
+        <div class="ppd-grid">${yearsHtml}</div>
+      </div>
+      <div class="ppd-section">
+        ${mkAnchor("", "Reset to this month")}
+      </div>
+    `;
+    badge.appendChild(dd);
+
+    dd.addEventListener("click", (e) => {
+      const a = e.target.closest("a[data-token]");
+      if (!a) return;
+      e.preventDefault();
+      goTo(a.dataset.token);
+    });
+
+    if (span) {
+      span.title = "Click to choose a period";
+      span.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dd.hidden = !dd.hidden;
+      });
+    }
+    document.addEventListener("click", (e) => {
+      if (dd.hidden) return;
+      if (e.target === span || badge.contains(e.target)) return;
+      dd.hidden = true;
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !dd.hidden) dd.hidden = true;
+    });
+  }
 
   const setTbody  = (html) => { const tb = document.querySelector(".card .table tbody"); if (tb) tb.innerHTML = html; };
   const setTitle  = (txt)  => { const el = document.querySelector(".card-header .card-title"); if (el) el.textContent = txt; };
@@ -64,11 +302,19 @@
   async function pageTransactions() {
     const filter = qs("filter"), type = qs("type"), cat = qs("cat"), catId = qs("cat_id"), budget = qs("budget"), budgetId = qs("budget_id"), account = qs("account");
     const TYPE_MAP = { expense: "withdrawal", expenses: "withdrawal", income: "deposit", transfers: "transfer", all: "all" };
+    // Honor explicit ?start/?end (or alias ?after/?before, used by side-panel links)
+    // or fall back to the global period selector.
+    const after = qs("after") || qs("start"), before = qs("before") || qs("end");
+    const P = periodRange();
+    const rangeStart = after  || P.start;
+    const rangeEnd   = before || P.end;
+    const explicitRange = !!(after || before);
+    const rangeQS = `start=${rangeStart}&end=${rangeEnd}`;
     let path;
-    if (catId)         path = `/categories/${catId}/transactions?limit=200`;
-    else if (budgetId) path = `/budgets/${budgetId}/transactions?limit=200`;
-    else               path = "/transactions?limit=200";
-    if (type) path += (path.includes("?") ? "&" : "?") + "type=" + (TYPE_MAP[type] || type);
+    if (catId)         path = `/categories/${catId}/transactions?limit=500&${rangeQS}`;
+    else if (budgetId) path = `/budgets/${budgetId}/transactions?limit=500&${rangeQS}`;
+    else               path = `/transactions?limit=500&${rangeQS}`;
+    if (type) path += "&type=" + (TYPE_MAP[type] || type);
     setTbody(loadingRow(5));
     try {
       const res = await api(path);
@@ -161,6 +407,65 @@
         }
       };
       renderPage(1);
+      // ── Per-day histogram on top ─────────────────────────────────────
+      try {
+        const svg = document.querySelector('.tx-histo-svg');
+        const info = document.querySelector('[data-k="tx-histo-info"]');
+        if (svg && rows.length) {
+          // bucket counts by yyyy-mm-dd
+          const counts = {};
+          for (const t of rows) {
+            const d = (t.attributes.transactions[0].date || "").slice(0, 10);
+            if (!d) continue;
+            counts[d] = (counts[d] || 0) + 1;
+          }
+          // span the FULL queried range (rangeStart \u2192 rangeEnd) so empty days
+          // are visible \u2014 e.g. a past month with no tx still shows all 30 days.
+          const days = [];
+          const start = new Date(rangeStart + "T00:00:00Z");
+          const end   = new Date(rangeEnd + "T00:00:00Z");
+          if (!isNaN(start) && !isNaN(end) && start <= end) {
+            for (let cur = new Date(start); cur <= end; cur.setUTCDate(cur.getUTCDate() + 1)) {
+              const k = cur.toISOString().slice(0, 10);
+              days.push({ date: k, n: counts[k] || 0 });
+            }
+          }
+          const N = days.length;
+          const maxN = Math.max(1, ...days.map(d => d.n));
+          const VBW = 1000, VBH = 60, PAD_X = 4, PAD_TOP = 4, PAD_BOT = 2;
+          const usableW = VBW - PAD_X * 2;
+          const usableH = VBH - PAD_TOP - PAD_BOT;
+          const barW = N > 0 ? Math.max(1, (usableW / N) - 1) : 0;
+          const today = periodRange().anchor.toISOString().slice(0, 10);
+          const bars = days.map((d, i) => {
+            const x = PAD_X + i * (usableW / Math.max(1, N));
+            const h = (d.n / maxN) * usableH;
+            const y = PAD_TOP + (usableH - h);
+            const isToday = d.date === today;
+            const fill = isToday ? "var(--pala-mint)" : (d.n > 0 ? "rgba(62,207,178,.55)" : "rgba(255,255,255,.06)");
+            return `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barW.toFixed(2)}" height="${Math.max(1, h).toFixed(2)}" fill="${fill}" rx="1"><title>${d.date} \u00b7 ${d.n} transaction${d.n === 1 ? "" : "s"}</title></rect>`;
+          }).join("");
+          svg.innerHTML = bars;
+          const axisWrap = document.querySelector('[data-k="tx-histo-axis"]');
+          if (axisWrap && N > 0) {
+            const fmtAxis = (iso) => {
+              try { return new Date(iso + "T00:00:00Z").toLocaleDateString("en", { day: "2-digit", month: "short" }); }
+              catch { return iso; }
+            };
+            const labels = N > 1
+              ? [days[0].date, days[Math.floor(N / 2)].date, days[N - 1].date]
+              : [days[0].date, days[0].date, days[0].date];
+            axisWrap.innerHTML = `
+              <span class="text-muted small">${fmtAxis(labels[0])}</span>
+              <span class="text-muted small">${fmtAxis(labels[1])}</span>
+              <span class="text-muted small">${fmtAxis(labels[2])}</span>`;
+          }
+          if (info) info.textContent = `${N} day${N === 1 ? "" : "s"} \u00b7 peak ${maxN}/day`;
+        } else if (svg) {
+          svg.innerHTML = "";
+          if (info) info.textContent = "no data";
+        }
+      } catch (e) { console.warn("tx histogram:", e); }
       const TYPE_MAP2 = { expense: "withdrawal", expenses: "withdrawal", income: "deposit", transfers: "transfer" };
       const rangeType = TYPE_MAP2[type] || (type === "all" ? "all" : null);
       let count = rows.length, net = 0;
@@ -176,14 +481,15 @@
       };
       const titleEl = document.querySelector('[data-k="tx-summary-title"]');
       const TYPE_TITLES = { withdrawal: "Withdrawals", deposit: "Deposits", transfer: "Transfers" };
-      const monthLabel = new Date().toLocaleDateString("en", { month: "long", year: "numeric" });
-      if (titleEl) titleEl.textContent = `${TYPE_TITLES[rangeType] || "Transactions"}: ${monthLabel}`;
+      const titleRangeLabel = explicitRange
+        ? `${dat(rangeStart)} \u2192 ${dat(rangeEnd)}`
+        : periodRange().startDate.toLocaleDateString("en", { month: "long", year: "numeric" });
+      if (titleEl) titleEl.textContent = `${TYPE_TITLES[rangeType] || "Transactions"}: ${titleRangeLabel}`;
       setK("tx-count", String(count));
       const netCls = net > 0 ? "text-success" : net < 0 ? "text-danger" : "text-muted";
       const netTxt = net === 0 ? "—" : (net > 0 ? "+" : "−") + "\u20ac" + Math.abs(net).toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       setK("tx-net", netTxt, netCls);
-      const { start: rs, end: re } = periodRange();
-      setK("tx-range", `${dat(rs)} → ${dat(re)}`);
+      setK("tx-range", `${dat(rangeStart)} → ${dat(rangeEnd)}`);
       liveTxSidebar(rangeType).catch((e) => console.warn("tx sidebar:", e));
     } catch (e) { setTbody(errorRow(5, e)); }
   }
@@ -471,20 +777,18 @@
   }
 
   async function pageBudgets() {
-    const today = new Date();
-    const y = today.getFullYear(), m = today.getMonth();
-    const monthStart = new Date(y, m, 1);
-    const monthEnd   = new Date(y, m + 1, 0);
+    const P = periodRange();
+    const today = P.anchor;
+    const y = P.startDate.getFullYear(), m = P.startDate.getMonth();
+    const monthStart = P.startDate;
+    const monthEnd   = P.endDate;
     const iso = (d) => d.toISOString().slice(0, 10);
-    const startStr = iso(monthStart), endStr = iso(monthEnd);
+    const startStr = P.start, endStr = P.end;
     const dayOfMonth = today.getDate();
     const daysInMonth = monthEnd.getDate();
     const daysLeft = Math.max(0, daysInMonth - dayOfMonth);
     const monthLabel = monthStart.toLocaleDateString("en", { month: "short", year: "numeric" });
-    document.body.setAttribute("data-period",
-      `${monthStart.getDate()} ${monthStart.toLocaleDateString("en", { month: "short" })} \u2013 ${daysInMonth} ${monthEnd.toLocaleDateString("en", { month: "short" })} ${y}`);
-    const periodEl = document.querySelector(".pala-navbar .period-badge span");
-    if (periodEl) periodEl.textContent = document.body.getAttribute("data-period");
+    // badge label is now managed centrally by wirePeriodChrome()
 
     let budgets = [], limits = [];
     try {
@@ -952,7 +1256,8 @@
   }
 
   async function liveTxSidebar(rangeType /* 'withdrawal'|'deposit'|'transfer'|'all' */) {
-    const today = new Date();
+    // Anchor on the selected period — "previous 3 months" means 3 months ending at the period's end.
+    const today = periodRange().anchor;
     const months = [];
     for (let k = 0; k < 3; k++) {
       const s = new Date(today.getFullYear(), today.getMonth() - k, 1);
@@ -1318,6 +1623,10 @@
   }
 
   function boot() {
+    // Defer one tick: the chrome IIFE registers its DOMContentLoaded
+    // listener AFTER pala-live.js, so on first load the navbar isn't in
+    // the DOM yet when our boot fires. setTimeout pushes us past it.
+    setTimeout(() => { try { wirePeriodChrome(); } catch (e) { console.warn("period chrome:", e); } }, 0);
     const page = document.body.dataset.page;
     const sub  = document.body.dataset.sub;
     if (page === "accounts")                          return pageAccounts();

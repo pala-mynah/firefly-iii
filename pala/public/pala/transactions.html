@@ -127,9 +127,11 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family: 'Crimson Pro', serif; font-weight: 
         <a href="transactions.html?type=transfers" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-rotate fa-fw text-info"></i> Transfers</a>
       </div>
     </div>
+    <div class="tx-histo-wrap px-3 pb-2" data-k="tx-histo" style="display:none;"></div>
   </div>
   <div class="row g-3">
     <div class="col-xl-10">
+      <div class="card mb-2 tx-histo-card"><div class="card-body py-2 px-3"><div class="d-flex align-items-center justify-content-between mb-1"><span class="text-muted small text-uppercase" style="letter-spacing:.06em">Transactions per day</span><span class="text-muted small" data-k="tx-histo-info">—</span></div><svg class="tx-histo-svg" viewBox="0 0 1000 60" preserveAspectRatio="none" style="width:100%; height:60px; display:block;"></svg><div class="d-flex justify-content-between mt-1" data-k="tx-histo-axis"><span class="text-muted small">—</span><span class="text-muted small">—</span><span class="text-muted small">—</span></div></div></div>
       <nav class="mb-2" data-k="tx-pagination"><ul class="pagination pagination-sm mb-0"></ul></nav>
       <div class="card"><div class="card-header d-flex align-items-center justify-content-between"><h3 class="card-title mb-0">Transactions</h3><span class="text-muted small" data-k="tx-pageinfo"></span></div><div class="card-body p-0 tx-scroll" style="max-height:65vh; overflow-y:auto;">
         <table class="table table-sm table-hover mb-0">
