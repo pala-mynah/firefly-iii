@@ -164,6 +164,57 @@ UNCATEGORISED_MOCKS = [
     ("VENDOR #4592",           24.80),
 ]
 
+@dataclass
+class Rule:
+    title: str
+    description: str
+    trigger_type: str        # 'description_contains', 'description_starts', 'amount_more', ...
+    trigger_value: str
+    actions: list[tuple[str, str]]  # [(action_type, value)]
+    strict: bool = True
+    stop_processing: bool = False
+
+# Rules that auto-categorise the mock transactions if they came in fresh.
+RULES: list[Rule] = [
+    Rule("Auto-tag groceries · BILLA",   "Anything from BILLA → Groceries",
+         "description_contains", "BILLA",
+         [("set_category", "Supermarket"), ("set_budget", "Groceries")]),
+    Rule("Auto-tag groceries · HOFER",   "Anything from HOFER → Groceries",
+         "description_contains", "HOFER",
+         [("set_category", "Supermarket"), ("set_budget", "Groceries")]),
+    Rule("Auto-tag subs · Netflix",      "Netflix → Subs Lifestyle",
+         "description_contains", "Netflix",
+         [("set_category", "Subs — Lifestyle"), ("set_budget", "Subscription")]),
+    Rule("Auto-tag subs · Spotify",      "Spotify → Subs Lifestyle",
+         "description_contains", "Spotify",
+         [("set_category", "Subs — Lifestyle"), ("set_budget", "Subscription")]),
+    Rule("Auto-tag transport · ÖBB",     "ÖBB → Public Transport",
+         "description_contains", "ÖBB",
+         [("set_category", "Public Transport"), ("set_budget", "Transport")]),
+    Rule("Auto-tag ATM withdrawals",     "ATM Withdrawal → Cash Withdrawals",
+         "description_starts", "ATM Withdrawal",
+         [("set_category", "Cash Withdrawals"), ("add_tag", "cash")],
+         strict=True, stop_processing=True),
+]
+
+@dataclass
+class Recurring:
+    title: str
+    amount: float
+    description: str
+    destination: str   # expense-account name; auto-created on first POST
+    category: str
+    budget: str
+    repeat_type: str   # 'monthly' | 'weekly' | 'yearly'
+    moment: str = "1"  # day-of-month for monthly
+    days_ahead: int = 5  # first_date = today + N days
+
+RECURRING: list[Recurring] = [
+    Recurring("Monthly · Gym membership",  29.90, "John Harris Fitness",  "John Harris Fitness", "Sports & Activities", "Lifestyle",   "monthly", "5",  3),
+    Recurring("Monthly · Apartment cleaning", 60.00, "Reinigung Hausverwaltung", "Putzfirma",      "Home & Hardware",     "Living",      "monthly", "10", 7),
+    Recurring("Weekly · Vegetable box",    18.50, "Bio-Kistl Wochenlieferung", "Adamah BioHof", "Fresh Market & Butcher", "Groceries",   "weekly",  "3",  2),
+]
+
 
 # ────────────────────────────────────────────────────────────────────────────
 # tiny api client
@@ -495,6 +546,141 @@ def upsert_piggies() -> None:
     create_piggies()
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# rules + recurrences
+# ─────────────────────────────────────────────────────────────────────────────
+
+def ensure_pala_rule_group() -> str:
+    """Find or create the 'Pala automations' rule group, return its id."""
+    for g in paged("/rule-groups"):
+        if g["attributes"]["title"] == "Pala automations":
+            return g["id"]
+    r = api("POST", "/rule-groups", json={
+        "title": "Pala automations",
+        "description": "Auto-classification rules seeded by Pala.",
+        "active": True,
+    })
+    return r["data"]["id"]
+
+
+def create_rules() -> None:
+    print(f"→ creating {len(RULES)} rules…")
+    gid = ensure_pala_rule_group()
+    for i, rule in enumerate(RULES, start=1):
+        actions = []
+        for act_type, val in rule.actions:
+            actions.append({
+                "type": act_type, "value": val,
+                "order": len(actions) + 1, "active": True, "stop_processing": False,
+            })
+        payload = {
+            "title": rule.title,
+            "description": rule.description,
+            "rule_group_id": gid,
+            "order": i,
+            "trigger": "store-journal",
+            "strict": rule.strict,
+            "stop_processing": rule.stop_processing,
+            "active": True,
+            "triggers": [{
+                "type": rule.trigger_type, "value": rule.trigger_value,
+                "order": 1, "active": True, "stop_processing": False,
+            }],
+            "actions": actions,
+        }
+        api("POST", "/rules", json=payload)
+        print(f"  ✓ {rule.title:<36} {rule.trigger_type}={rule.trigger_value!r}")
+
+
+def upsert_rules() -> None:
+    existing = [r for r in paged("/rules") if r["attributes"]["title"].startswith("Auto-tag")]
+    if existing:
+        print(f"✓ found {len(existing)} existing pala rules, skipping creation")
+        return
+    create_rules()
+
+
+def wipe_rules() -> None:
+    print("→ wiping rules + rule-groups…")
+    api("DELETE", "/data/destroy?objects=rules&confirm=Are%20you%20sure%3F")
+    for g in paged("/rule-groups"):
+        api("DELETE", f"/rule-groups/{g['id']}")
+    print("  ✓ rules + groups deleted")
+
+
+def create_recurrences() -> None:
+    print(f"→ creating {len(RECURRING)} recurring transactions…")
+    today = date.today()
+    # We need an expense account id to use as destination_id on the recurrence template.
+    # Look up by name; auto-create if missing.
+    cat_ids = existing_index("/categories")
+    bud_ids = existing_index("/budgets")
+    for rec in RECURRING:
+        # Resolve destination expense account — fetch one page directly to
+        # avoid paged()'s ?page= concat clashing with the ?type= query.
+        dest_id = None
+        accs = api("GET", "/accounts?type=expense&limit=200")
+        for a in (accs.get("data") or []):
+            if a["attributes"]["name"] == rec.destination:
+                dest_id = a["id"]; break
+        if not dest_id:
+            ar = api("POST", "/accounts", json={
+                "name": rec.destination, "type": "expense",
+                "currency_code": CURRENCY,
+            })
+            dest_id = ar["data"]["id"]
+
+        first = today + timedelta(days=rec.days_ahead)
+        payload = {
+            "type": "withdrawal",
+            "title": rec.title,
+            "first_date": first.isoformat(),
+            "apply_rules": True,
+            "active": True,
+            "notes": "Seeded by Pala dashboard.",
+            "nr_of_repetitions": 12,
+            "repetitions": [{
+                "type": rec.repeat_type,
+                "moment": rec.moment,
+                "skip": 0,
+                "weekend": 1,
+            }],
+            "transactions": [{
+                "amount": f"{rec.amount:.2f}",
+                "description": rec.description,
+                "currency_code": CURRENCY,
+                "source_id": ASSET_ACCOUNT_ID,
+                "destination_id": dest_id,
+                "category_id": cat_ids.get(rec.category),
+                "budget_id":   bud_ids.get(rec.budget),
+                "tags": [MOCK_TAG],
+            }],
+        }
+        api("POST", "/recurrences", json=payload)
+        print(f"  ✓ {rec.title:<34} €{rec.amount:>6.2f} {rec.repeat_type:<7} → {rec.destination}")
+
+
+def upsert_recurrences() -> None:
+    existing = existing_index("/recurrences")
+    if existing:
+        print(f"✓ found {len(existing)} existing recurrences, skipping creation")
+        return
+    create_recurrences()
+
+
+def wipe_recurrences() -> None:
+    print("→ wiping recurrences…")
+    # The /recurrences listing 500s if Firefly has a corrupt row from a failed
+    # POST. Tolerate that — wipe_accounts() at the end of `reset` will cascade.
+    try:
+        for r in paged("/recurrences"):
+            api("DELETE", f"/recurrences/{r['id']}", ok_status=(404, 422))
+    except SystemExit as e:
+        print(f"  ⚠ recurrence listing failed ({e}); will be cleared by account wipe.")
+        return
+    print("  ✓ recurrences deleted")
+
+
 # ────────────────────────────────────────────────────────────────────────────
 # main
 # ────────────────────────────────────────────────────────────────────────────
@@ -536,6 +722,8 @@ def main() -> None:
 
     if args.mode == "meta":
         if args.wipe:
+            wipe_recurrences()
+            wipe_rules()
             wipe_bills()
             wipe_piggies()
             wipe_metadata()
@@ -543,6 +731,8 @@ def main() -> None:
         upsert_categories()
         upsert_bills()
         upsert_piggies()
+        upsert_rules()
+        upsert_recurrences()
         _ = budget_ids  # silence linter
 
     elif args.mode == "mock":
@@ -557,9 +747,10 @@ def main() -> None:
         generate_mocks(budget_ids, category_ids, months_back=args.months)
 
     elif args.mode == "reset":
+        wipe_recurrences()
         wipe_bills()
         wipe_piggies()
-        wipe_metadata()
+        wipe_metadata()  # also clears rules
         wipe_transactions()
         wipe_accounts()
         create_accounts()
@@ -569,7 +760,9 @@ def main() -> None:
         create_piggies()
         budget_ids = create_envelopes(history_months=args.history)
         category_ids = create_categories()
+        create_rules()
         generate_mocks(budget_ids, category_ids, months_back=args.months)
+        create_recurrences()
 
     elif args.mode == "clean-mocks":
         clean_mocks()

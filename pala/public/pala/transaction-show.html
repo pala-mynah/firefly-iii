@@ -93,9 +93,26 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
       </div>
     </div>
     <div class="card-footer d-flex gap-2 flex-wrap">
-      <a href="#" class="btn btn-sm btn-primary" data-k="tx-edit-btn"><i class="fa-solid fa-pencil fa-fw"></i> Edit in Firefly</a>
-      <a href="#" class="btn btn-sm btn-outline-secondary" data-k="tx-clone-btn"><i class="fa-solid fa-clone fa-fw"></i> Clone</a>
-      <button class="btn btn-sm btn-outline-danger" data-k="tx-delete-btn"><i class="fa-solid fa-trash fa-fw"></i> Delete</button>
+      <a href="#" class="btn btn-sm btn-primary" data-k="tx-edit-btn"><i class="fa-solid fa-pencil fa-fw"></i> Edit</a>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fa-solid fa-ellipsis-vertical fa-fw"></i> Actions
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="#" data-k="tx-act-clone"><i class="fa-solid fa-clone"></i> Clone</a></li>
+          <li><a class="dropdown-item" href="#" data-k="tx-act-clone-edit"><i class="fa-solid fa-clone"></i> Clone &amp; edit</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="#" data-k="tx-act-convert-deposit"><i class="fa-solid fa-arrow-right text-success"></i> Convert to deposit</a></li>
+          <li><a class="dropdown-item" href="#" data-k="tx-act-convert-transfer"><i class="fa-solid fa-arrows-rotate text-info"></i> Convert to transfer</a></li>
+          <li><a class="dropdown-item" href="#" data-k="tx-act-convert-withdrawal"><i class="fa-solid fa-arrow-left text-danger"></i> Convert to withdrawal</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="#" data-k="tx-act-link"><i class="fa-solid fa-link"></i> Link transaction</a></li>
+          <li><a class="dropdown-item" href="#" data-k="tx-act-rule"><i class="fa-solid fa-shuffle"></i> Create rule from transaction</a></li>
+          <li><a class="dropdown-item" href="#" data-k="tx-act-recurring"><i class="fa-solid fa-repeat"></i> Create recurring transaction</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item text-danger" href="#" data-k="tx-act-delete"><i class="fa-solid fa-trash"></i> Delete</a></li>
+        </ul>
+      </div>
       <a href="transactions.html" class="btn btn-sm btn-outline-secondary ms-auto" data-k="tx-back-btn"><i class="fa-solid fa-arrow-left fa-fw"></i> Back to transactions</a>
     </div>
   </div>
@@ -163,6 +180,7 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-ui.js"></script>
 <script src="pala-live.js"></script>
 <script src="pala-live2.js"></script>
 <script>

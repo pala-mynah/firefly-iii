@@ -741,16 +741,123 @@
       setText("tx-reconciled", first.reconciled ? "Yes" : "No");
 
       const baseUrl = (localStorage.getItem("pala_url") || location.origin).replace(/\/$/, "");
-      const editBtn = $k("tx-edit-btn");   if (editBtn)  editBtn.setAttribute("href",  `${baseUrl}/transactions/edit/${id}`);
-      const cloneBtn = $k("tx-clone-btn"); if (cloneBtn) cloneBtn.setAttribute("href", `${baseUrl}/transactions/clone/${id}`);
-      const delBtn = $k("tx-delete-btn");
-      if (delBtn) {
-        delBtn.addEventListener("click", async () => {
-          if (!confirm("Delete this transaction? This cannot be undone.")) return;
-          try { await api(`/transactions/${id}`, { method: "DELETE" }); location.href = `transactions.html${periodQS}`; }
-          catch (e) { alert("Delete failed: " + e.message); }
+      // ----- 9-action submenu -----
+      // Edit: until pala has its own edit form (Phase 4), bounce to Firefly's.
+      const editBtn = $k("tx-edit-btn");
+      if (editBtn) editBtn.setAttribute("href", `${baseUrl}/transactions/edit/${id}`);
+
+      // Helper: POST a clone via the API, return the new id.
+      const cloneViaApi = async () => {
+        // Build a fresh payload from the current journal's splits.
+        // Firefly will create a new group with its own ids.
+        const transactions = splits.map((s) => {
+          const t = {
+            type: s.type,
+            date: (s.date || "").slice(0, 10),
+            amount: String(s.amount),
+            description: s.description || (res.data.attributes.group_title || "Clone"),
+            source_id: s.source_id || undefined,
+            source_name: s.source_id ? undefined : s.source_name,
+            destination_id: s.destination_id || undefined,
+            destination_name: s.destination_id ? undefined : s.destination_name,
+            category_id: s.category_id || undefined,
+            budget_id: s.budget_id || undefined,
+            bill_id: s.bill_id || undefined,
+            piggy_bank_id: s.piggy_bank_id || undefined,
+            tags: s.tags || [],
+            notes: s.notes || undefined,
+            currency_id: s.currency_id || undefined,
+            foreign_amount: s.foreign_amount || undefined,
+            foreign_currency_id: s.foreign_currency_id || undefined,
+          };
+          Object.keys(t).forEach((k) => t[k] === undefined && delete t[k]);
+          return t;
         });
-      }
+        const body = {
+          group_title: splits.length > 1 ? (res.data.attributes.group_title || "Clone of " + (first.description || "transaction")) : null,
+          transactions,
+        };
+        const created = await api(`/transactions`, { method: "POST", body: JSON.stringify(body) });
+        return created.data && created.data.id;
+      };
+
+      const wireAct = (key, handler) => {
+        const el = $k(key);
+        if (!el) return;
+        el.addEventListener("click", async (ev) => { ev.preventDefault(); try { await handler(); } catch (e) { console.error(e); if (window.palaToast) palaToast.danger("Action failed", { msg: e.message }); } });
+      };
+
+      // Clone — API call, toast with link to the new transaction.
+      wireAct("tx-act-clone", async () => {
+        const newId = await cloneViaApi();
+        if (!newId) throw new Error("Server did not return new transaction id");
+        if (window.palaToast) palaToast.success("Transaction cloned", {
+          msg: "Created as #" + newId,
+          actions: [{ label: "Open clone", onClick: () => { location.href = `transaction-show.html?tx=${newId}${periodQS ? "&" + periodQS.slice(1) : ""}`; } }],
+        });
+      });
+
+      // Clone & edit — API clone, then redirect to Firefly's edit page (Phase 4 will swap this).
+      wireAct("tx-act-clone-edit", async () => {
+        const newId = await cloneViaApi();
+        if (!newId) throw new Error("Server did not return new transaction id");
+        location.href = `${baseUrl}/transactions/edit/${newId}`;
+      });
+
+      // Convert to deposit/transfer/withdrawal.
+      const wireConvert = (key, target) => wireAct(key, async () => {
+        if (type === target) {
+          if (window.palaToast) palaToast.info("Already a " + target);
+          return;
+        }
+        // Firefly's convert endpoint: POST /transactions/{id}/convert/{type} with optional source/destination overrides.
+        // Convert requires you to specify a new counterparty when going to/from a different type.
+        // Easiest path: open a pala modal asking for the new source/destination.
+        const counterLabel = target === "deposit" ? "Source (revenue) account name" : target === "transfer" ? "Destination (asset) account name" : "Destination (expense) account name";
+        const placeholderEx = target === "deposit" ? "Salary, Refund, …" : target === "transfer" ? "Savings, Cash, …" : "Billa, Spar, …";
+        const newName = await palaPrompt({
+          title: "Convert to " + target,
+          message: "Firefly needs to know which account on the other side. Enter a name (existing or new).",
+          placeholder: placeholderEx,
+          confirmLabel: "Convert",
+        });
+        if (newName == null || !newName.trim()) return;
+        const body = (target === "deposit")
+          ? { source_name: newName.trim() }
+          : (target === "transfer")
+          ? { destination_name: newName.trim() }
+          : { destination_name: newName.trim() };
+        await api(`/transactions/${id}/convert/${target}`, { method: "POST", body: JSON.stringify(body) });
+        if (window.palaToast) palaToast.success("Converted to " + target, { msg: "Reloading…" });
+        setTimeout(() => location.reload(), 600);
+      });
+      wireConvert("tx-act-convert-deposit",    "deposit");
+      wireConvert("tx-act-convert-transfer",   "transfer");
+      wireConvert("tx-act-convert-withdrawal", "withdrawal");
+
+      // Link to another transaction — bounce to Firefly's link UI for now;
+      // building a tx-search picker is a Phase 4 item.
+      wireAct("tx-act-link", () => { location.href = `${baseUrl}/transactions/show/${id}#linked-transactions`; });
+
+      // Create rule from this transaction — Firefly has a dedicated prefilled flow.
+      wireAct("tx-act-rule", () => { location.href = `${baseUrl}/rules/create-from-journal/${id}`; });
+
+      // Create recurring transaction from this — Firefly has a dedicated prefilled flow.
+      wireAct("tx-act-recurring", () => { location.href = `${baseUrl}/recurring/create-from-journal/${id}`; });
+
+      // Delete — pala-styled confirm modal + toast.
+      wireAct("tx-act-delete", async () => {
+        const ok = await palaConfirm({
+          title: "Delete transaction?",
+          message: `“${desc}” will be permanently removed. This cannot be undone.`,
+          confirmLabel: "Delete",
+          danger: true,
+        });
+        if (!ok) return;
+        await api(`/transactions/${id}`, { method: "DELETE" });
+        if (window.palaToast) palaToast.danger("Transaction deleted", { msg: desc, timeout: 1800 });
+        setTimeout(() => { location.href = `transactions.html${periodQS}`; }, 600);
+      });
 
       const counterId   = type === "deposit" ? first.source_id   : first.destination_id;
       const counterName = type === "deposit" ? first.source_name : first.destination_name;
@@ -785,7 +892,7 @@
       } else { setHTML("tx-cat-recent", '<span class="text-muted small">—</span>'); }
 
       try {
-        const lk = await api(`/transactions/${id}/links`);
+        const lk = await api(`/transactions/${id}/transaction-links`);
         const links = lk.data || [];
         const linksEl = $k("tx-links");
         if (linksEl) {

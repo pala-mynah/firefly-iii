@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subscription — Firefly III · Pala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="pala-shell.css">
+<style>
+.bill-hero { padding:1.5rem 1.4rem; }
+.bill-hero .bill-title { font-family:'Crimson Pro',serif; font-size:2rem; margin:0 0 .25rem; }
+.bill-hero .bill-meta-row { display:flex; gap:.65rem; flex-wrap:wrap; color:var(--pala-muted); font-size:.85rem; margin-bottom:.3rem; }
+.bill-hero .bill-amount { font-family:'Crimson Pro',serif; font-size:1.8rem; font-variant-numeric:tabular-nums; margin-top:.2rem; }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:.75rem; padding:.85rem 1.1rem 1.1rem; }
+.kpi-grid .kpi { background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.65rem .8rem; }
+.kpi .kpi-label { color:var(--pala-muted); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; }
+.kpi .kpi-value { font-family:'Crimson Pro',serif; font-size:1.45rem; font-variant-numeric:tabular-nums; }
+.bill-status-chip { display:inline-flex; align-items:center; gap:.35rem; padding:.18rem .55rem; border-radius:999px; font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; }
+.bill-status-chip.active   { background:rgba(76,175,130,.15); color:var(--pala-success); border:1px solid rgba(76,175,130,.4); }
+.bill-status-chip.inactive { background:rgba(122,155,191,.15); color:var(--pala-muted);  border:1px solid rgba(122,155,191,.35); }
+.bill-status-chip.late     { background:rgba(224,92,106,.15); color:var(--pala-danger);  border:1px solid rgba(224,92,106,.4); }
+.history-strip { display:flex; gap:.3rem; padding:.4rem 1.1rem 1.1rem; overflow-x:auto; }
+.history-strip .dot { min-width:46px; flex:0 0 auto; border:1px solid var(--pala-navy-border); border-radius:6px; padding:.4rem .35rem; text-align:center; font-size:.72rem; background:var(--pala-navy); }
+.history-strip .dot.hit  { background:rgba(76,175,130,.15); border-color:rgba(76,175,130,.4); color:var(--pala-success); }
+.history-strip .dot.miss { background:rgba(224,92,106,.15); border-color:rgba(224,92,106,.4); color:var(--pala-danger);  }
+.history-strip .dot.fut  { color:var(--pala-muted); }
+.history-strip .dot .m { font-weight:500; }
+.history-strip .dot .a { font-variant-numeric:tabular-nums; font-size:.7rem; }
+</style>
+</head>
+<body data-page="bill-show" data-sub="" data-crumbs="Home/Subscriptions/Detail" data-title="Subscription — Pala">
+
+<main class="pala-main">
+  <div class="card mb-3">
+    <div class="bill-hero">
+      <div class="bill-meta-row">
+        <span class="bill-status-chip" data-k="bill-status-chip" data-k-class="bill-status-chip">
+          <span data-k="bill-status-label">…</span>
+        </span>
+        <span data-k="bill-id-line" class="text-muted small">—</span>
+      </div>
+      <h1 class="bill-title" data-k="bill-name">Loading…</h1>
+      <div class="text-muted small" data-k="bill-repeat">—</div>
+      <div class="bill-amount" data-k="bill-amount">—</div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Expected range</div><div class="kpi-value" data-k="bill-range">—</div></div>
+      <div class="kpi"><div class="kpi-label">Next expected</div><div class="kpi-value" data-k="bill-next">—</div></div>
+      <div class="kpi"><div class="kpi-label">Paid this year</div><div class="kpi-value" data-k="bill-paid-ytd">—</div></div>
+      <div class="kpi"><div class="kpi-label">Avg. amount</div><div class="kpi-value" data-k="bill-avg">—</div></div>
+    </div>
+    <div class="history-strip" data-k="bill-history">
+      <span class="text-muted small">Loading history…</span>
+    </div>
+    <div class="card-footer d-flex gap-2 flex-wrap">
+      <a href="#" class="btn btn-sm btn-primary" data-k="bill-edit-btn"><i class="fa-solid fa-pencil fa-fw"></i> Edit</a>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical fa-fw"></i> Actions</button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="#" data-k="bill-act-toggle"><i class="fa-solid fa-pause"></i> <span data-k="bill-act-toggle-label">Pause</span></a></li>
+          <li><a class="dropdown-item" href="#" data-k="bill-act-rules"><i class="fa-solid fa-shuffle"></i> Match transactions with rule</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item text-danger" href="#" data-k="bill-act-delete"><i class="fa-solid fa-trash"></i> Delete subscription</a></li>
+        </ul>
+      </div>
+      <a href="bills.html" class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-arrow-left fa-fw"></i> Back to subscriptions</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header d-flex align-items-center">
+          <h3 class="card-title">Linked transactions</h3>
+          <span class="ms-auto text-muted small" data-k="bill-tx-count">—</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Date</th><th>Description</th><th>Counterparty</th><th class="text-end">Amount</th></tr></thead>
+            <tbody data-k="bill-tx-body">
+              <tr><td colspan="4" class="text-muted small">Loading transactions…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title">Details</h3></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0 kv-table"><tbody>
+            <tr><th>Currency</th><td data-k="bill-currency">—</td></tr>
+            <tr><th>Repeat frequency</th><td data-k="bill-freq">—</td></tr>
+            <tr><th>Skip n repetitions</th><td data-k="bill-skip">—</td></tr>
+            <tr><th>Object group</th><td data-k="bill-group">—</td></tr>
+            <tr><th>Notes</th><td data-k="bill-notes"><span class="text-muted">—</span></td></tr>
+            <tr><th>Created</th><td class="text-muted" data-k="bill-created">—</td></tr>
+            <tr><th>Updated</th><td class="text-muted" data-k="bill-updated">—</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-shell.js"></script>
+<script src="pala-ui.js"></script>
+<script src="pala-live.js"></script>
+<script src="pala-live2.js"></script>
+<script src="pala-live3.js"></script>
+</body>
+</html>

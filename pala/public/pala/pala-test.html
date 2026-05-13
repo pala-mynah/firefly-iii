@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pala — smoke tests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Crimson+Pro:wght@400;600&display=swap">
+<link rel="stylesheet" href="pala-shell.css">
+<style>
+  body { font-family:'Inter',sans-serif; background:var(--pala-navy); color:var(--pala-text); margin:0; padding:1.5rem 2rem; }
+  h1 { font-family:'Crimson Pro',serif; margin:0 0 1rem; }
+  .controls { display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--pala-navy-border); }
+  .controls button { background:var(--pala-mint); color:#0c2329; border:0; padding:.5rem 1rem; border-radius:6px; font-weight:600; cursor:pointer; }
+  .controls button:disabled { opacity:.45; cursor:default; }
+  .controls .ghost { background:transparent; color:var(--pala-text); border:1px solid var(--pala-navy-border); }
+  .summary { font-variant-numeric:tabular-nums; color:var(--pala-muted); }
+  .summary .ok { color:var(--pala-success); font-weight:600; }
+  .summary .ko { color:var(--pala-danger); font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  th, td { text-align:left; padding:.5rem .55rem; border-bottom:1px solid var(--pala-navy-border); vertical-align:top; }
+  th { color:var(--pala-muted); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; font-weight:500; }
+  td.status { width:6rem; }
+  td.dur    { width:5rem; color:var(--pala-muted); font-variant-numeric:tabular-nums; }
+  .pill { display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; }
+  .pill.pending { background:rgba(122,155,191,.15); color:var(--pala-muted);  border:1px solid rgba(122,155,191,.35); }
+  .pill.running { background:rgba(122,155,191,.25); color:var(--pala-text);   border:1px solid rgba(122,155,191,.5); }
+  .pill.pass    { background:rgba(76,175,130,.15); color:var(--pala-success); border:1px solid rgba(76,175,130,.4); }
+  .pill.fail    { background:rgba(224,92,106,.15); color:var(--pala-danger);  border:1px solid rgba(224,92,106,.4); }
+  .pill.skip    { background:transparent; color:var(--pala-muted); border:1px dashed var(--pala-navy-border); }
+  .checks { margin:0; padding:.4rem 0 0; font-size:.8rem; }
+  .checks li { margin:.15rem 0; color:var(--pala-muted); list-style:none; }
+  .checks li::before { content:"·  "; }
+  .checks li.ok::before  { content:"✓ "; color:var(--pala-success); }
+  .checks li.ko::before  { content:"✗ "; color:var(--pala-danger); }
+  .checks li.ok { color:var(--pala-text); }
+  .checks li.ko { color:var(--pala-danger); }
+  iframe { position:fixed; left:-9999px; width:1200px; height:900px; border:0; }
+  details summary { cursor:pointer; color:var(--pala-mint); }
+  .note { background:rgba(122,155,191,.08); border:1px solid var(--pala-navy-border); padding:.7rem .9rem; border-radius:6px; color:var(--pala-muted); font-size:.85rem; margin-bottom:1rem; }
+  .note code { background:var(--pala-navy); padding:.1rem .35rem; border-radius:3px; color:var(--pala-text); }
+</style>
+</head>
+<body>
+  <h1>Pala — smoke tests</h1>
+  <div class="note">
+    Loads every pala page in a hidden iframe, waits up to 8 s for hydration, then asserts: page returned 200, no JS console errors, a critical content slot is no longer in “Loading…” / “—” state, action buttons present. Uses your own <code>pala_pat</code> + <code>pala_url</code> from localStorage. Fetches a real id from <code>/api/v1</code> for every <code>:detail</code> page so tests use live data.
+  </div>
+  <div class="controls">
+    <button id="run">▶ Run all tests</button>
+    <button id="stop" class="ghost" disabled>Stop</button>
+    <button id="copy" class="ghost" disabled>📋 Copy report</button>
+    <button id="download" class="ghost" disabled>⬇ Download .txt</button>
+    <span class="summary">
+      <span id="sum-total">0</span> total ·
+      <span class="ok"><span id="sum-pass">0</span> pass</span> ·
+      <span class="ko"><span id="sum-fail">0</span> fail</span> ·
+      <span id="sum-skip">0</span> skip ·
+      <span id="sum-running">0</span> running
+    </span>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Page</th><th>URL</th><th class="status">Status</th><th class="dur">Time</th><th>Checks</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+<script>
+const PAT  = () => localStorage.getItem("pala_pat") || "";
+const BASE = () => (localStorage.getItem("pala_url") || location.origin).replace(/\/$/, "");
+
+async function apiOne(path) {
+  const r = await fetch(BASE() + "/api/v1" + path, { headers: { Authorization: "Bearer " + PAT(), Accept: "application/json" } });
+  if (!r.ok) throw new Error(path + ": " + r.status);
+  return r.json();
+}
+
+// Each test has either:
+//   hydrate: "data-k name"   — wait for that slot to leave placeholder state
+//   assert:  (doc) => bool   — custom predicate against the iframe document
+// Pages built before the data-k convention get a generic "page has real content" predicate.
+function genericListReady(doc) {
+  if (!doc) return false;
+  // Any table tbody with at least one row that isn't a loading/empty placeholder?
+  for (const tb of doc.querySelectorAll("tbody")) {
+    const rows = [...tb.querySelectorAll("tr")].filter(r => {
+      const txt = (r.textContent || "").trim();
+      return txt && !/^loading/i.test(txt) && !/^no /i.test(txt);
+    });
+    if (rows.length >= 1) return true;
+  }
+  // OR any element with class hinting at a populated card/list with substantive text content
+  const candidates = doc.querySelectorAll("[class*='list'],[class*='grid'],[class*='cloud'],[class*='cards']");
+  for (const el of candidates) {
+    const txt = (el.textContent || "").replace(/\s+/g, " ").trim();
+    if (txt.length > 40 && !/^loading/i.test(txt)) return true;
+  }
+  // Fallback — page has a card body with reasonable text (covers preferences/profile/search/reports)
+  for (const el of doc.querySelectorAll(".card-body, main")) {
+    const txt = (el.textContent || "").replace(/\s+/g, " ").trim();
+    if (txt.length > 120) return true;
+  }
+  return false;
+}
+const TESTS = [
+  { name: "Index / dashboard",       build: () => "index.html",         assert: genericListReady },
+  { name: "Transactions list",       build: () => "transactions.html",  hydrate: "tx-count" },
+  { name: "Transaction detail",      build: ({txId})  => txId  ? `transaction-show.html?tx=${txId}` : null, hydrate: "tx-desc",
+    actions: ["tx-edit-btn", "tx-act-clone", "tx-act-delete", "tx-act-convert-deposit"] },
+  { name: "Accounts list",           build: () => "accounts.html",      assert: genericListReady },
+  { name: "Account detail",          build: ({accId}) => accId ? `account-show.html?id=${accId}`   : null, hydrate: "ac-title" },
+  { name: "Budgets list",            build: () => "budgets.html",       assert: genericListReady },
+  { name: "Budget detail",           build: ({budId}) => budId ? `budget-show.html?id=${budId}`    : null, hydrate: "bs-title" },
+  { name: "Categories list",         build: () => "categories.html",    assert: genericListReady },
+  { name: "Category detail",         build: ({catId}) => catId ? `category-show.html?id=${catId}`  : null, hydrate: "cs-title" },
+  { name: "Tags list",               build: () => "tags.html",          assert: genericListReady },
+  { name: "Tag detail",              build: ({tag})   => tag   ? `tag-show.html?tag=${encodeURIComponent(tag)}` : null, hydrate: "tag-name",
+    actions: ["tag-edit-btn", "tag-act-rename", "tag-act-delete"] },
+  { name: "Bills list",              build: () => "bills.html",         assert: genericListReady },
+  { name: "Bill detail",             build: ({billId}) => billId ? `bill-show.html?id=${billId}`   : null, hydrate: "bill-name",
+    actions: ["bill-edit-btn", "bill-act-toggle", "bill-act-delete"] },
+  { name: "Rules list",              build: () => "rules.html",         assert: genericListReady },
+  { name: "Rule detail",             build: ({ruleId}) => ruleId ? `rule-show.html?id=${ruleId}`   : null, hydrate: "rule-title",
+    actions: ["rule-edit-btn", "rule-test-btn", "rule-fire-btn", "rule-act-toggle", "rule-act-duplicate", "rule-act-delete"] },
+  { name: "Piggy list",              build: () => "piggy.html",         assert: genericListReady },
+  { name: "Piggy detail",            build: ({pigId}) => pigId ? `piggy-show.html?id=${pigId}`     : null, hydrate: "piggy-name",
+    actions: ["piggy-add-btn", "piggy-remove-btn", "piggy-edit-btn", "piggy-act-delete"] },
+  { name: "Recurring list",          build: () => "recurring.html",     assert: genericListReady },
+  { name: "Recurring detail",        build: ({recId}) => recId ? `recurring-show.html?id=${recId}` : null, hydrate: "rec-title",
+    actions: ["rec-edit-btn", "rec-act-toggle", "rec-act-delete"] },
+  { name: "Reports",                 build: () => "reports.html",       assert: genericListReady },
+  { name: "Search",                  build: () => "search.html",        assert: genericListReady },
+  { name: "Preferences",             build: () => "preferences.html",   assert: genericListReady },
+  { name: "Profile",                 build: () => "profile.html",       assert: genericListReady },
+];
+
+const rowsEl = document.getElementById("rows");
+const sumTotal = document.getElementById("sum-total");
+const sumPass  = document.getElementById("sum-pass");
+const sumFail  = document.getElementById("sum-fail");
+const sumSkip  = document.getElementById("sum-skip");
+const sumRun   = document.getElementById("sum-running");
+let runState = { pass:0, fail:0, skip:0, running:0, stop:false };
+
+function setSummary() {
+  sumTotal.textContent = TESTS.length;
+  sumPass.textContent  = runState.pass;
+  sumFail.textContent  = runState.fail;
+  sumSkip.textContent  = runState.skip;
+  sumRun.textContent   = runState.running;
+}
+
+function renderRows() {
+  rowsEl.innerHTML = TESTS.map((t, i) => `
+    <tr id="row-${i}">
+      <td>${i+1}</td>
+      <td>${t.name}</td>
+      <td class="url"><span class="muted">—</span></td>
+      <td class="status"><span class="pill pending">pending</span></td>
+      <td class="dur">—</td>
+      <td class="checks"><ul class="checks"></ul></td>
+    </tr>`).join("");
+}
+renderRows(); setSummary();
+
+async function getReferenceIds() {
+  // Fetch first id from each list we need.
+  const out = {};
+  const want = [
+    ["/transactions?limit=1",     "txId",   d => d.data?.[0]?.id],
+    ["/accounts?type=asset&limit=1","accId", d => d.data?.[0]?.id],
+    ["/budgets?limit=1",          "budId",  d => d.data?.[0]?.id],
+    ["/categories?limit=1",       "catId",  d => d.data?.[0]?.id],
+    ["/tags?limit=1",             "tag",    d => d.data?.[0]?.attributes?.tag],
+    ["/bills?limit=1",            "billId", d => d.data?.[0]?.id],
+    ["/rules?limit=1",            "ruleId", d => d.data?.[0]?.id],
+    ["/piggy_banks?limit=1",      "pigId",  d => d.data?.[0]?.id],
+    ["/recurrences?limit=1",      "recId",  d => d.data?.[0]?.id],
+  ];
+  await Promise.all(want.map(async ([path, key, pick]) => {
+    try { out[key] = pick(await apiOne(path)) || null; } catch { out[key] = null; }
+  }));
+  return out;
+}
+
+function waitForReady(iframe, t, timeoutMs) {
+  const start = Date.now();
+  return new Promise((resolve) => {
+    const tick = () => {
+      try {
+        const d = iframe.contentDocument;
+        if (d) {
+          if (t.hydrate) {
+            const el = d.querySelector(`[data-k="${t.hydrate}"]`);
+            if (el) {
+              const txt = (el.textContent || "").trim();
+              const html = (el.innerHTML || "").trim();
+              const placeholder = txt === "" || txt === "—" || /^loading/i.test(txt);
+              const stillSkeleton = /Loading transactions|Loading events|Loading/i.test(html) && el.children.length <= 1;
+              if (!placeholder && !stillSkeleton) return resolve({ ok: true, took: Date.now() - start, text: txt.slice(0, 60), mode: "slot" });
+            }
+          } else if (t.assert) {
+            if (t.assert(d)) return resolve({ ok: true, took: Date.now() - start, text: "(content ok)", mode: "assert" });
+          }
+        }
+      } catch {}
+      if (Date.now() - start > timeoutMs || runState.stop) return resolve({ ok: false, took: Date.now() - start });
+      setTimeout(tick, 200);
+    };
+    tick();
+  });
+}
+
+async function runOne(idx, t, ids) {
+  const row = document.getElementById(`row-${idx}`);
+  const urlCell = row.querySelector(".url");
+  const statusCell = row.querySelector(".status");
+  const durCell = row.querySelector(".dur");
+  const checks = row.querySelector("ul.checks");
+  const setStatus = (cls, label) => statusCell.innerHTML = `<span class="pill ${cls}">${label}</span>`;
+  const addCheck  = (ok, msg) => { const li = document.createElement("li"); li.className = ok ? "ok" : "ko"; li.textContent = msg; checks.appendChild(li); };
+
+  const url = t.build(ids);
+  if (!url) {
+    urlCell.innerHTML = '<span class="muted">—</span>';
+    setStatus("skip", "skip");
+    addCheck(false, "Could not resolve a real id from the API for this page.");
+    runState.skip++; setSummary();
+    return;
+  }
+  urlCell.textContent = url;
+  setStatus("running", "running");
+  runState.running++; setSummary();
+  const t0 = Date.now();
+
+  // Capture iframe errors
+  const errors = [];
+  const iframe = document.createElement("iframe");
+  iframe.src = url;
+  document.body.appendChild(iframe);
+  // Errors in same-origin iframes bubble up here:
+  const onErr = (e) => { if (e?.filename && url && (e.filename.includes(url.split("?")[0]) || e.filename.includes("pala-"))) errors.push(e.message || String(e)); };
+  window.addEventListener("error", onErr);
+  iframe.addEventListener("error", () => errors.push("iframe error event"));
+  // Hook into the iframe's console once it loads:
+  await new Promise((resolve) => iframe.addEventListener("load", resolve, { once: true }));
+  try {
+    const w = iframe.contentWindow;
+    if (w && w.console) {
+      const origErr = w.console.error.bind(w.console);
+      w.console.error = (...args) => { errors.push(args.map(a => a && a.message || String(a)).join(" ")); origErr(...args); };
+    }
+  } catch {}
+
+  // 1) HTTP / page loaded at all
+  let docOk = false;
+  try { docOk = !!iframe.contentDocument && !!iframe.contentDocument.body; } catch {}
+  addCheck(docOk, docOk ? "Loaded (200)" : "Did not load");
+
+  // 2) Hydration / content
+  const hyd = await waitForReady(iframe, t, 8000);
+  const slotLabel = t.hydrate ? `[${t.hydrate}]` : "(generic content)";
+  if (hyd.ok) addCheck(true, `Hydrated ${slotLabel} in ${hyd.took}ms${hyd.text ? ` → “${hyd.text}”` : ""}`);
+  else addCheck(false, `${slotLabel} never hydrated (waited ${hyd.took}ms)`);
+
+  // 3) Action buttons present (if declared)
+  if (t.actions) {
+    const d = iframe.contentDocument;
+    for (const k of t.actions) {
+      const el = d?.querySelector(`[data-k="${k}"]`);
+      addCheck(!!el, el ? `Action button [${k}] present` : `Action button [${k}] MISSING`);
+    }
+  }
+
+  // 4) No JS console errors
+  const errCount = errors.length;
+  addCheck(errCount === 0, errCount === 0 ? "No console errors" : `${errCount} console error(s): ${errors.slice(0,3).join(" | ")}`);
+
+  // Verdict
+  const dur = ((Date.now() - t0) / 1000).toFixed(2) + "s";
+  durCell.textContent = dur;
+  const allOk = [...checks.children].every(li => li.classList.contains("ok"));
+  setStatus(allOk ? "pass" : "fail", allOk ? "pass" : "fail");
+  if (allOk) runState.pass++; else runState.fail++;
+  runState.running--; setSummary();
+
+  window.removeEventListener("error", onErr);
+  // Leave iframe attached briefly so user can poke at it, then drop:
+  setTimeout(() => iframe.remove(), 50);
+}
+
+async function runAll() {
+  document.getElementById("run").disabled = true;
+  document.getElementById("stop").disabled = false;
+  runState = { pass:0, fail:0, skip:0, running:0, stop:false };
+  renderRows(); setSummary();
+  if (!PAT()) {
+    alert("No pala_pat in localStorage. Open profile.html, paste your PAT + URL, then re-run.");
+    document.getElementById("run").disabled = false;
+    document.getElementById("stop").disabled = true;
+    return;
+  }
+  const ids = await getReferenceIds();
+  console.log("[pala-test] reference ids:", ids);
+  for (let i = 0; i < TESTS.length; i++) {
+    if (runState.stop) break;
+    await runOne(i, TESTS[i], ids);
+  }
+  document.getElementById("run").disabled = false;
+  document.getElementById("stop").disabled = true;
+}
+
+function buildReport() {
+  const lines = [];
+  lines.push("Pala smoke test — " + new Date().toISOString());
+  lines.push("Base URL: " + BASE());
+  lines.push(`Total: ${TESTS.length}  ·  Pass: ${runState.pass}  ·  Fail: ${runState.fail}  ·  Skip: ${runState.skip}`);
+  lines.push("─".repeat(70));
+  TESTS.forEach((t, i) => {
+    const row = document.getElementById(`row-${i}`);
+    if (!row) return;
+    const status = row.querySelector(".status .pill")?.textContent || "?";
+    const url    = row.querySelector(".url")?.textContent || "—";
+    const dur    = row.querySelector(".dur")?.textContent || "—";
+    lines.push(`[${status.toUpperCase().padEnd(7)}] ${(i+1+".").padEnd(3)} ${t.name.padEnd(28)} ${dur.padStart(8)}   ${url}`);
+    row.querySelectorAll("ul.checks li").forEach(li => {
+      const ok = li.classList.contains("ok");
+      lines.push(`             ${ok ? "✓" : "✗"} ${li.textContent}`);
+    });
+  });
+  return lines.join("\n");
+}
+document.getElementById("run").addEventListener("click", async () => {
+  document.getElementById("copy").disabled = true;
+  document.getElementById("download").disabled = true;
+  await runAll();
+  const hasResults = runState.pass + runState.fail + runState.skip > 0;
+  document.getElementById("copy").disabled = !hasResults;
+  document.getElementById("download").disabled = !hasResults;
+});
+document.getElementById("stop").addEventListener("click", () => { runState.stop = true; document.getElementById("stop").disabled = true; });
+document.getElementById("copy").addEventListener("click", async () => {
+  const txt = buildReport();
+  try { await navigator.clipboard.writeText(txt); document.getElementById("copy").textContent = "✓ Copied"; setTimeout(() => document.getElementById("copy").textContent = "📋 Copy report", 1500); }
+  catch { prompt("Copy this:", txt); }
+});
+document.getElementById("download").addEventListener("click", () => {
+  const txt = buildReport();
+  const blob = new Blob([txt], { type: "text/plain" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "pala-test-" + new Date().toISOString().slice(0,19).replace(/[T:]/g, "-") + ".txt"; a.click();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule — Firefly III · Pala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="pala-shell.css">
+<style>
+.rule-hero { padding:1.5rem 1.4rem; }
+.rule-hero .rule-title { font-family:'Crimson Pro',serif; font-size:2rem; margin:0 0 .25rem; }
+.rule-hero .rule-meta-row { display:flex; gap:.65rem; flex-wrap:wrap; color:var(--pala-muted); font-size:.85rem; }
+.flag-chip { display:inline-flex; align-items:center; gap:.3rem; padding:.15rem .5rem; border-radius:999px; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; border:1px solid var(--pala-navy-border); background:var(--pala-navy); color:var(--pala-muted); }
+.flag-chip.on { color:var(--pala-mint); border-color:var(--pala-mint); background:rgba(62,207,178,.1); }
+.flag-chip.off { color:var(--pala-muted); }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:.75rem; padding:.85rem 1.1rem 1.1rem; }
+.kpi-grid .kpi { background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.65rem .8rem; }
+.kpi .kpi-label { color:var(--pala-muted); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; }
+.kpi .kpi-value { font-family:'Crimson Pro',serif; font-size:1.45rem; font-variant-numeric:tabular-nums; }
+.rule-step { display:flex; align-items:flex-start; gap:.7rem; padding:.55rem .85rem; border-bottom:1px solid var(--pala-navy-border); font-size:.86rem; }
+.rule-step:last-child { border-bottom:0; }
+.rule-step .num { color:var(--pala-muted); font-variant-numeric:tabular-nums; min-width:1.2rem; }
+.rule-step .ico { color:var(--pala-mint); width:1.2rem; text-align:center; }
+.rule-step .body { flex:1; }
+.rule-step .body code { background:var(--pala-navy); padding:.05rem .35rem; border-radius:3px; color:var(--pala-text); font-size:.82rem; }
+.rule-step.stop .ico { color:var(--pala-warning); }
+.rule-step.disabled { opacity:.55; }
+</style>
+</head>
+<body data-page="rule-show" data-sub="rules" data-crumbs="Home/Automation/Rules/Detail" data-title="Rule — Pala">
+
+<main class="pala-main">
+  <div class="card mb-3">
+    <div class="rule-hero">
+      <div class="rule-meta-row">
+        <span class="flag-chip" data-k="rule-active">…</span>
+        <span class="flag-chip" data-k="rule-strict">…</span>
+        <span class="flag-chip" data-k="rule-stoponhit">…</span>
+        <span data-k="rule-id-line" class="text-muted small">—</span>
+      </div>
+      <h1 class="rule-title" data-k="rule-title">Loading…</h1>
+      <div class="text-muted small" data-k="rule-description">—</div>
+      <div class="text-muted small mt-1">In group: <a data-k="rule-group" href="#" class="kv-link">—</a> · Order #<span data-k="rule-order">—</span> · Trigger: <span data-k="rule-trigger-type">—</span></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Triggers</div><div class="kpi-value" data-k="rule-trigger-count">—</div></div>
+      <div class="kpi"><div class="kpi-label">Actions</div><div class="kpi-value" data-k="rule-action-count">—</div></div>
+      <div class="kpi"><div class="kpi-label">Created</div><div class="kpi-value" style="font-size:.95rem;" data-k="rule-created">—</div></div>
+      <div class="kpi"><div class="kpi-label">Updated</div><div class="kpi-value" style="font-size:.95rem;" data-k="rule-updated">—</div></div>
+    </div>
+    <div class="card-footer d-flex gap-2 flex-wrap">
+      <a href="#" class="btn btn-sm btn-primary" data-k="rule-edit-btn"><i class="fa-solid fa-pencil fa-fw"></i> Edit</a>
+      <button class="btn btn-sm btn-outline-primary" data-k="rule-test-btn"><i class="fa-solid fa-flask"></i> Test rule</button>
+      <button class="btn btn-sm btn-outline-primary" data-k="rule-fire-btn"><i class="fa-solid fa-bolt"></i> Fire on existing</button>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical fa-fw"></i> More</button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="#" data-k="rule-act-toggle"><i class="fa-solid fa-power-off"></i> <span data-k="rule-act-toggle-label">Disable</span></a></li>
+          <li><a class="dropdown-item" href="#" data-k="rule-act-duplicate"><i class="fa-solid fa-clone"></i> Duplicate rule</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item text-danger" href="#" data-k="rule-act-delete"><i class="fa-solid fa-trash"></i> Delete rule</a></li>
+        </ul>
+      </div>
+      <a href="rules.html" class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-arrow-left fa-fw"></i> Back to rules</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Triggers <span class="text-muted small" data-k="rule-triggers-mode">—</span></h3></div>
+        <div data-k="rule-triggers"><div class="text-muted small p-3">Loading…</div></div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Actions</h3></div>
+        <div data-k="rule-actions"><div class="text-muted small p-3">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-shell.js"></script>
+<script src="pala-ui.js"></script>
+<script src="pala-live.js"></script>
+<script src="pala-live2.js"></script>
+<script src="pala-live3.js"></script>
+</body>
+</html>

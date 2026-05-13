@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piggy bank — Firefly III · Pala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="pala-shell.css">
+<style>
+.piggy-hero { padding:1.5rem 1.4rem; }
+.piggy-hero .piggy-title { font-family:'Crimson Pro',serif; font-size:2rem; margin:0 0 .25rem; }
+.piggy-hero .piggy-meta-row { display:flex; gap:.65rem; flex-wrap:wrap; color:var(--pala-muted); font-size:.85rem; }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:.75rem; padding:.85rem 1.1rem; }
+.kpi-grid .kpi { background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.65rem .8rem; }
+.kpi .kpi-label { color:var(--pala-muted); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; }
+.kpi .kpi-value { font-family:'Crimson Pro',serif; font-size:1.45rem; font-variant-numeric:tabular-nums; }
+.progress-wrap { padding:0 1.1rem 1.1rem; }
+.progress-bar-pala { height:1rem; background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:6px; overflow:hidden; position:relative; }
+.progress-bar-pala .fill { height:100%; background:linear-gradient(90deg, var(--pala-mint-dim), var(--pala-mint)); }
+.progress-bar-pala .pct { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:500; color:var(--pala-text); }
+.event-row { display:flex; align-items:center; gap:.7rem; padding:.5rem .85rem; border-bottom:1px solid var(--pala-navy-border); font-size:.86rem; }
+.event-row:last-child { border-bottom:0; }
+.event-row .e-when { color:var(--pala-muted); min-width:5.5rem; }
+.event-row .e-amt  { margin-left:auto; font-variant-numeric:tabular-nums; font-weight:500; }
+</style>
+</head>
+<body data-page="piggy-show" data-sub="" data-crumbs="Home/Piggy Banks/Detail" data-title="Piggy bank — Pala">
+
+<main class="pala-main">
+  <div class="card mb-3">
+    <div class="piggy-hero">
+      <div class="piggy-meta-row">
+        <span data-k="piggy-id-line" class="text-muted small">—</span>
+      </div>
+      <h1 class="piggy-title" data-k="piggy-name">Loading…</h1>
+      <div class="text-muted small" data-k="piggy-account">—</div>
+      <div class="text-muted small" data-k="piggy-target-date">—</div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Saved</div><div class="kpi-value text-success" data-k="piggy-saved">—</div></div>
+      <div class="kpi"><div class="kpi-label">Target</div><div class="kpi-value" data-k="piggy-target">—</div></div>
+      <div class="kpi"><div class="kpi-label">Remaining</div><div class="kpi-value" data-k="piggy-remaining">—</div></div>
+      <div class="kpi"><div class="kpi-label">Progress</div><div class="kpi-value" data-k="piggy-pct">—</div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar-pala">
+        <div class="fill" data-k="piggy-fill" style="width:0%"></div>
+        <div class="pct" data-k="piggy-pct-label">—</div>
+      </div>
+    </div>
+    <div class="card-footer d-flex gap-2 flex-wrap">
+      <button class="btn btn-sm btn-primary" data-k="piggy-add-btn"><i class="fa-solid fa-plus fa-fw"></i> Add money</button>
+      <button class="btn btn-sm btn-outline-primary" data-k="piggy-remove-btn"><i class="fa-solid fa-minus fa-fw"></i> Remove money</button>
+      <a href="#" class="btn btn-sm btn-outline-secondary" data-k="piggy-edit-btn"><i class="fa-solid fa-pencil fa-fw"></i> Edit</a>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical fa-fw"></i> More</button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item text-danger" href="#" data-k="piggy-act-delete"><i class="fa-solid fa-trash"></i> Delete piggy bank</a></li>
+        </ul>
+      </div>
+      <a href="piggy.html" class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-arrow-left fa-fw"></i> Back to piggy banks</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Events</h3></div>
+        <div data-k="piggy-events"><div class="text-muted small p-3">Loading events…</div></div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Details</h3></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0 kv-table"><tbody>
+            <tr><th>Currency</th><td data-k="piggy-currency">—</td></tr>
+            <tr><th>Start date</th><td data-k="piggy-start-date">—</td></tr>
+            <tr><th>Object group</th><td data-k="piggy-group">—</td></tr>
+            <tr><th>Notes</th><td data-k="piggy-notes"><span class="text-muted">—</span></td></tr>
+            <tr><th>Created</th><td class="text-muted" data-k="piggy-created">—</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-shell.js"></script>
+<script src="pala-ui.js"></script>
+<script src="pala-live.js"></script>
+<script src="pala-live2.js"></script>
+<script src="pala-live3.js"></script>
+</body>
+</html>

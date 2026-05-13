@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recurring transaction — Firefly III · Pala</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="pala-shell.css">
+<style>
+.rec-hero { padding:1.5rem 1.4rem; }
+.rec-hero .rec-title { font-family:'Crimson Pro',serif; font-size:2rem; margin:0 0 .25rem; }
+.rec-hero .rec-meta-row { display:flex; gap:.65rem; flex-wrap:wrap; color:var(--pala-muted); font-size:.85rem; }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:.75rem; padding:.85rem 1.1rem 1.1rem; }
+.kpi-grid .kpi { background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.65rem .8rem; }
+.kpi .kpi-label { color:var(--pala-muted); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; }
+.kpi .kpi-value { font-family:'Crimson Pro',serif; font-size:1.45rem; font-variant-numeric:tabular-nums; }
+.flag-chip { display:inline-flex; align-items:center; gap:.3rem; padding:.15rem .5rem; border-radius:999px; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; border:1px solid var(--pala-navy-border); background:var(--pala-navy); color:var(--pala-muted); }
+.flag-chip.on { color:var(--pala-mint); border-color:var(--pala-mint); background:rgba(62,207,178,.1); }
+.upcoming-row { display:flex; align-items:center; gap:.7rem; padding:.4rem .85rem; border-bottom:1px solid var(--pala-navy-border); font-size:.86rem; }
+.upcoming-row:last-child { border-bottom:0; }
+.upcoming-row .u-date { color:var(--pala-text); min-width:6.5rem; }
+.upcoming-row .u-amt  { margin-left:auto; font-variant-numeric:tabular-nums; }
+.upcoming-row .u-skip { color:var(--pala-warning); }
+</style>
+</head>
+<body data-page="recurring-show" data-sub="recurring" data-crumbs="Home/Automation/Recurring/Detail" data-title="Recurring transaction — Pala">
+
+<main class="pala-main">
+  <div class="card mb-3">
+    <div class="rec-hero">
+      <div class="rec-meta-row">
+        <span class="flag-chip" data-k="rec-active-chip">…</span>
+        <span data-k="rec-id-line" class="text-muted small">—</span>
+      </div>
+      <h1 class="rec-title" data-k="rec-title">Loading…</h1>
+      <div class="text-muted small" data-k="rec-description">—</div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Type</div><div class="kpi-value" style="font-size:1rem;" data-k="rec-type">—</div></div>
+      <div class="kpi"><div class="kpi-label">Amount</div><div class="kpi-value" data-k="rec-amount">—</div></div>
+      <div class="kpi"><div class="kpi-label">Next fire</div><div class="kpi-value" style="font-size:1.05rem;" data-k="rec-next">—</div></div>
+      <div class="kpi"><div class="kpi-label">Latest fire</div><div class="kpi-value" style="font-size:1.05rem;" data-k="rec-latest">—</div></div>
+    </div>
+    <div class="card-footer d-flex gap-2 flex-wrap">
+      <a href="#" class="btn btn-sm btn-primary" data-k="rec-edit-btn"><i class="fa-solid fa-pencil fa-fw"></i> Edit</a>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical fa-fw"></i> Actions</button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="#" data-k="rec-act-toggle"><i class="fa-solid fa-power-off"></i> <span data-k="rec-act-toggle-label">Pause</span></a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item text-danger" href="#" data-k="rec-act-delete"><i class="fa-solid fa-trash"></i> Delete recurring</a></li>
+        </ul>
+      </div>
+      <a href="recurring.html" class="btn btn-sm btn-outline-secondary ms-auto"><i class="fa-solid fa-arrow-left fa-fw"></i> Back to recurring</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title">Template</h3></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0 kv-table"><tbody>
+            <tr><th>Source</th><td data-k="rec-source">—</td></tr>
+            <tr><th>Destination</th><td data-k="rec-destination">—</td></tr>
+            <tr><th>Category</th><td data-k="rec-category">—</td></tr>
+            <tr><th>Budget</th><td data-k="rec-budget">—</td></tr>
+            <tr><th>Tags</th><td data-k="rec-tags">—</td></tr>
+            <tr><th>Currency</th><td data-k="rec-currency">—</td></tr>
+            <tr><th>Notes</th><td data-k="rec-notes"><span class="text-muted">—</span></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header d-flex align-items-center">
+          <h3 class="card-title">Generated transactions</h3>
+          <span class="ms-auto text-muted small" data-k="rec-tx-count">—</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Date</th><th>Description</th><th class="text-end">Amount</th></tr></thead>
+            <tbody data-k="rec-tx-body">
+              <tr><td colspan="3" class="text-muted small">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title">Schedule</h3></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0 kv-table"><tbody>
+            <tr><th>Repeats</th><td data-k="rec-repeats">—</td></tr>
+            <tr><th>Skip n</th><td data-k="rec-skip">—</td></tr>
+            <tr><th>First date</th><td data-k="rec-first-date">—</td></tr>
+            <tr><th>Repeat until</th><td data-k="rec-repeat-until">—</td></tr>
+            <tr><th>Apply rules</th><td data-k="rec-apply-rules">—</td></tr>
+            <tr><th>Times fired</th><td data-k="rec-nr-fired">—</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Upcoming occurrences</h3></div>
+        <div data-k="rec-upcoming"><div class="text-muted small p-3">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="pala-shell.js"></script>
+<script src="pala-ui.js"></script>
+<script src="pala-live.js"></script>
+<script src="pala-live2.js"></script>
+<script src="pala-live3.js"></script>
+</body>
+</html>

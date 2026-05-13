@@ -1,0 +1,275 @@
+/* Pala shared shell — palette, chrome, primitives. Load via:
+     <link rel="stylesheet" href="pala-shell.css">
+   Every pala page should link this. New pages should not redeclare
+   the dark-navy palette or sidebar/navbar styles inline. */
+
+:root {
+  --pala-navy:#0f1b2d;
+  --pala-navy-mid:#172236;
+  --pala-navy-card:#1e2d45;
+  --pala-navy-border:#253550;
+  --pala-mint:#3ecfb2;
+  --pala-mint-dim:#2aa89a;
+  --pala-text:#d6e4f0;
+  --pala-muted:#7a9bbf;
+  --pala-danger:#e05c6a;
+  --pala-success:#4caf82;
+  --pala-warning:#f0a84a;
+  --pala-info:#5bafd6;
+  --sidebar-w:250px;
+}
+
+body {
+  background:var(--pala-navy);
+  color:var(--pala-text);
+  font-family:'Inter',sans-serif;
+  font-size:.9rem;
+}
+h1, h2, h3, h4, h5, h6, .card-title { font-family:'Crimson Pro',serif; font-weight:600; }
+
+/* ---------- Sidebar ---------- */
+.pala-sidebar {
+  position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w);
+  background:var(--pala-navy-mid);
+  border-right:1px solid var(--pala-navy-border);
+  overflow-y:auto; z-index:1000;
+}
+.pala-sidebar .brand {
+  padding:1rem 1.25rem;
+  font-family:'Crimson Pro',serif; font-size:1.25rem;
+  color:var(--pala-mint);
+  border-bottom:1px solid var(--pala-navy-border);
+}
+.pala-sidebar .nav-header {
+  padding:.75rem 1.25rem .25rem;
+  font-size:.63rem; letter-spacing:.1em;
+  color:var(--pala-muted); text-transform:uppercase;
+}
+.pala-sidebar .nav-link {
+  color:var(--pala-text);
+  padding:.45rem 1.25rem;
+  display:flex; align-items:center; gap:.6rem;
+}
+.pala-sidebar .nav-link:hover,
+.pala-sidebar .nav-link.active {
+  background:rgba(62,207,178,.1);
+  color:var(--pala-mint);
+}
+.pala-sidebar .nav-link i,
+.pala-sidebar .nav-link em { width:1.1rem; text-align:center; }
+.pala-sidebar .nav-sub .nav-link { padding:.3rem 1.25rem .3rem 2.8rem; font-size:.84rem; }
+
+/* ---------- Navbar ---------- */
+.pala-navbar {
+  position:fixed; top:0; left:var(--sidebar-w); right:0; height:3.5rem;
+  background:var(--pala-navy-mid);
+  border-bottom:1px solid var(--pala-navy-border);
+  display:flex; align-items:center; padding:0 1.5rem; gap:1rem; z-index:900;
+}
+.pala-navbar .breadcrumb { margin:0; font-size:.84rem; }
+.pala-navbar .breadcrumb-item,
+.pala-navbar .breadcrumb-item a { color:var(--pala-muted); text-decoration:none; }
+.pala-navbar .breadcrumb-item a:hover { color:var(--pala-mint); }
+.pala-navbar .breadcrumb-item.active { color:var(--pala-text); }
+.pala-navbar .period-badge {
+  margin-left:auto;
+  background:var(--pala-navy-card);
+  border:1px solid var(--pala-navy-border);
+  border-radius:6px;
+  padding:.25rem .75rem;
+  font-size:.8rem; color:var(--pala-muted);
+  display:flex; align-items:center; gap:.4rem;
+}
+
+/* ---------- Main pane ---------- */
+.pala-main { margin-left:var(--sidebar-w); margin-top:3.5rem; padding:1.5rem; }
+
+/* ---------- Cards ---------- */
+.card {
+  background:var(--pala-navy-card);
+  border:1px solid var(--pala-navy-border);
+  border-radius:8px;
+}
+.card-header  { background:transparent; border-bottom:1px solid var(--pala-navy-border); padding:.7rem 1.1rem; }
+.card-title   { color:var(--pala-text); margin:0; font-size:1.05rem; }
+.card-footer  { background:transparent; border-top:1px solid var(--pala-navy-border); padding:.6rem 1.1rem; }
+
+/* ---------- Tables ---------- */
+.table { color:var(--pala-text); --bs-table-bg:transparent; }
+.table > :not(caption) > * > * { border-color:var(--pala-navy-border); padding:.42rem .75rem; }
+.table thead th { color:var(--pala-muted); font-weight:500; font-size:.78rem; letter-spacing:.04em; text-transform:uppercase; }
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+  background:var(--pala-mint); border-color:var(--pala-mint); color:#0f1b2d; font-weight:500;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background:var(--pala-mint-dim); border-color:var(--pala-mint-dim); color:#0f1b2d;
+}
+.btn-outline-secondary { border-color:var(--pala-navy-border); color:var(--pala-muted); }
+.btn-outline-secondary:hover { background:var(--pala-navy-border); color:var(--pala-text); }
+.btn-outline-danger { border-color:var(--pala-danger); color:var(--pala-danger); }
+.btn-outline-danger:hover { background:var(--pala-danger); color:#fff; }
+.btn-outline-primary { border-color:var(--pala-mint); color:var(--pala-mint); }
+.btn-outline-primary:hover { background:var(--pala-mint); color:#0f1b2d; }
+.btn-danger { background:var(--pala-danger); border-color:var(--pala-danger); color:#fff; }
+.btn-danger:hover { background:#c44755; border-color:#c44755; color:#fff; }
+.btn-link { color:var(--pala-mint); text-decoration:none; }
+.btn-link:hover { color:var(--pala-mint-dim); text-decoration:underline; }
+
+/* ---------- Text colors ---------- */
+.text-danger  { color:var(--pala-danger)  !important; }
+.text-success { color:var(--pala-success) !important; }
+.text-warning { color:var(--pala-warning) !important; }
+.text-info    { color:var(--pala-info)    !important; }
+.text-muted   { color:var(--pala-muted)   !important; }
+.text-mint    { color:var(--pala-mint)    !important; }
+
+/* ---------- Form widgets ---------- */
+.form-control, .form-select {
+  background:var(--pala-navy);
+  border:1px solid var(--pala-navy-border);
+  color:var(--pala-text);
+}
+.form-control:focus, .form-select:focus {
+  background:var(--pala-navy);
+  border-color:var(--pala-mint);
+  color:var(--pala-text);
+  box-shadow:0 0 0 .2rem rgba(62,207,178,.18);
+}
+.form-control::placeholder { color:var(--pala-muted); opacity:.65; }
+.form-label { color:var(--pala-muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; font-weight:500; margin-bottom:.3rem; }
+.form-text  { color:var(--pala-muted); font-size:.78rem; }
+.form-check-input { background:var(--pala-navy); border-color:var(--pala-navy-border); }
+.form-check-input:checked { background:var(--pala-mint); border-color:var(--pala-mint); }
+.input-group-text { background:var(--pala-navy-mid); border-color:var(--pala-navy-border); color:var(--pala-muted); }
+
+/* ---------- Pills / badges / chips ---------- */
+.tag-pill {
+  display:inline-block;
+  padding:.15rem .5rem;
+  border-radius:999px;
+  background:var(--pala-navy);
+  border:1px solid var(--pala-navy-border);
+  color:var(--pala-muted);
+  font-size:.78rem;
+  margin-right:.25rem;
+  text-decoration:none;
+}
+.tag-pill:hover { color:var(--pala-mint); border-color:var(--pala-mint); }
+.acct-pill {
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.18rem .55rem; border-radius:6px;
+  background:var(--pala-navy); border:1px solid var(--pala-navy-border);
+  color:var(--pala-text); text-decoration:none; font-size:.83rem;
+}
+.acct-pill:hover { border-color:var(--pala-mint); color:var(--pala-mint); }
+
+/* ---------- Pala modal (custom, not bootstrap-dependent) ---------- */
+.pala-backdrop {
+  position:fixed; inset:0;
+  background:rgba(7,12,22,.7);
+  z-index:1100;
+  display:flex; align-items:center; justify-content:center;
+  padding:2rem;
+  animation:palaFade .12s ease-out;
+}
+@keyframes palaFade { from { opacity:0; } to { opacity:1; } }
+.pala-modal {
+  background:var(--pala-navy-card);
+  border:1px solid var(--pala-navy-border);
+  border-radius:10px;
+  width:100%; max-width:480px;
+  box-shadow:0 24px 60px -10px rgba(0,0,0,.55);
+  overflow:hidden;
+  animation:palaPop .14s ease-out;
+}
+.pala-modal.wide { max-width:720px; }
+@keyframes palaPop { from { transform:translateY(8px); opacity:0; } to { transform:none; opacity:1; } }
+.pala-modal-header { padding:1rem 1.25rem; border-bottom:1px solid var(--pala-navy-border); display:flex; align-items:center; gap:.75rem; }
+.pala-modal-header .pala-modal-title { font-family:'Crimson Pro',serif; font-size:1.15rem; margin:0; }
+.pala-modal-header .pala-modal-close {
+  margin-left:auto; background:transparent; border:0;
+  color:var(--pala-muted); font-size:1.1rem; cursor:pointer; padding:.2rem .4rem;
+}
+.pala-modal-header .pala-modal-close:hover { color:var(--pala-text); }
+.pala-modal-body { padding:1.1rem 1.25rem; }
+.pala-modal-footer { padding:.85rem 1.25rem; border-top:1px solid var(--pala-navy-border); display:flex; gap:.5rem; justify-content:flex-end; }
+
+/* ---------- Pala toast ---------- */
+.pala-toast-wrap {
+  position:fixed; right:1.25rem; bottom:1.25rem;
+  display:flex; flex-direction:column; gap:.5rem;
+  z-index:1200;
+  pointer-events:none;
+}
+.pala-toast {
+  pointer-events:auto;
+  min-width:280px; max-width:380px;
+  background:var(--pala-navy-card);
+  border:1px solid var(--pala-navy-border);
+  border-left:3px solid var(--pala-mint);
+  border-radius:8px;
+  padding:.7rem .9rem;
+  display:flex; align-items:flex-start; gap:.65rem;
+  box-shadow:0 10px 26px -6px rgba(0,0,0,.5);
+  color:var(--pala-text); font-size:.86rem;
+  animation:palaToastIn .15s ease-out;
+}
+@keyframes palaToastIn { from { transform:translateX(20px); opacity:0; } to { transform:none; opacity:1; } }
+.pala-toast.leaving { animation:palaToastOut .18s ease-in forwards; }
+@keyframes palaToastOut { to { transform:translateX(20px); opacity:0; } }
+.pala-toast.success { border-left-color:var(--pala-success); }
+.pala-toast.danger  { border-left-color:var(--pala-danger); }
+.pala-toast.warning { border-left-color:var(--pala-warning); }
+.pala-toast.info    { border-left-color:var(--pala-info); }
+.pala-toast .pala-toast-icon { padding-top:.1rem; }
+.pala-toast .pala-toast-body { flex:1; }
+.pala-toast .pala-toast-title { font-weight:500; }
+.pala-toast .pala-toast-msg { color:var(--pala-muted); font-size:.8rem; margin-top:.1rem; }
+.pala-toast .pala-toast-actions { margin-top:.4rem; display:flex; gap:.5rem; }
+.pala-toast .pala-toast-actions .btn-link { padding:0; font-size:.8rem; }
+.pala-toast .pala-toast-close {
+  background:transparent; border:0; color:var(--pala-muted);
+  font-size:1rem; cursor:pointer; padding:0;
+}
+.pala-toast .pala-toast-close:hover { color:var(--pala-text); }
+
+/* ---------- Dropdown menus (Bootstrap) ---------- */
+.dropdown-menu {
+  background:var(--pala-navy-card);
+  border:1px solid var(--pala-navy-border);
+  box-shadow:0 12px 28px -6px rgba(0,0,0,.5);
+  padding:.3rem 0;
+}
+.dropdown-item { color:var(--pala-text); padding:.45rem .9rem; display:flex; align-items:center; gap:.5rem; font-size:.86rem; }
+.dropdown-item:hover, .dropdown-item:focus { background:rgba(62,207,178,.1); color:var(--pala-mint); }
+.dropdown-item i { width:1.1rem; text-align:center; color:var(--pala-muted); }
+.dropdown-item:hover i, .dropdown-item:focus i { color:var(--pala-mint); }
+.dropdown-divider { border-color:var(--pala-navy-border); margin:.25rem 0; }
+
+/* ---------- Misc utilities ---------- */
+.kv-table th { color:var(--pala-muted); font-weight:500; width:36%; vertical-align:top; padding-top:.55rem; }
+.kv-table td { vertical-align:top; padding-top:.55rem; }
+.kv-table .kv-link { color:var(--pala-mint); text-decoration:none; }
+.kv-table .kv-link:hover { text-decoration:underline; }
+.note-box { background:var(--pala-navy); border:1px solid var(--pala-navy-border); border-radius:6px; padding:.65rem .85rem; color:var(--pala-text); font-size:.86rem; white-space:pre-wrap; }
+hr.pala-divider { border-color:var(--pala-navy-border); margin:0.6rem 0; }
+
+/* ---------- Autocomplete (used by pala-forms.js) ---------- */
+.pala-ac { position:relative; }
+.pala-ac-results {
+  position:absolute; top:100%; left:0; right:0;
+  background:var(--pala-navy-card);
+  border:1px solid var(--pala-navy-border);
+  border-top:0;
+  border-radius:0 0 6px 6px;
+  max-height:240px; overflow-y:auto;
+  z-index:1050;
+  box-shadow:0 8px 20px -4px rgba(0,0,0,.4);
+}
+.pala-ac-results.empty { display:none; }
+.pala-ac-item { padding:.4rem .75rem; cursor:pointer; font-size:.86rem; display:flex; align-items:center; gap:.5rem; }
+.pala-ac-item:hover, .pala-ac-item.active { background:rgba(62,207,178,.1); color:var(--pala-mint); }
+.pala-ac-item .pala-ac-sub { color:var(--pala-muted); font-size:.76rem; margin-left:auto; }
+.pala-ac-create { border-top:1px dashed var(--pala-navy-border); color:var(--pala-mint); font-style:italic; }
