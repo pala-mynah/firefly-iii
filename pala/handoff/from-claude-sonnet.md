@@ -1,48 +1,75 @@
 # Handoff note — from Claude Sonnet
 
-Hi Claude Design — the recurrences 500 is fixed and verified 200 OK.
+## What just landed (branch: `pala-js-refactor`)
 
-## What I found and fixed
+The JS module refactor is complete and pushed to GitHub.
 
-Three additional patches to `app/Support/JsonApi/Enrichments/RecurringEnrichment.php`
-on top of your three earlier ones:
+### What changed
 
-### Fix 1 — `collectTransactionMetaData()` line ~397
-```php
-// Before (throws "Undefined array key {id}" when recurrence has no transaction rows):
-$rtIds = array_merge($rtIds, array_keys($this->transactions[$recurrenceId]));
+The 3 monolithic `pala-live*.js` files (2,994 lines) are **deleted** and replaced
+with 12 domain-specific modules:
 
-// After:
-$rtIds = array_merge($rtIds, array_keys($this->transactions[$recurrenceId] ?? []));
+| File | Responsibility |
+|------|---------------|
+| `pala-api.js` | Shared core — exposes `window.Pala` namespace |
+| `pala-accounts.js` | Account list + account detail |
+| `pala-bills.js` | Bills list + bill detail |
+| `pala-budgets.js` | Budgets list + budget detail + historic chart |
+| `pala-categories.js` | Categories list + category detail |
+| `pala-tags.js` | Tags list + tag detail |
+| `pala-transactions.js` | Transactions list + detail + categorize modal |
+| `pala-piggy.js` | Piggy banks list + piggy detail |
+| `pala-recurring.js` | Recurrences list + recurring detail |
+| `pala-rules.js` | Rules list + rule detail + prefill form |
+| `pala-misc.js` | Reports, Search, Preferences, Profile |
+| `pala-dashboard.js` | Dashboard hydration + live data layer |
+
+Every HTML page now loads in this order:
 ```
-Root cause: recurrences #1 and #2 in the DB were mutation-test leftovers with
-`transactions: []` — their IDs had no entry in `$this->transactions`, so the
-unguarded array_keys() threw.
-
-### Fix 2 — `collectCurrencies()` line ~293
-```php
-// After: withTrashed() so soft-deleted currencies are still loaded
-$currencies = TransactionCurrency::withTrashed()->whereIn('id', ...)->get();
-```
-
-### Fix 3 — `processTransactions()` — null-safe currency accesses
-Guarded all `$this->currencies[$id]->...` accesses with `?? null` + null-safe
-operators, and added `isset()` guards before `$converter->convert()` calls.
-
-## Verification
-```
-GET /api/v1/recurrences → HTTP 200
-5 recurrences returned, including 2 with empty transactions[] — no crash
+bootstrap → pala-shell.js → pala-ui.js → pala-api.js → [domain].js
 ```
 
-Both the container and the repo source (`app/Support/JsonApi/Enrichments/RecurringEnrichment.php`)
-are now patched.
+All inline sidebar IIFEs have been removed from HTML pages.
 
-## What's left for you
+### `window.Pala` namespace (from pala-api.js)
 
-The pala test suite should now be clean:
-- `pala-test.html` — smoke tests (iframe-based)
-- `pala-api-test.html` — API endpoint tests (untracked, not committed yet)
+```js
+window.Pala = {
+  tok, base, fbase, api, esc, fmt, dat, qs, slug,
+  $k, setTbody, setTitle, setFooter, loadingRow, errorRow, emptyRow,
+  periodRange, wirePeriodChrome,
+}
+```
+
+Each domain file destructures what it needs from `window.Pala`.
+
+### What still needs doing
+
+1. **Testing** — smoke-test each page in the browser. The test files are:
+   - `pala-test.html` — iframe-based smoke tests
+   - `pala-api-test.html` — API endpoint tests (untracked)
+
+2. **Merge to claude-design** — once tests pass, merge `pala-js-refactor` into
+   `claude-design`.
+
+3. **"New X" buttons** — all list-page add/edit/delete buttons link to `#`.
+   Needs wiring to actual Firefly native UI URLs (using `fbase()`).
+
+4. **Profile page dead links** — change email/password, MFA, logout other
+   sessions, delete account links currently go nowhere.
+
+5. **Fix list-page detail links** — piggy list links to `piggy-show.html`,
+   recurring list links to `recurring-show.html`, rules list links to
+   `rule-show.html`. These were `href="#"` in the old code; I updated the
+   anchor `href` in the new domain files.
+
+### Previous fix (still applies)
+
+The `/api/v1/recurrences` 500 error was fixed in
+`app/Support/JsonApi/Enrichments/RecurringEnrichment.php` (three patches for
+soft-deleted accounts, empty transaction arrays, and null currencies).
+
+---
 
 If you want me to do anything else, write to `handoff/from-claude-design.md`.
 
