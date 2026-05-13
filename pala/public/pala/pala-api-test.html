@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pala — API tests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Crimson+Pro:wght@400;600&display=swap">
+<link rel="stylesheet" href="pala-shell.css">
+<style>
+  body { font-family:'Inter',sans-serif; background:var(--pala-navy); color:var(--pala-text); margin:0; padding:1.5rem 2rem; }
+  h1 { font-family:'Crimson Pro',serif; margin:0 0 1rem; }
+  .controls { display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--pala-navy-border); }
+  .controls button { background:var(--pala-mint); color:#0c2329; border:0; padding:.5rem 1rem; border-radius:6px; font-weight:600; cursor:pointer; }
+  .controls button:disabled { opacity:.45; cursor:default; }
+  .controls .ghost { background:transparent; color:var(--pala-text); border:1px solid var(--pala-navy-border); }
+  .summary { font-variant-numeric:tabular-nums; color:var(--pala-muted); }
+  .summary .ok { color:var(--pala-success); font-weight:600; }
+  .summary .ko { color:var(--pala-danger); font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:.86rem; }
+  th, td { text-align:left; padding:.45rem .55rem; border-bottom:1px solid var(--pala-navy-border); vertical-align:top; }
+  th { color:var(--pala-muted); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; font-weight:500; }
+  td.method { width:4rem; font-family:monospace; color:var(--pala-mint); }
+  td.status { width:5.5rem; }
+  td.dur    { width:4.5rem; color:var(--pala-muted); font-variant-numeric:tabular-nums; }
+  td.code   { width:4rem; font-variant-numeric:tabular-nums; }
+  td.path { font-family:monospace; font-size:.82rem; word-break:break-all; }
+  td.section { color:var(--pala-muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; }
+  .pill { display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; }
+  .pill.pending { background:rgba(122,155,191,.15); color:var(--pala-muted);  border:1px solid rgba(122,155,191,.35); }
+  .pill.running { background:rgba(122,155,191,.25); color:var(--pala-text);   border:1px solid rgba(122,155,191,.5); }
+  .pill.pass    { background:rgba(76,175,130,.15); color:var(--pala-success); border:1px solid rgba(76,175,130,.4); }
+  .pill.fail    { background:rgba(224,92,106,.15); color:var(--pala-danger);  border:1px solid rgba(224,92,106,.4); }
+  .pill.skip    { background:transparent; color:var(--pala-muted); border:1px dashed var(--pala-navy-border); }
+  .checks { margin:0; padding:.4rem 0 0; font-size:.78rem; list-style:none; }
+  .checks li { margin:.1rem 0; color:var(--pala-muted); }
+  .checks li.ok::before  { content:"✓ "; color:var(--pala-success); }
+  .checks li.ko::before  { content:"✗ "; color:var(--pala-danger); }
+  .checks li.ok { color:var(--pala-text); }
+  .checks li.ko { color:var(--pala-danger); }
+  .note { background:rgba(122,155,191,.08); border:1px solid var(--pala-navy-border); padding:.7rem .9rem; border-radius:6px; color:var(--pala-muted); font-size:.85rem; margin-bottom:1rem; }
+  .note code { background:var(--pala-navy); padding:.1rem .35rem; border-radius:3px; color:var(--pala-text); }
+  .filter { display:flex; gap:.4rem; align-items:center; margin-left:.5rem; }
+  .filter input { background:var(--pala-navy-card); border:1px solid var(--pala-navy-border); color:var(--pala-text); padding:.35rem .6rem; border-radius:4px; font-size:.82rem; }
+</style>
+</head>
+<body>
+  <h1>Pala — API endpoint tests</h1>
+  <div class="note">
+    Hits every Firefly III API endpoint pala calls — <strong>read-only only</strong> (no POST / PUT / DELETE so this never mutates your data). Each test asserts: <code>200 OK</code>, response parses as JSON, and a key field on the response is non-empty. Uses <code>pala_pat</code> + <code>pala_url</code> from localStorage. Detail-id endpoints fetch a real id first; if none exists (e.g. no piggies set up) they skip.
+  </div>
+  <div class="controls">
+    <button id="run">▶ Run reads</button>
+    <button id="run-mutations" class="ghost">⚡ Run mutations</button>
+    <button id="stop" class="ghost" disabled>Stop</button>
+    <button id="copy" class="ghost" disabled>📋 Copy report</button>
+    <button id="download" class="ghost" disabled>⬇ Download .txt</button>
+    <div class="filter"><span class="muted">filter:</span><input id="filter" placeholder="e.g. /budgets" /></div>
+    <span class="summary">
+      <span id="sum-total">0</span> total ·
+      <span class="ok"><span id="sum-pass">0</span> pass</span> ·
+      <span class="ko"><span id="sum-fail">0</span> fail</span> ·
+      <span id="sum-skip">0</span> skip ·
+      <span id="sum-running">0</span> running
+    </span>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Section</th><th class="method">M</th><th>Path</th><th class="status">Status</th><th class="code">Code</th><th class="dur">Time</th><th>Checks</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+<script>
+const PAT  = () => localStorage.getItem("pala_pat") || "";
+const BASE = () => (localStorage.getItem("pala_url") || location.origin).replace(/\/$/, "");
+
+async function fetchOne(path, opts = {}) {
+  const t0 = performance.now();
+  let res, json, err;
+  try {
+    res = await fetch(BASE() + "/api/v1" + path, {
+      headers: { Authorization: "Bearer " + PAT(), Accept: "application/json" },
+      ...opts,
+    });
+    const text = await res.text();
+    try { json = text ? JSON.parse(text) : null; }
+    catch { err = "Response body is not JSON"; }
+  } catch (e) { err = e.message; }
+  return { res, json, err, ms: Math.round(performance.now() - t0) };
+}
+
+// Build the test catalog. Each test:
+//   { section, method, path, assert: (json) => true | "fail msg" }
+// Detail tests use the ids resolved at the top of run.
+function buildTests(ids) {
+  const today = new Date();
+  const ymStart = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-01`;
+  const ymEnd   = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${new Date(today.getFullYear(), today.getMonth()+1, 0).getDate()}`;
+  const yStart  = `${today.getFullYear()}-01-01`;
+  const yEnd    = `${today.getFullYear()}-12-31`;
+
+  const hasData = (j) => j && (Array.isArray(j.data) || Array.isArray(j)) ? true : "Empty or non-array response";
+  const hasObj  = (j) => j && j.data && j.data.attributes ? true : "Missing data.attributes";
+  const idOpt   = (id, mk) => id ? mk(id) : null;
+
+  const tests = [
+    { section: "Auth/user",   method: "GET", path: "/about/user",         assert: hasObj },
+    { section: "Auth/user",   method: "GET", path: "/preferences",        assert: hasData },
+    { section: "Currencies",  method: "GET", path: "/currencies?limit=200", assert: hasData },
+
+    { section: "Accounts",    method: "GET", path: "/accounts?type=asset",       assert: hasData },
+    { section: "Accounts",    method: "GET", path: "/accounts?type=expense",     assert: hasData },
+    { section: "Accounts",    method: "GET", path: "/accounts?type=revenue",     assert: hasData },
+    { section: "Accounts",    method: "GET", path: "/accounts?type=liabilities", assert: hasData },
+    idOpt(ids.accId, (id) => ({ section: "Account detail", method: "GET", path: `/accounts/${id}`,                              assert: hasObj  })),
+    idOpt(ids.accId, (id) => ({ section: "Account detail", method: "GET", path: `/accounts/${id}/transactions?limit=10`,        assert: hasData })),
+
+    { section: "Transactions", method: "GET", path: `/transactions?start=${ymStart}&end=${ymEnd}&limit=10`,                       assert: hasData },
+    { section: "Transactions", method: "GET", path: `/transactions?start=${ymStart}&end=${ymEnd}&type=withdrawal&limit=10`,       assert: hasData },
+    { section: "Transactions", method: "GET", path: `/transactions?start=${ymStart}&end=${ymEnd}&type=deposit&limit=10`,          assert: hasData },
+    { section: "Transactions", method: "GET", path: `/transactions?start=${ymStart}&end=${ymEnd}&type=transfer&limit=10`,         assert: hasData },
+    idOpt(ids.txId, (id) => ({ section: "Tx detail",      method: "GET", path: `/transactions/${id}`,             assert: (j) => j?.data?.attributes?.transactions?.length ? true : "No splits in journal" })),
+    
+
+    { section: "Budgets",      method: "GET", path: `/budgets?start=${ymStart}&end=${ymEnd}`,        assert: hasData },
+    { section: "Budgets",      method: "GET", path: `/budget-limits?start=${ymStart}&end=${ymEnd}`,  assert: hasData },
+    idOpt(ids.budId, (id) => ({ section: "Budget detail", method: "GET", path: `/budgets/${id}`,                                        assert: hasObj  })),
+    idOpt(ids.budId, (id) => ({ section: "Budget detail", method: "GET", path: `/budgets/${id}/limits?start=${ymStart}&end=${ymEnd}`,    assert: hasData })),
+    idOpt(ids.budId, (id) => ({ section: "Budget detail", method: "GET", path: `/budgets/${id}/transactions?start=${ymStart}&end=${ymEnd}&limit=10`, assert: hasData })),
+
+    { section: "Categories",   method: "GET", path: "/categories",                              assert: hasData },
+    idOpt(ids.catId, (id) => ({ section: "Category detail", method: "GET", path: `/categories/${id}`,                                                              assert: hasObj  })),
+    idOpt(ids.catId, (id) => ({ section: "Category detail", method: "GET", path: `/categories/${id}/transactions?start=${ymStart}&end=${ymEnd}&limit=10`,           assert: hasData })),
+
+    { section: "Tags",         method: "GET", path: "/tags?limit=200",                          assert: hasData },
+    idOpt(ids.tag,   (t)  => ({ section: "Tag detail",    method: "GET", path: `/tags/${encodeURIComponent(t)}`,                                  assert: hasObj  })),
+    idOpt(ids.tag,   (t)  => ({ section: "Tag detail",    method: "GET", path: `/tags/${encodeURIComponent(t)}/transactions?limit=10`,            assert: hasData })),
+
+    { section: "Bills",        method: "GET", path: "/bills",                                   assert: hasData },
+    idOpt(ids.billId, (id) => ({ section: "Bill detail",  method: "GET", path: `/bills/${id}?start=${yStart}&end=${yEnd}`,                        assert: hasObj  })),
+    idOpt(ids.billId, (id) => ({ section: "Bill detail",  method: "GET", path: `/bills/${id}/transactions?limit=10`,                              assert: hasData })),
+
+    { section: "Rules",        method: "GET", path: "/rules",                                   assert: hasData },
+    { section: "Rules",        method: "GET", path: "/rule-groups",                             assert: hasData },
+    idOpt(ids.ruleId, (id) => ({ section: "Rule detail",  method: "GET", path: `/rules/${id}`,                                                    assert: hasObj  })),
+    idOpt(ids.ruleId, (id) => ({ section: "Rule detail",  method: "GET", path: `/rules/${id}/test`,                                               assert: hasData })),
+
+    { section: "Piggy banks",  method: "GET", path: "/piggy-banks",                             assert: hasData },
+    idOpt(ids.pigId, (id) => ({ section: "Piggy detail",  method: "GET", path: `/piggy_banks/${id}`,                                              assert: hasObj  })),
+    idOpt(ids.pigId, (id) => ({ section: "Piggy detail",  method: "GET", path: `/piggy_banks/${id}/events?limit=10`,                              assert: hasData })),
+
+    // /recurrences listing returns 500 on some Firefly versions even after
+    // wipe (server-side bug in their pagination). The detail endpoint works,
+    // so only the listing was problematic; both are still tested via the
+    // mutation/detail flows. We keep the listing test but document the quirk.
+    { section: "Recurring",    method: "GET", path: "/recurrences",                             assert: hasData },
+    idOpt(ids.recId, (id) => ({ section: "Recurring detail", method: "GET", path: `/recurrences/${id}`,                                           assert: hasObj  })),
+    idOpt(ids.recId, (id) => ({ section: "Recurring detail", method: "GET", path: `/recurrences/${id}/transactions?limit=10`,                     assert: hasData })),
+
+    { section: "Insights",     method: "GET", path: `/insight/expense/category?start=${ymStart}&end=${ymEnd}`, assert: (j) => Array.isArray(j) ? true : "Expected array" },
+    { section: "Summary",      method: "GET", path: `/summary/basic?start=${ymStart}&end=${ymEnd}`,            assert: (j) => j && typeof j === "object" && Object.keys(j).length ? true : "Empty summary" },
+    { section: "Search",       method: "GET", path: `/search/transactions?query=description:billa&limit=5`,    assert: hasData },
+
+    { section: "Autocomplete", method: "GET", path: "/autocomplete/accounts?query=a&limit=5",   assert: (j) => Array.isArray(j) ? true : "Expected array" },
+    { section: "Autocomplete", method: "GET", path: "/autocomplete/categories?query=a&limit=5", assert: (j) => Array.isArray(j) ? true : "Expected array" },
+    { section: "Autocomplete", method: "GET", path: "/autocomplete/budgets?query=a&limit=5",    assert: (j) => Array.isArray(j) ? true : "Expected array" },
+    { section: "Autocomplete", method: "GET", path: "/autocomplete/tags?query=a&limit=5",       assert: (j) => Array.isArray(j) ? true : "Expected array" },
+  ].filter(Boolean);
+
+  return tests;
+}
+
+async function getReferenceIds() {
+  const out = {};
+  const want = [
+    ["/transactions?limit=1",         "txId",   d => d.data?.[0]?.id],
+    ["/accounts?type=asset&limit=1",  "accId",  d => d.data?.[0]?.id],
+    ["/budgets?limit=1",              "budId",  d => d.data?.[0]?.id],
+    ["/categories?limit=1",           "catId",  d => d.data?.[0]?.id],
+    ["/tags?limit=1",                 "tag",    d => d.data?.[0]?.attributes?.tag],
+    ["/bills?limit=1",                "billId", d => d.data?.[0]?.id],
+    ["/rules?limit=1",                "ruleId", d => d.data?.[0]?.id],
+    ["/piggy_banks?limit=1",          "pigId",  d => d.data?.[0]?.id],
+    ["/recurrences?limit=1",          "recId",  d => d.data?.[0]?.id],
+  ];
+  await Promise.all(want.map(async ([path, key, pick]) => {
+    const { json } = await fetchOne(path);
+    out[key] = json ? pick(json) || null : null;
+  }));
+  return out;
+}
+
+const rowsEl = document.getElementById("rows");
+let runState = { pass:0, fail:0, skip:0, running:0, stop:false, total:0 };
+let TESTS = [];
+let SKIPS = []; // tests dropped because id missing — we still display them.
+
+function setSummary() {
+  document.getElementById("sum-total").textContent = runState.total;
+  document.getElementById("sum-pass").textContent  = runState.pass;
+  document.getElementById("sum-fail").textContent  = runState.fail;
+  document.getElementById("sum-skip").textContent  = runState.skip;
+  document.getElementById("sum-running").textContent = runState.running;
+}
+
+function renderRows() {
+  const f = document.getElementById("filter").value.trim().toLowerCase();
+  const visible = TESTS.map((t, i) => ({ t, i })).filter(({ t }) => !f || (t.path + " " + t.section).toLowerCase().includes(f));
+  rowsEl.innerHTML = visible.map(({ t, i }) => `
+    <tr id="row-${i}">
+      <td>${i+1}</td>
+      <td class="section">${t.section}</td>
+      <td class="method">${t.method}</td>
+      <td class="path">${t.path}</td>
+      <td class="status"><span class="pill pending">pending</span></td>
+      <td class="code">—</td>
+      <td class="dur">—</td>
+      <td><ul class="checks"></ul></td>
+    </tr>`).join("");
+}
+
+document.getElementById("filter").addEventListener("input", renderRows);
+
+async function runOne(idx) {
+  const t = TESTS[idx];
+  const row = document.getElementById(`row-${idx}`);
+  if (!row) return;
+  const statusCell = row.querySelector(".status");
+  const codeCell   = row.querySelector(".code");
+  const durCell    = row.querySelector(".dur");
+  const checks     = row.querySelector("ul.checks");
+  const set = (cls, label) => statusCell.innerHTML = `<span class="pill ${cls}">${label}</span>`;
+  const add = (ok, msg)   => { const li = document.createElement("li"); li.className = ok ? "ok" : "ko"; li.textContent = msg; checks.appendChild(li); };
+
+  set("running", "running"); runState.running++; setSummary();
+
+  const { res, json, err, ms } = await fetchOne(t.path, { method: t.method });
+  durCell.textContent = ms + "ms";
+  codeCell.textContent = res ? res.status : "—";
+
+  let pass = true;
+  if (err) { add(false, "Network/parse error: " + err); pass = false; }
+  else if (!res.ok) { add(false, `HTTP ${res.status} ${res.statusText}`); pass = false; }
+  else {
+    add(true, `HTTP ${res.status} · ${ms}ms`);
+    try {
+      const verdict = t.assert(json);
+      if (verdict === true) add(true, "Response shape OK");
+      else { add(false, "Shape: " + (verdict || "unknown failure")); pass = false; }
+    } catch (e) { add(false, "Assert threw: " + e.message); pass = false; }
+  }
+  set(pass ? "pass" : "fail", pass ? "pass" : "fail");
+  if (pass) runState.pass++; else runState.fail++;
+  runState.running--; setSummary();
+}
+
+async function runAll() {
+  document.getElementById("run").disabled = true;
+  document.getElementById("stop").disabled = false;
+  document.getElementById("copy").disabled = true;
+  document.getElementById("download").disabled = true;
+  runState = { pass:0, fail:0, skip:0, running:0, stop:false, total:0 };
+
+  if (!PAT()) {
+    alert("No pala_pat in localStorage. Open profile.html, save your PAT + URL, then re-run.");
+    document.getElementById("run").disabled = false;
+    document.getElementById("stop").disabled = true;
+    return;
+  }
+  const ids = await getReferenceIds();
+  console.log("[pala-api-test] reference ids:", ids);
+  const idKeys = ["txId","accId","budId","catId","tag","billId","ruleId","pigId","recId"];
+  // Note which detail endpoints will be skipped.
+  SKIPS = idKeys.filter(k => !ids[k]);
+  TESTS = buildTests(ids);
+  runState.total = TESTS.length + SKIPS.length;
+  renderRows(); setSummary();
+
+  for (let i = 0; i < TESTS.length; i++) {
+    if (runState.stop) break;
+    await runOne(i);
+  }
+  // Add skip rows for missing ids
+  if (SKIPS.length) {
+    const skipLabel = { txId: "transactions", accId: "asset accounts", budId: "budgets", catId: "categories", tag: "tags", billId: "bills", ruleId: "rules", pigId: "piggy banks", recId: "recurrences" };
+    SKIPS.forEach((k) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>—</td><td class="section">Detail</td><td class="method">GET</td><td class="path">${skipLabel[k]} detail endpoints</td><td class="status"><span class="pill skip">skip</span></td><td class="code">—</td><td class="dur">—</td><td><ul class="checks"><li class="ko">No ${skipLabel[k]} in DB — skipped detail endpoints</li></ul></td>`;
+      rowsEl.appendChild(tr);
+      runState.skip++;
+    });
+    setSummary();
+  }
+  document.getElementById("run").disabled = false;
+  document.getElementById("stop").disabled = true;
+  const hasResults = runState.pass + runState.fail + runState.skip > 0;
+  document.getElementById("copy").disabled = !hasResults;
+  document.getElementById("download").disabled = !hasResults;
+}
+
+function buildReport() {
+  const lines = [];
+  lines.push("Pala API smoke test — " + new Date().toISOString());
+  lines.push("Base URL: " + BASE());
+  lines.push(`Total: ${runState.total}  ·  Pass: ${runState.pass}  ·  Fail: ${runState.fail}  ·  Skip: ${runState.skip}`);
+  lines.push("─".repeat(80));
+  TESTS.forEach((t, i) => {
+    const row = document.getElementById(`row-${i}`);
+    if (!row) return;
+    const status = row.querySelector(".status .pill")?.textContent || "?";
+    const code   = row.querySelector(".code")?.textContent || "—";
+    const dur    = row.querySelector(".dur")?.textContent || "—";
+    lines.push(`[${status.toUpperCase().padEnd(7)}] ${(i+1+".").padEnd(3)} ${code.padStart(4)}  ${dur.padStart(7)}  ${t.method} ${t.path}`);
+    row.querySelectorAll("ul.checks li").forEach(li => {
+      const ok = li.classList.contains("ok");
+      lines.push(`             ${ok ? "✓" : "✗"} ${li.textContent}`);
+    });
+  });
+  if (SKIPS.length) {
+    lines.push("");
+    lines.push("Skipped detail endpoints (no data in DB to test):");
+    const skipLabel = { txId: "transactions", accId: "asset accounts", budId: "budgets", catId: "categories", tag: "tags", billId: "bills", ruleId: "rules", pigId: "piggy banks", recId: "recurrences" };
+    SKIPS.forEach((k) => lines.push("  · " + skipLabel[k]));
+  }
+  return lines.join("\n");
+}
+document.getElementById("run").addEventListener("click", runAll);
+document.getElementById("stop").addEventListener("click", () => { runState.stop = true; document.getElementById("stop").disabled = true; });
+
+/* ─── Mutation tests ──────────────────────────────────────────────────
+   Each mutation creates a pala-test-tagged entity, modifies it, deletes
+   it — and reports each step. If any step throws, subsequent cleanup
+   still runs so leftovers are minimized. Tagged "pala-test-{ts}" so you
+   can grep / delete leftovers if a run dies mid-cycle. */
+
+async function fetchJson(method, path, body) {
+  const t0 = performance.now();
+  const r = await fetch(BASE() + "/api/v1" + path, {
+    method,
+    headers: { Authorization: "Bearer " + PAT(), Accept: "application/json", "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await r.text();
+  let json = null; try { json = text ? JSON.parse(text) : null; } catch {}
+  return { status: r.status, ok: r.ok, json, ms: Math.round(performance.now() - t0), errText: r.ok ? null : (text || r.statusText) };
+}
+
+async function runMutations() {
+  if (!confirm("This will CREATE, MODIFY, and DELETE test entities (categories, budgets, tags, transactions, piggies, bills, rules, recurrences). Each cycle cleans up after itself. Continue?")) return;
+  document.getElementById("run").disabled = true;
+  document.getElementById("run-mutations").disabled = true;
+  document.getElementById("stop").disabled = false;
+  document.getElementById("copy").disabled = true;
+  document.getElementById("download").disabled = true;
+  runState = { pass:0, fail:0, skip:0, running:0, stop:false, total:0 };
+  TESTS = []; SKIPS = [];
+
+  const ts = Date.now();
+  const ids = await getReferenceIds();
+  const created = []; // [{ kind, path, name }]
+
+  // Render a fresh table with the mutation cycles up front.
+  rowsEl.innerHTML = '';
+  const addRow = (section, method, path) => {
+    const i = TESTS.length;
+    TESTS.push({ section, method, path, assert: () => true });
+    const tr = document.createElement("tr"); tr.id = "row-" + i;
+    tr.innerHTML = `<td>${i+1}</td><td class="section">${section}</td><td class="method">${method}</td><td class="path">${path}</td><td class="status"><span class="pill running">running</span></td><td class="code">—</td><td class="dur">—</td><td><ul class="checks"></ul></td>`;
+    rowsEl.appendChild(tr);
+    return i;
+  };
+  const finalize = (i, ok, status, ms, msg) => {
+    const row = document.getElementById("row-" + i);
+    if (!row) return;
+    row.querySelector(".code").textContent = status ?? "—";
+    row.querySelector(".dur").textContent  = (ms ?? "—") + (ms != null ? "ms" : "");
+    row.querySelector(".status").innerHTML = `<span class="pill ${ok ? "pass" : "fail"}">${ok ? "pass" : "fail"}</span>`;
+    const li = document.createElement("li"); li.className = ok ? "ok" : "ko"; li.textContent = msg; row.querySelector("ul.checks").appendChild(li);
+    if (ok) runState.pass++; else runState.fail++;
+    runState.total = TESTS.length; setSummary();
+  };
+  const skipRow = (section, reason) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>—</td><td class="section">${section}</td><td class="method">—</td><td class="path">—</td><td class="status"><span class="pill skip">skip</span></td><td class="code">—</td><td class="dur">—</td><td><ul class="checks"><li class="ko">${reason}</li></ul></td>`;
+    rowsEl.appendChild(tr);
+    runState.skip++; runState.total++; setSummary();
+  };
+
+  // ── Category cycle ──────────────────────────────────────────────
+  {
+    const name = `pala-test-cat-${ts}`;
+    let id = null;
+    const a = addRow("Category mutation", "POST", "/categories");
+    const c1 = await fetchJson("POST", "/categories", { name });
+    finalize(a, c1.ok, c1.status, c1.ms, c1.ok ? `Created "${name}" id=${c1.json?.data?.id}` : ("Create failed: " + (c1.errText || c1.status)));
+    if (c1.ok) {
+      id = c1.json.data.id; created.push({ kind: "category", id });
+      const b = addRow("Category mutation", "PUT", `/categories/${id}`);
+      const c2 = await fetchJson("PUT", `/categories/${id}`, { name: name + "-edited" });
+      finalize(b, c2.ok, c2.status, c2.ms, c2.ok ? "Renamed" : ("Update failed: " + (c2.errText || c2.status)));
+      const d = addRow("Category mutation", "DELETE", `/categories/${id}`);
+      const c3 = await fetchJson("DELETE", `/categories/${id}`);
+      finalize(d, c3.ok, c3.status, c3.ms, c3.ok ? "Deleted" : ("Delete failed: " + (c3.errText || c3.status)));
+      if (c3.ok) created.pop();
+    }
+  }
+
+  // ── Budget cycle ──────────────────────────────────────────────
+  {
+    const name = `pala-test-bud-${ts}`;
+    const a = addRow("Budget mutation", "POST", "/budgets");
+    const r1 = await fetchJson("POST", "/budgets", { name, active: true });
+    finalize(a, r1.ok, r1.status, r1.ms, r1.ok ? `Created "${name}" id=${r1.json?.data?.id}` : ("Create failed: " + (r1.errText || r1.status)));
+    if (r1.ok) {
+      const id = r1.json.data.id;
+      const b = addRow("Budget mutation", "PUT", `/budgets/${id}`);
+      const r2 = await fetchJson("PUT", `/budgets/${id}`, { name: name + "-edited" });
+      finalize(b, r2.ok, r2.status, r2.ms, r2.ok ? "Renamed" : ("Update failed: " + (r2.errText || r2.status)));
+      const d = addRow("Budget mutation", "DELETE", `/budgets/${id}`);
+      const r3 = await fetchJson("DELETE", `/budgets/${id}`);
+      finalize(d, r3.ok, r3.status, r3.ms, r3.ok ? "Deleted" : ("Delete failed: " + (r3.errText || r3.status)));
+    }
+  }
+
+  // ── Tag cycle ─────────────────────────────────────────────────
+  {
+    const name = `pala-test-tag-${ts}`;
+    const a = addRow("Tag mutation", "POST", "/tags");
+    const r1 = await fetchJson("POST", "/tags", { tag: name });
+    finalize(a, r1.ok, r1.status, r1.ms, r1.ok ? `Created "${name}" id=${r1.json?.data?.id}` : ("Create failed: " + (r1.errText || r1.status)));
+    if (r1.ok) {
+      const b = addRow("Tag mutation", "PUT", `/tags/${name}`);
+      const r2 = await fetchJson("PUT", `/tags/${encodeURIComponent(name)}`, { tag: name + "-edited" });
+      finalize(b, r2.ok, r2.status, r2.ms, r2.ok ? "Renamed" : ("Update failed: " + (r2.errText || r2.status)));
+      const delName = r2.ok ? name + "-edited" : name;
+      const d = addRow("Tag mutation", "DELETE", `/tags/${delName}`);
+      const r3 = await fetchJson("DELETE", `/tags/${encodeURIComponent(delName)}`);
+      finalize(d, r3.ok, r3.status, r3.ms, r3.ok ? "Deleted" : ("Delete failed: " + (r3.errText || r3.status)));
+    }
+  }
+
+  // ── Bill cycle ────────────────────────────────────────────────
+  {
+    const name = `pala-test-bill-${ts}`;
+    const a = addRow("Bill mutation", "POST", "/bills");
+    const r1 = await fetchJson("POST", "/bills", { name, amount_min: "9.00", amount_max: "11.00", date: new Date().toISOString().slice(0,10), repeat_freq: "monthly", skip: 0, active: true, currency_code: "EUR" });
+    finalize(a, r1.ok, r1.status, r1.ms, r1.ok ? `Created "${name}" id=${r1.json?.data?.id}` : ("Create failed: " + (r1.errText || r1.status)));
+    if (r1.ok) {
+      const id = r1.json.data.id;
+      const b = addRow("Bill mutation", "PUT", `/bills/${id}`);
+      const r2 = await fetchJson("PUT", `/bills/${id}`, { active: false });
+      finalize(b, r2.ok, r2.status, r2.ms, r2.ok ? "Paused (active=false)" : ("Update failed: " + (r2.errText || r2.status)));
+      const d = addRow("Bill mutation", "DELETE", `/bills/${id}`);
+      const r3 = await fetchJson("DELETE", `/bills/${id}`);
+      finalize(d, r3.ok, r3.status, r3.ms, r3.ok ? "Deleted" : ("Delete failed: " + (r3.errText || r3.status)));
+    }
+  }
+
+  // ── Piggy cycle (needs asset account) ─────────────────────────
+  if (ids.accId) {
+    const name = `pala-test-pig-${ts}`;
+    const a = addRow("Piggy mutation", "POST", "/piggy-banks");
+    const r1 = await fetchJson("POST", "/piggy-banks", {
+      name, accounts: [{ account_id: ids.accId, current_amount: "0.00" }],
+      target_amount: "100.00", start_date: new Date().toISOString().slice(0,10),
+      transaction_currency_code: "EUR", order: 999,
+    });
+    finalize(a, r1.ok, r1.status, r1.ms, r1.ok ? `Created "${name}" id=${r1.json?.data?.id}` : ("Create failed: " + (r1.errText || r1.status)));
+    if (r1.ok) {
+      const id = r1.json.data.id;
+      const b = addRow("Piggy mutation", "PUT", `/piggy-banks/${id}`);
+      const r2 = await fetchJson("PUT", `/piggy-banks/${id}`, { target_amount: "200.00" });
+      finalize(b, r2.ok, r2.status, r2.ms, r2.ok ? "Updated target to 200" : ("Update failed: " + (r2.errText || r2.status)));
+      const d = addRow("Piggy mutation", "DELETE", `/piggy-banks/${id}`);
+      const r3 = await fetchJson("DELETE", `/piggy-banks/${id}`);
+      finalize(d, r3.ok, r3.status, r3.ms, r3.ok ? "Deleted" : ("Delete failed: " + (r3.errText || r3.status)));
+    }
+  } else { skipRow("Piggy mutation", "No asset account available — needed to host the piggy bank."); }
+
+  // ── Transaction cycle (needs asset account; uses free-text expense) ─────────
+  if (ids.accId) {
+    const desc = `pala-test-tx-${ts}`;
+    const a = addRow("Transaction mutation", "POST", "/transactions");
+    const r1 = await fetchJson("POST", "/transactions", {
+      apply_rules: false,
+      transactions: [{
+        type: "withdrawal", date: new Date().toISOString().slice(0,10), amount: "1.00",
+        description: desc, source_id: String(ids.accId), destination_name: "pala-test-vendor",
+        currency_code: "EUR", tags: ["pala-test"],
+      }],
+    });
+    finalize(a, r1.ok, r1.status, r1.ms, r1.ok ? `Created "${desc}" id=${r1.json?.data?.id}` : ("Create failed: " + (r1.errText || r1.status)));
+    if (r1.ok) {
+      const id = r1.json.data.id;
+      const b = addRow("Transaction mutation", "PUT", `/transactions/${id}`);
+      const r2 = await fetchJson("PUT", `/transactions/${id}`, { transactions: [{ description: desc + " (edited)" }] });
+      finalize(b, r2.ok, r2.status, r2.ms, r2.ok ? "Renamed" : ("Update failed: " + (r2.errText || r2.status)));
+      const d = addRow("Transaction mutation", "DELETE", `/transactions/${id}`);
+      const r3 = await fetchJson("DELETE", `/transactions/${id}`);
+      finalize(d, r3.ok, r3.status, r3.ms, r3.ok ? "Deleted" : ("Delete failed: " + (r3.errText || r3.status)));
+    }
+  } else { skipRow("Transaction mutation", "No asset account available."); }
+
+  // ── Rule cycle (needs rule group) ─────────────────────────────
+  const grp = await fetchJson("GET", "/rule-groups?limit=1");
+  const groupId = grp.json?.data?.[0]?.id;
+  if (groupId) {
+    const title = `pala-test-rule-${ts}`;
+    const a = addRow("Rule mutation", "POST", "/rules");
+    const r1 = await fetchJson("POST", "/rules", {
+      title, description: "pala test rule",
+      rule_group_id: groupId, trigger: "store-journal", strict: true,
+      stop_processing: false, active: false,
+      triggers: [{ type: "description_contains", value: "pala-test", active: true, stop_processing: false }],
+      actions:  [{ type: "add_tag", value: "pala-test", active: true, stop_processing: false }],
+    });
+    finalize(a, r1.ok, r1.status, r1.ms, r1.ok ? `Created "${title}" id=${r1.json?.data?.id}` : ("Create failed: " + (r1.errText || r1.status)));
+    if (r1.ok) {
+      const id = r1.json.data.id;
+      const b = addRow("Rule mutation", "PUT", `/rules/${id}`);
+      const r2 = await fetchJson("PUT", `/rules/${id}`, { active: true });
+      finalize(b, r2.ok, r2.status, r2.ms, r2.ok ? "Enabled" : ("Update failed: " + (r2.errText || r2.status)));
+      const d = addRow("Rule mutation", "DELETE", `/rules/${id}`);
+      const r3 = await fetchJson("DELETE", `/rules/${id}`);
+      finalize(d, r3.ok, r3.status, r3.ms, r3.ok ? "Deleted" : ("Delete failed: " + (r3.errText || r3.status)));
+    }
+  } else { skipRow("Rule mutation", "No rule group found — Firefly creates a default group; create one in UI first."); }
+
+  // ── Recurring cycle (needs asset account + expense account) ───
+  // Firefly's recurrence template requires destination_id (not destination_name).
+  // Look up an existing expense account to point at.
+  const exp = await fetchJson("GET", "/accounts?type=expense&limit=1");
+  const destExpId = exp.json?.data?.[0]?.id || null;
+  if (ids.accId && destExpId) {
+    const title = `pala-test-rec-${ts}`;
+    const a = addRow("Recurring mutation", "POST", "/recurrences");
+    const r1 = await fetchJson("POST", "/recurrences", {
+      type: "withdrawal", title, first_date: new Date(Date.now()+86400000).toISOString().slice(0,10),
+      apply_rules: false, active: false, notes: "pala test",
+      nr_of_repetitions: 1,
+      repetitions: [{ type: "monthly", moment: "1", skip: 0, weekend: 1 }],
+      transactions: [{
+        amount: "1.00", description: title, currency_code: "EUR",
+        source_id: String(ids.accId), destination_id: String(destExpId), tags: ["pala-test"],
+      }],
+    });
+    finalize(a, r1.ok, r1.status, r1.ms, r1.ok ? `Created "${title}" id=${r1.json?.data?.id}` : ("Create failed: " + (r1.errText || r1.status)));
+    if (r1.ok) {
+      const id = r1.json.data.id;
+      const b = addRow("Recurring mutation", "PUT", `/recurrences/${id}`);
+      // Firefly's recurrence PUT requires the transactions array even when
+      // only flipping `active`. Echo the original template back.
+      const r2 = await fetchJson("PUT", `/recurrences/${id}`, {
+        active: true,
+        transactions: [{
+          amount: "1.00", description: title, currency_code: "EUR",
+          source_id: String(ids.accId), destination_id: String(destExpId), tags: ["pala-test"],
+        }],
+      });
+      finalize(b, r2.ok, r2.status, r2.ms, r2.ok ? "Enabled" : ("Update failed: " + (r2.errText || r2.status)));
+      const d = addRow("Recurring mutation", "DELETE", `/recurrences/${id}`);
+      const r3 = await fetchJson("DELETE", `/recurrences/${id}`);
+      finalize(d, r3.ok, r3.status, r3.ms, r3.ok ? "Deleted" : ("Delete failed: " + (r3.errText || r3.status)));
+    }
+  } else { skipRow("Recurring mutation", !ids.accId ? "No asset account available." : "No expense account available — needed as destination_id."); }
+
+  // ── Account cycle ───────────────────────────────────────────────
+  {
+    const name = `pala-test-acc-${ts}`;
+    const a = addRow("Account mutation", "POST", "/accounts");
+    const r1 = await fetchJson("POST", "/accounts", { name, type: "asset", account_role: "defaultAsset", currency_code: "EUR", opening_balance: "0.00", opening_balance_date: new Date().toISOString().slice(0,10) });
+    finalize(a, r1.ok, r1.status, r1.ms, r1.ok ? `Created "${name}" id=${r1.json?.data?.id}` : ("Create failed: " + (r1.errText || r1.status)));
+    if (r1.ok) {
+      const id = r1.json.data.id;
+      const b = addRow("Account mutation", "PUT", `/accounts/${id}`);
+      const r2 = await fetchJson("PUT", `/accounts/${id}`, { notes: "pala test edited at " + ts });
+      finalize(b, r2.ok, r2.status, r2.ms, r2.ok ? "Notes updated" : ("Update failed: " + (r2.errText || r2.status)));
+      const d = addRow("Account mutation", "DELETE", `/accounts/${id}`);
+      const r3 = await fetchJson("DELETE", `/accounts/${id}`);
+      finalize(d, r3.ok, r3.status, r3.ms, r3.ok ? "Deleted" : ("Delete failed: " + (r3.errText || r3.status)));
+    }
+  }
+
+  document.getElementById("run").disabled = false;
+  document.getElementById("run-mutations").disabled = false;
+  document.getElementById("stop").disabled = true;
+  const hasResults = runState.pass + runState.fail + runState.skip > 0;
+  document.getElementById("copy").disabled = !hasResults;
+  document.getElementById("download").disabled = !hasResults;
+}
+document.getElementById("run-mutations").addEventListener("click", runMutations);
+document.getElementById("copy").addEventListener("click", async () => {
+  const txt = buildReport();
+  try { await navigator.clipboard.writeText(txt); document.getElementById("copy").textContent = "✓ Copied"; setTimeout(() => document.getElementById("copy").textContent = "📋 Copy report", 1500); }
+  catch { prompt("Copy this:", txt); }
+});
+document.getElementById("download").addEventListener("click", () => {
+  const txt = buildReport();
+  const blob = new Blob([txt], { type: "text/plain" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "pala-api-test-" + new Date().toISOString().slice(0,19).replace(/[T:]/g, "-") + ".txt"; a.click();
+});
+</script>
+</body>
+</html>

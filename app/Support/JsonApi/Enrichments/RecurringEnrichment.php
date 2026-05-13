@@ -290,7 +290,7 @@ class RecurringEnrichment implements EnrichmentInterface
     private function collectCurrencies(): void
     {
         $all        = array_merge(array_unique($this->currencyIds), array_unique($this->foreignCurrencyIds));
-        $currencies = TransactionCurrency::whereIn('id', array_unique($all))->get();
+        $currencies = TransactionCurrency::withTrashed()->whereIn('id', array_unique($all))->get();
         foreach ($currencies as $currency) {
             $id                    = (int) $currency->id;
             $this->currencies[$id] = $currency;
@@ -394,7 +394,7 @@ class RecurringEnrichment implements EnrichmentInterface
     {
         $rtIds         = [];
         foreach ($this->ids as $recurrenceId) {
-            $rtIds = array_merge($rtIds, array_keys($this->transactions[$recurrenceId]));
+            $rtIds = array_merge($rtIds, array_keys($this->transactions[$recurrenceId] ?? []));
         }
         $meta          = RecurrenceTransactionMeta::whereNull('deleted_at')->whereIn('rt_id', $rtIds)->get();
         // other meta-data to be collected:
@@ -563,12 +563,12 @@ class RecurringEnrichment implements EnrichmentInterface
                 $pcAmount = $transaction['amount'];
             }
             // convert the amount to the primary currency, if it is not the same.
-            if ($this->convertToPrimary && $currencyId !== (int) $this->primaryCurrency->id) {
+            if ($this->convertToPrimary && $currencyId !== (int) $this->primaryCurrency->id && isset($this->currencies[$currencyId])) {
                 $pcAmount = $converter->convert($this->currencies[$currencyId], $this->primaryCurrency, today(), $transaction['amount']);
             }
             if (null !== $transaction['foreign_amount'] && null !== $transaction['foreign_currency_id']) {
                 $foreignCurrencyId = $transaction['foreign_currency_id'];
-                if ($foreignCurrencyId !== $this->primaryCurrency->id) {
+                if ($foreignCurrencyId !== $this->primaryCurrency->id && isset($this->currencies[$foreignCurrencyId])) {
                     $pcForeignAmount = $converter->convert(
                         $this->currencies[$foreignCurrencyId],
                         $this->primaryCurrency,
@@ -595,10 +595,11 @@ class RecurringEnrichment implements EnrichmentInterface
             $transaction['destination_type']                = $dstAcct?->accountType?->type;
 
             $transaction['currency_id']                     = (string) $currencyId;
-            $transaction['currency_name']                   = $this->currencies[$currencyId]->name;
-            $transaction['currency_code']                   = $this->currencies[$currencyId]->code;
-            $transaction['currency_symbol']                 = $this->currencies[$currencyId]->symbol;
-            $transaction['currency_decimal_places']         = $this->currencies[$currencyId]->decimal_places;
+            $currency                                       = $this->currencies[$currencyId] ?? null;
+            $transaction['currency_name']                   = $currency?->name ?? '';
+            $transaction['currency_code']                   = $currency?->code ?? '';
+            $transaction['currency_symbol']                 = $currency?->symbol ?? '';
+            $transaction['currency_decimal_places']         = $currency?->decimal_places ?? 2;
 
             $transaction['primary_currency_id']             = (string) $this->primaryCurrency->id;
             $transaction['primary_currency_name']           = $this->primaryCurrency->name;
@@ -613,11 +614,12 @@ class RecurringEnrichment implements EnrichmentInterface
             $transaction['foreign_currency_decimal_places'] = null;
             if (null !== $transaction['foreign_currency_id']) {
                 $currencyId                                     = $transaction['foreign_currency_id'];
+                $foreignCurrency                                = $this->currencies[$currencyId] ?? null;
                 $transaction['foreign_currency_id']             = (string) $currencyId;
-                $transaction['foreign_currency_name']           = $this->currencies[$currencyId]->name;
-                $transaction['foreign_currency_code']           = $this->currencies[$currencyId]->code;
-                $transaction['foreign_currency_symbol']         = $this->currencies[$currencyId]->symbol;
-                $transaction['foreign_currency_decimal_places'] = $this->currencies[$currencyId]->decimal_places;
+                $transaction['foreign_currency_name']           = $foreignCurrency?->name ?? '';
+                $transaction['foreign_currency_code']           = $foreignCurrency?->code ?? '';
+                $transaction['foreign_currency_symbol']         = $foreignCurrency?->symbol ?? '';
+                $transaction['foreign_currency_decimal_places'] = $foreignCurrency?->decimal_places ?? 2;
             }
             unset($transaction['transaction_currency_id']);
             $return[]                                       = $transaction;

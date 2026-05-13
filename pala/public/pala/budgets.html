@@ -168,6 +168,13 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 }
 .bud-link:hover .bud-head .name, .bud-link:focus-visible .bud-head .name { color:var(--pala-mint); }
 .bud-card { display:flex; flex-direction:column; gap:.7rem; padding:1rem 1.1rem; height:100%; }
+/* Lift the wrapping .card.bud-link a notch so envelopes read as distinct, clickable boxes */
+.bud-link.card {
+  background:var(--pala-navy-mid);
+  border:1px solid var(--pala-navy-border);
+  border-radius:10px;
+  box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 4px 12px -8px rgba(0,0,0,.4);
+}
 /* stretch the wrapping anchor.card so all cards in a row are the same height,
    so .mini-hist-block (margin-top:auto) sits at a consistent baseline */
 #view-this .row.g-3 > [class*="col-"] > a.card { height:100%; }
