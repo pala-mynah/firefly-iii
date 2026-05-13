@@ -299,72 +299,9 @@ h1,h2,h3,h4,h5,h6,.card-title { font-family:'Crimson Pro',serif; font-weight:600
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-<script src="pala-live.js"></script>
-<script src="pala-live2.js"></script>
-<script>
-/* Shared chrome — identical NAV across pages */
-(function () {
-  const NAV = [
-    { header: "Financial Control" },
-    { key:"dashboard", icon:"fa-solid fa-gauge-high",    label:"Dashboard",     href:"index.html" },
-    { key:"budgets",   icon:"fa-solid fa-chart-pie",     label:"Budgets",       href:"budgets.html" },
-    { key:"bills",     icon:"fa-regular fa-calendar",    label:"Subscriptions", href:"bills.html" },
-    { key:"piggy",     icon:"fa-solid fa-piggy-bank",    label:"Piggy Banks",   href:"piggy.html" },
-    { header: "Accounting" },
-    { key:"transactions", icon:"fa-solid fa-arrow-right-arrow-left", label:"Transactions", href:"transactions.html" },
-    { key:"automation", icon:"fa-solid fa-microchip", label:"Automation", expanded:true,
-      sub:[
-        { key:"rules",     icon:"fa-solid fa-shuffle", label:"Rules",     href:"rules.html" },
-        { key:"recurring", icon:"fa-solid fa-repeat",  label:"Recurring", href:"recurring.html" },
-      ] },
-    { header: "Others" },
-    { key:"accounts", icon:"fa-regular fa-credit-card", label:"Accounts", href:"accounts.html" },
-    { key:"classification", icon:"fa-solid fa-tags", label:"Classification", expanded:true,
-      sub:[
-        { key:"categories", icon:"fa-regular fa-bookmark", label:"Categories", href:"categories.html" },
-        { key:"tags",       icon:"fa-solid fa-tag",        label:"Tags",       href:"tags.html" },
-      ] },
-    { key:"reports", icon:"fa-solid fa-chart-column",   label:"Reports", href:"reports.html" },
-    { key:"search",  icon:"fa-solid fa-magnifying-glass", label:"Search",  href:"search.html" },
-    { divider:true },
-    { key:"profile",     icon:"fa-solid fa-user-gear", label:"Profile",     href:"profile.html" },
-    { key:"preferences", icon:"fa-solid fa-sliders",   label:"Preferences", href:"preferences.html" },
-  ];
-  const esc = (s) => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-
-  function renderSidebar(active) {
-    const parts = ['<div class="brand"><i class="fa-solid fa-fire-flame-curved me-2"></i>Firefly III</div>'];
-    for (const item of NAV) {
-      if (item.header)  { parts.push(`<div class="nav-header">${esc(item.header)}</div>`); continue; }
-      if (item.divider) { parts.push('<hr style="border-color:var(--pala-navy-border);margin:.6rem 0">'); continue; }
-      const isActive = item.key === active;
-      const chev = item.sub ? '<i class="fa-solid fa-chevron-down ms-auto fa-xs"></i>' : "";
-      parts.push(`<a href="${item.href||"#"}" class="nav-link${isActive?" active":""}"><i class="${item.icon}"></i> ${esc(item.label)}${chev}</a>`);
-      if (item.sub && (isActive || item.expanded)) {
-        parts.push('<div class="nav-sub">');
-        for (const s of item.sub) parts.push(`<a href="${s.href}" class="nav-link"><i class="${s.icon}"></i> ${esc(s.label)}</a>`);
-        parts.push('</div>');
-      }
-    }
-    return `<aside class="pala-sidebar">${parts.join("")}</aside>`;
-  }
-  function renderNavbar(crumbs, period) {
-    const segs = (crumbs||"").split("/").filter(Boolean);
-    const last = segs.pop();
-    const olItems = segs.map(s => `<li class="breadcrumb-item"><a href="#">${esc(s)}</a></li>`).join("");
-    const activeItem = last ? `<li class="breadcrumb-item active">${esc(last)}</li>` : "";
-    const periodHtml = period ? `<div class="period-badge"><a href="#"><i class="fa-solid fa-chevron-left fa-xs"></i></a><span>${esc(period)}</span><a href="#"><i class="fa-solid fa-chevron-right fa-xs"></i></a></div>` : "";
-    return `<nav class="pala-navbar"><ol class="breadcrumb">${olItems}${activeItem}</ol>${periodHtml}</nav>`;
-  }
-  function inject() {
-    const b = document.body;
-    b.insertAdjacentHTML("afterbegin", renderSidebar(b.dataset.page||""));
-    const main = document.querySelector("main.pala-main");
-    if (main) main.insertAdjacentHTML("beforebegin", renderNavbar(b.dataset.crumbs||"", b.dataset.period||""));
-  }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inject);
-  else inject();
-})();
-</script>
+<script src="pala-shell.js"></script>
+<script src="pala-ui.js"></script>
+<script src="pala-api.js"></script>
+<script src="pala-categories.js"></script>
 </body>
 </html>
