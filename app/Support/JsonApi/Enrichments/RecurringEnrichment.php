@@ -141,8 +141,9 @@ class RecurringEnrichment implements EnrichmentInterface
         }
         if ('ndom' === $repetition->repetition_type) {
             $parts     = explode(',', $repetition->repetition_moment);
-            // first part is number of week, second is weekday.
-            $dayOfWeek = trans(sprintf('config.dow_%s', $parts[1]), [], $this->language);
+            // first part is number of week, second is weekday. Guard against malformed values.
+            $weekday   = $parts[1] ?? '1';
+            $dayOfWeek = trans(sprintf('config.dow_%s', $weekday), [], $this->language);
             if ($repetition->repetition_skip > 0) {
                 return (string) trans(
                     'firefly.recurring_ndom_skip',
@@ -200,7 +201,8 @@ class RecurringEnrichment implements EnrichmentInterface
     private function collectAccounts(): void
     {
         $all      = array_merge(array_unique($this->sourceAccountIds), array_unique($this->destinationAccountIds));
-        $accounts = Account::with(['accountType'])->whereIn('id', array_unique($all))->get();
+        // include trashed: a recurrence may still reference a soft-deleted account.
+        $accounts = Account::withTrashed()->with(['accountType'])->whereIn('id', array_unique($all))->get();
 
         /** @var Account $account */
         foreach ($accounts as $account) {
@@ -580,16 +582,17 @@ class RecurringEnrichment implements EnrichmentInterface
             $transaction['pc_foreign_amount']               = $pcForeignAmount;
 
             $sourceId                                       = $transaction['source_id'];
-            $transaction['source_name']                     = $this->accounts[$sourceId]->name;
-            $transaction['source_iban']                     = $this->accounts[$sourceId]->iban;
-            $transaction['source_type']                     = $this->accounts[$sourceId]->accountType->type;
+            $srcAcct                                        = $this->accounts[$sourceId] ?? null;
+            $transaction['source_name']                     = $srcAcct?->name ?? '(deleted account)';
+            $transaction['source_iban']                     = $srcAcct?->iban;
+            $transaction['source_type']                     = $srcAcct?->accountType?->type;
             $transaction['source_id']                       = (string) $transaction['source_id'];
 
             $destId                                         = $transaction['destination_id'];
-            $transaction['destination_name']                = $this->accounts[$destId]->name;
-            $transaction['destination_iban']                = $this->accounts[$destId]->iban;
-            $transaction['destination_type']                = $this->accounts[$destId]->accountType->type;
-            $transaction['destination_id']                  = (string) $transaction['destination_id'];
+            $dstAcct                                        = $this->accounts[$destId] ?? null;
+            $transaction['destination_name']                = $dstAcct?->name ?? '(deleted account)';
+            $transaction['destination_iban']                = $dstAcct?->iban;
+            $transaction['destination_type']                = $dstAcct?->accountType?->type;
 
             $transaction['currency_id']                     = (string) $currencyId;
             $transaction['currency_name']                   = $this->currencies[$currencyId]->name;
