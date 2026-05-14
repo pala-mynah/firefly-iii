@@ -143,7 +143,8 @@
       console.warn("pageBudgets: per-budget tx for cat-stack failed", e);
     }
     const anchorCard = document.querySelector(".bud-link");
-    const grid = anchorCard?.closest(".row");
+    // Prefer the explicit grid id (static placeholder may have no .bud-link anchor yet).
+    const grid = document.getElementById("envelopeGrid") || anchorCard?.closest(".row");
     if (grid && records.length) {
       // Build into a DocumentFragment first, then swap atomically — avoids the
       // ~200 ms flicker where the user sees an empty grid between wipe and rebuild.
@@ -209,7 +210,7 @@
         const col = document.createElement("div");
         col.className = "col-lg-6 col-xl-4";
         col.innerHTML = `
-          <a class="card bud-link" href="budget-show.html?id=${r.id}" data-budget-id="${r.id}" style="text-decoration:none; color:inherit; display:block;">
+          <div class="card bud-link" data-href="budget-show.html?id=${r.id}" data-budget-id="${r.id}" tabindex="0" role="link" style="color:inherit; display:block; cursor:pointer;">
             <div class="bud-card">
               <div class="bud-head">
                 <div class="name"><span class="swatch" style="background:${r.color}"></span>${escH(r.name)}</div>
@@ -229,7 +230,7 @@
               ${catBlockHtml}
               ${histHtml}
             </div>
-          </a>
+          </div>
         `;
         frag.appendChild(col);
       });
@@ -278,7 +279,27 @@
   async function liveHistoricChart() {
     const wrap = document.getElementById("histWrap");
     if (!wrap) return;
-    const monthsEls = wrap.querySelectorAll(".history-month");
+    const bars = document.getElementById("historyBars");
+    if (!bars) return;
+    // If the static .history-month placeholders aren't there (e.g. budgets.html
+    // shipped with just a "Loading…" stub), build 12 empty month columns now so
+    // the rest of this function can hydrate them.
+    let monthsEls = wrap.querySelectorAll(".history-month");
+    if (!monthsEls.length) {
+      bars.innerHTML = "";
+      for (let i = 0; i < 12; i++) {
+        const el = document.createElement("div");
+        el.className = "history-month";
+        el.innerHTML = `
+          <div class="history-stack" style="height:0%"></div>
+          <div class="pct"></div>
+          <div class="euro"></div>
+          <div class="nodata"></div>
+          <div class="history-label"></div>`;
+        bars.appendChild(el);
+      }
+      monthsEls = wrap.querySelectorAll(".history-month");
+    }
     if (!monthsEls.length) return;
     monthsEls.forEach((el) => {
       const stack = el.querySelector(".history-stack");
@@ -768,6 +789,25 @@
     const page = document.body.dataset.page;
     if (page === "budgets")          pageBudgets();
     else if (page === "budget-show") pageBudgetShow();
+
+    // Click-anywhere navigation for envelope cards. Wrapping element is a
+    // <div class="card bud-link" data-href="..."> (NOT an <a>) so we wire
+    // both click and keyboard (Enter / Space) here.
+    if (page === "budgets") {
+      document.addEventListener("click", (e) => {
+        if (e.target.closest("a, button")) return;
+        const card = e.target.closest(".bud-link");
+        if (!card || !card.dataset.href) return;
+        location.href = card.dataset.href;
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const card = e.target.closest?.(".bud-link");
+        if (!card || e.target !== card || !card.dataset.href) return;
+        e.preventDefault();
+        location.href = card.dataset.href;
+      });
+    }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
