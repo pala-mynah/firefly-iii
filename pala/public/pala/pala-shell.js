@@ -136,7 +136,7 @@
     const last = segs.pop();
     const ol = segs.map((s) => `<li class="breadcrumb-item"><a href="#">${esc(s)}</a></li>`).join("");
     const active = last ? `<li class="breadcrumb-item active">${esc(last)}</li>` : "";
-    return `<nav class="pala-navbar"><ol class="breadcrumb">${ol}${active}<span class="period-badge"><i class="fa-regular fa-calendar fa-xs"></i><span>Loading…</span><i class="fa-solid fa-chevron-down fa-xs"></i></span></ol></nav>`;
+    return `<nav class="pala-navbar"><ol class="breadcrumb">${ol}${active}</ol><span class="period-badge"><i class="fa-regular fa-calendar fa-xs"></i><span>Loading…</span><i class="fa-solid fa-chevron-down fa-xs"></i></span></nav>`;
   }
 
   function inject() {
