@@ -144,8 +144,10 @@
     }
     const anchorCard = document.querySelector(".bud-link");
     const grid = anchorCard?.closest(".row");
-    if (grid) {
-      grid.innerHTML = "";
+    if (grid && records.length) {
+      // Build into a DocumentFragment first, then swap atomically — avoids the
+      // ~200 ms flicker where the user sees an empty grid between wipe and rebuild.
+      const frag = document.createDocumentFragment();
       const expectedPacePct = daysInMonth > 0 ? (dayOfMonth / daysInMonth) * 100 : 0;
       records.forEach((r) => {
         const leftColor =
@@ -229,8 +231,9 @@
             </div>
           </a>
         `;
-        grid.appendChild(col);
+        frag.appendChild(col);
       });
+      grid.replaceChildren(frag);
     }
     const totBudgeted = records.reduce((a, r) => a + r.limit, 0);
     const totSpent    = records.reduce((a, r) => a + r.spent, 0);
