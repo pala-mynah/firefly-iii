@@ -26,7 +26,6 @@
         { key: "income",    icon: "fa-solid fa-arrow-right text-success", label: "Income",    href: "transactions.html?type=income" },
         { key: "transfers", icon: "fa-solid fa-arrows-rotate text-info",  label: "Transfers", href: "transactions.html?type=transfers" },
         { key: "all",       icon: "fa-solid fa-arrows-turn-to-dots",      label: "All",       href: "transactions.html?type=all" },
-        { key: "new",       icon: "fa-solid fa-plus text-mint",           label: "New",       href: "transaction-new.html" },
       ] },
     { key: "automation", icon: "fa-solid fa-microchip", label: "Automation", expanded: true,
       sub: [

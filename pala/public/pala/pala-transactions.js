@@ -514,11 +514,307 @@
     }
   }
 
+  /* ─── New transaction form ────────────────────────────────────────────── */
+  // The form body is generated from a template string so it can be mounted
+  // EITHER on a standalone page (transaction-new.html) OR inside a palaModal
+  // triggered from any "+" button.
+  const NEW_TX_FORM_HTML = `
+    <div style="padding:0 0 .25rem;">
+      <div class="tx-type-pills" data-k="tx-type-pills">
+        <button type="button" data-type="withdrawal" class="active withdrawal"><i class="fa-solid fa-arrow-left"></i>Withdrawal</button>
+        <button type="button" data-type="deposit"><i class="fa-solid fa-arrow-right"></i>Deposit</button>
+        <button type="button" data-type="transfer"><i class="fa-solid fa-arrows-rotate"></i>Transfer</button>
+      </div>
+    </div>
+    <form id="tx-form" autocomplete="off">
+      <input type="hidden" data-field="type" value="withdrawal">
+      <div data-k="splits"></div>
+      <div style="padding:0 0 .25rem;">
+        <button type="button" class="add-split-btn" data-k="add-split">
+          <i class="fa-solid fa-plus"></i> Add split
+        </button>
+      </div>
+    </form>
+    <template id="split-template-inline">
+      <div class="split-block" data-k="split-row">
+        <div class="split-header">
+          <span class="split-num">Split <span data-k="split-num">1</span></span>
+          <button type="button" class="btn btn-sm btn-outline-danger ms-auto" data-k="remove-split" hidden>
+            <i class="fa-solid fa-xmark fa-fw"></i> Remove
+          </button>
+        </div>
+        <div class="form-grid">
+          <div class="form-row full">
+            <label class="form-label">Description</label>
+            <input class="form-control" data-field="description" placeholder="What was this for?">
+          </div>
+          <div class="form-row">
+            <label class="form-label" data-k="source-label">Source account</label>
+            <div data-k="source-picker"></div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" data-k="destination-label">Destination account</label>
+            <div data-k="destination-picker"></div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Amount</label>
+            <div class="input-group">
+              <span class="input-group-text">€</span>
+              <input class="form-control" type="number" step="0.01" data-field="amount" placeholder="0.00" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Date</label>
+            <input class="form-control" type="date" data-field="date" required>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Category</label>
+            <div data-k="category-picker"></div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Budget</label>
+            <div data-k="budget-picker"></div>
+          </div>
+          <div class="form-row full">
+            <label class="form-label">Tags</label>
+            <div data-k="tag-picker"></div>
+          </div>
+          <div class="form-row full">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" rows="2" data-field="notes" placeholder="Optional notes (markdown allowed)"></textarea>
+          </div>
+        </div>
+      </div>
+    </template>
+  `;
+
+  // Wire a transaction-creation form mounted inside `root`. Returns
+  //   { submit: async () => true | false }
+  // so callers (modal or page) can drive submit from their own footer button.
+  function initTransactionForm(root, opts = {}) {
+    const form = root.querySelector("#tx-form");
+    if (!form) { console.warn("initTransactionForm: no #tx-form"); return null; }
+    const splitsHost = form.querySelector('[data-k="splits"]');
+    const tmpl       = root.querySelector("#split-template, #split-template-inline");
+    const typePills  = root.querySelector('[data-k="tx-type-pills"]');
+    const typeHidden = form.querySelector('[data-field="type"]');
+    const addBtn     = form.querySelector('[data-k="add-split"]');
+    if (!splitsHost || !tmpl || !typePills) { console.warn("initTransactionForm: missing parts"); return null; }
+
+    const splits = [];
+
+    const labelsForType = (type) => {
+      if (type === "deposit")   return { src: "Source (revenue)",  dst: "Destination (asset)",   srcType: "revenue", dstType: "asset" };
+      if (type === "transfer")  return { src: "Source (asset)",    dst: "Destination (asset)",   srcType: "asset",   dstType: "asset" };
+      return                          { src: "Source (asset)",    dst: "Destination (expense)", srcType: "asset",   dstType: "expense" };
+    };
+
+    function applyType(type) {
+      typeHidden.value = type;
+      typePills.querySelectorAll("button").forEach((b) => {
+        const active = b.dataset.type === type;
+        b.classList.toggle("active", active);
+        b.classList.remove("withdrawal", "deposit", "transfer");
+        if (active) b.classList.add(type);
+      });
+      const L = labelsForType(type);
+      splits.forEach((s) => {
+        s.rowEl.querySelector('[data-k="source-label"]').textContent      = L.src;
+        s.rowEl.querySelector('[data-k="destination-label"]').textContent = L.dst;
+        rebuildPickers(s, type);
+      });
+    }
+
+    function rebuildPickers(split, type) {
+      const L = labelsForType(type);
+      const srcHost = split.rowEl.querySelector('[data-k="source-picker"]');
+      const dstHost = split.rowEl.querySelector('[data-k="destination-picker"]');
+      const oldSrc = split.source?.value();
+      const oldDst = split.destination?.value();
+      srcHost.innerHTML = ""; dstHost.innerHTML = "";
+      split.source = palaAccountPicker(srcHost, {
+        type: L.srcType,
+        placeholder: L.src.replace(/\s*\([^)]*\)/, ""),
+        initialId:   oldSrc?.id   || "",
+        initialName: oldSrc?.name || "",
+        allowNew: type !== "transfer" && L.srcType !== "asset",
+      });
+      split.destination = palaAccountPicker(dstHost, {
+        type: L.dstType,
+        placeholder: L.dst.replace(/\s*\([^)]*\)/, ""),
+        initialId:   oldDst?.id   || "",
+        initialName: oldDst?.name || "",
+        allowNew: type !== "transfer" && L.dstType !== "asset",
+      });
+    }
+
+    function addSplit() {
+      const frag = tmpl.content.cloneNode(true);
+      const rowEl = frag.querySelector('[data-k="split-row"]');
+      splitsHost.appendChild(frag);
+      const split = { rowEl };
+      splits.push(split);
+      rowEl.querySelector('[data-field="date"]').value = new Date().toISOString().slice(0, 10);
+      split.category = palaCategoryPicker(rowEl.querySelector('[data-k="category-picker"]'), { placeholder: "Pick or create a category" });
+      split.budget   = palaBudgetPicker(rowEl.querySelector('[data-k="budget-picker"]'),     { placeholder: "Pick a budget (optional)" });
+      split.tags     = palaTagPicker(rowEl.querySelector('[data-k="tag-picker"]'),           { placeholder: "Add a tag and press Enter" });
+      rebuildPickers(split, typeHidden.value || "withdrawal");
+      renumberSplits();
+    }
+
+    function renumberSplits() {
+      splits.forEach((s, i) => {
+        s.rowEl.querySelector('[data-k="split-num"]').textContent = String(i + 1);
+        const removeBtn = s.rowEl.querySelector('[data-k="remove-split"]');
+        removeBtn.hidden = splits.length === 1;
+        removeBtn.onclick = () => {
+          const idx = splits.indexOf(s);
+          if (idx < 0) return;
+          splits.splice(idx, 1);
+          s.rowEl.remove();
+          renumberSplits();
+        };
+      });
+    }
+
+    typePills.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-type]");
+      if (!btn) return;
+      applyType(btn.dataset.type);
+    });
+    addBtn.addEventListener("click", addSplit);
+
+    addSplit();
+    applyType(opts.initialType || "withdrawal");
+
+    async function submit() {
+      form.querySelectorAll(".is-invalid").forEach((el) => el.classList.remove("is-invalid"));
+      form.querySelectorAll("[data-error-for]").forEach((el) => el.remove());
+      const type = typeHidden.value || "withdrawal";
+      const groupTitle = splits.length > 1
+        ? splits.map((s) => s.rowEl.querySelector('[data-field="description"]').value).filter(Boolean).join(" / ")
+        : null;
+      const transactions = splits.map((s) => {
+        const f = palaReadForm(s.rowEl);
+        const src = s.source.value();
+        const dst = s.destination.value();
+        const tx = {
+          type, date: f.date,
+          description: f.description || "(no description)",
+          amount: String(f.amount ?? ""),
+          tags: s.tags.value() || [],
+        };
+        if (src.id) tx.source_id = src.id; else if (src.name) tx.source_name = src.name;
+        if (dst.id) tx.destination_id = dst.id; else if (dst.name) tx.destination_name = dst.name;
+        const cat = s.category.value();
+        if (cat.id) tx.category_id = cat.id; else if (cat.name) tx.category_name = cat.name;
+        const bud = s.budget.value();
+        if (bud.id) tx.budget_id = bud.id;
+        if (f.notes) tx.notes = f.notes;
+        return tx;
+      });
+      try {
+        const r = await api(`/transactions`, {
+          method: "POST",
+          body: JSON.stringify({ group_title: groupTitle, transactions, apply_rules: true }),
+        });
+        const newId = r.data?.id;
+        const label = groupTitle || splits[0].rowEl.querySelector('[data-field="description"]').value;
+        if (window.palaToast) palaToast.success("Transaction saved", {
+          msg: label,
+          actions: newId ? [{ label: "Open", onClick: () => { location.href = `transaction-show.html?tx=${newId}`; } }] : [],
+        });
+        return { ok: true, id: newId, label };
+      } catch (err) {
+        let body = null;
+        try {
+          const txt = err.message || "";
+          const idx = txt.indexOf("{");
+          if (idx >= 0) body = JSON.parse(txt.slice(idx));
+        } catch {}
+        if (body?.errors) {
+          const flattened = {};
+          for (const [k, v] of Object.entries(body.errors)) {
+            const m = k.match(/^transactions\.(\d+)\.(.+)$/);
+            if (m) flattened[m[2]] = v;
+            else flattened[k] = v;
+          }
+          if (splits[0]) palaShowFormErrors(splits[0].rowEl, { errors: flattened });
+        }
+        if (window.palaToast) palaToast.danger("Save failed", { msg: body?.message || err.message });
+        return { ok: false, err: body?.message || err.message };
+      }
+    }
+
+    return { submit, form };
+  }
+
+  // Page mode — used by the standalone transaction-new.html. The page's own
+  // <form> + footer buttons are wired here; we still call initTransactionForm
+  // for the actual field/picker setup.
+  function pageTransactionNew() {
+    const form = document.getElementById("tx-form");
+    if (!form) return;
+    // Page version has its template id="split-template" — keep working.
+    const ctrl = initTransactionForm(document, { initialType: "withdrawal" });
+    if (!ctrl) return;
+    const submitBtn = form.querySelector('[data-k="submit-btn"]');
+    const statusEl  = form.querySelector('[data-k="form-status"]');
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true; statusEl.textContent = "Saving\u2026";
+      const r = await ctrl.submit();
+      if (r.ok) {
+        statusEl.textContent = "";
+        setTimeout(() => { location.href = r.id ? `transaction-show.html?tx=${r.id}` : "transactions.html"; }, 700);
+      } else {
+        submitBtn.disabled = false;
+        statusEl.textContent = "Save failed.";
+      }
+    });
+  }
+
+  // Modal mode — drop the form into a palaModal triggered by any "+" button.
+  // Exposed as window.palaNewTransaction so any page can call it.
+  function openNewTransactionModal(opts = {}) {
+    if (!window.palaModal) { console.warn("palaModal not loaded"); return; }
+    const m = palaModal({
+      title: "New transaction",
+      wide: true,
+      body: NEW_TX_FORM_HTML,
+      footer: `
+        <button class="btn btn-outline-secondary" data-act="cancel">Cancel</button>
+        <button class="btn btn-primary" data-act="save"><i class="fa-solid fa-check"></i> Save</button>`,
+    });
+    const ctrl = initTransactionForm(m.bodyEl, { initialType: opts.initialType || "withdrawal" });
+    if (!ctrl) { m.close(); return; }
+    const cancel = m.footEl.querySelector('[data-act="cancel"]');
+    const save   = m.footEl.querySelector('[data-act="save"]');
+    cancel.addEventListener("click", () => m.close());
+    save.addEventListener("click", async () => {
+      save.disabled = true; save.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving\u2026';
+      const r = await ctrl.submit();
+      if (r.ok) {
+        m.close();
+        if (opts.onSaved) try { opts.onSaved(r); } catch {}
+        // Refresh the current page if it's the transactions list / dashboard.
+        const page = document.body.dataset.page;
+        if (page === "transactions" || page === "dashboard") setTimeout(() => location.reload(), 400);
+      } else {
+        save.disabled = false; save.innerHTML = '<i class="fa-solid fa-check"></i> Save';
+      }
+    });
+  }
+  window.palaNewTransaction = openNewTransactionModal;
+
+
+
   function boot() {
     setTimeout(() => { try { wirePeriodChrome(); } catch (e) { console.warn("period chrome:", e); } }, 0);
     const page = document.body.dataset.page;
     if (page === "transactions")     pageTransactions();
     else if (page === "transaction-show") pageTransactionShow();
+    else if (page === "transaction-new")  pageTransactionNew();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
